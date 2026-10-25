@@ -1,7 +1,7 @@
 # SoilSense ZM — Migration Plan
 
 > **Audit date:** 2026-10-26  
-> **Spec version:** v0.1, 26 Oct 2026 (`dissertation/SOILSENSE_SPEC.md`)  
+> **Spec version:** audited against v0.1; reviewed against v0.2 (25 Oct 2026, `docs/SOILSENSE_SPEC.md`), see section 11  
 > **Auditor:** Antigravity (Phase 1, read-only)
 
 ---
@@ -324,8 +324,8 @@ A pH of 0.5 or 13.0 would get a "Critical" prediction and full advice with lime 
 
 | # | Task | Owner | Status |
 |---|---|---|---|
-| S0-1 | Initialise git repo, commit current state | Developer | `todo` |
-| S0-2 | Copy `dissertation/SOILSENSE_SPEC.md` to `docs/SOILSENSE_SPEC.md` | Developer | `todo` |
+| S0-1 | Initialise git repo, commit current state | Developer | `done` |
+| S0-2 | Copy spec to `docs/SOILSENSE_SPEC.md` (now v0.2; `dissertation/` copy removed) | Developer | `done` |
 | S0-3 | Review this migration plan | Developer | `todo` |
 | S0-4 | Freeze contracts: DB schema (spec S3), API (spec S4), YAML shape (spec S6), i18n key format | Developer | `todo` |
 | S0-5 | Create branches and directory ownership | Developer | `todo` |
@@ -366,7 +366,7 @@ S1-7 (independent, parallel from day 1)
 
 | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|
-| **Not a git repo** — any mistake is unrecoverable | Critical | Certain (it is not a repo right now) | `git init` and commit immediately before any changes |
+| ~~**Not a git repo**~~ | — | Resolved | Repo is on GitHub (`lush-is-him/soilsense-zm`) |
 | **advisory.py deletion is a one-way door** — the hardcoded advice is the only working output | High | Certain (must delete per spec) | Back up the file to `analysis/advisory_old.py`; the rule engine replaces it |
 | **iSDAsoil rasters not yet obtained** — the spec requires iSDAsoil, the repo has SoilGrids | High | High (task H6 not done) | SoilGrids can be used for development; swap to iSDAsoil before evaluation |
 | **No Arduino hardware tested** — firmware is being written without hardware in the repo | High | Unknown | S1-4 must be verified against real hardware |
@@ -389,6 +389,8 @@ S1-7 (independent, parallel from day 1)
 | **C-4** (pH method for bands and crops) | All pH comparisons — use `ph_method: unconfirmed` + method-sensitivity rule |
 | **C-5** (manure unit) | Crop manure display — store tonnes/ha, derive per lima |
 | **C-6** (maize lowest workable = best range bottom) | Plan A vs Plan C boundary — treat as "below this, not recommended without liming" |
+| **C-7** (lime lead time 2–3 vs 1–2 months) — added v0.2 | REF-05 and Plan A timing — evaluate with both, flag when they differ |
+| **C-8** (target pH 5.5–6.5 vs 5.5–7) — added v0.2 | Plan A target and over-liming warning — use 5.5–6.5 |
 
 ### Spec problems
 
@@ -408,6 +410,56 @@ S1-7 (independent, parallel from day 1)
 8. **For the dashboard, do you want to keep vanilla HTML/CSS/JS or move to a framework (e.g., Vite + vanilla, or a lightweight framework)?** The current approach works but will get harder to maintain as pages multiply.
 9. **The spec assigns some tasks to Claude Code. Are you running Claude Code alongside, or should I handle everything?**
 10. **Do you want me to proceed to Phase 2 (Sprint 1 tasks) after you approve this plan?**
+
+---
+
+## 11. Review against spec v0.2 (25 Oct 2026)
+
+This section was added after the audit. It covers what the audit got wrong, what is now out of date, and how the spec v0.2 changes affect the tasks above. Sections 1 to 10 are left as audited, apart from status updates.
+
+### 11.1 Spec changes in v0.2 that affect code
+
+| Change | Affects | What to do |
+|---|---|---|
+| First reviewer (`AGR-1`, anonymous) will not review scenarios or confirm tables | S1-2 (`rules.reviewer_alias`), S1-7 | Store the alias only, never a name. The validator must reject `status: verified` on a rule whose only support is `AGR-1` expert opinion (no `source_doc` and no second reviewer) |
+| **C-7** lime lead time: E5 says 2 to 3 months, E10 says 1 to 2 | REF-05, Plan A timing text (Sprint 3) | `lead_time_before_planting_months: CONFLICT`. The validator must report `CONFLICT` values alongside `OPEN` ones |
+| **C-8** target pH: E3 says 5.5 to 6.5, G2 says 5.5 to 7 | Plan A target, over-liming warning | Use 5.5 to 6.5 until resolved |
+| REF-05 is evaluated **per crop**, with both 1 and 3 months | REF-05 tests | Add scenarios with `as_of_date = 2026-10-25`: maize gives "too late this season"; sunflower (Dec to Jan) gives "lime timing uncertain" |
+| C-1: sorghum was never in questionnaire v1 | `rules/crops.yaml` comment only | No behaviour change |
+| About 30 new lab samples replace the earlier 12 | Track H (evaluation) only | No Sprint 1 impact |
+
+C-7 and C-8 are also added to the conflict table in section 10.
+
+### 11.2 Corrections to the audit
+
+1. **The second "spec problem" is already covered.** Spec section 3 `readings` holds both `ph_water (mean)` and `replicates (JSON)`. No spec change is needed.
+2. **S1-5 does not depend on S1-2 or S1-4.** `QualityChecker` is a pure function (spec 2.1). It takes calibration, replicates, temperature and moisture and returns accepted or rejected with reasons. Its tests can be written on day 1. Only persisting the result needs S1-2.
+3. **S1-4a (firmware and bridge) can also start on day 1.** It depends only on the `POST /readings` payload in spec section 4, not on the schema. Only S1-4b (backend endpoints) waits for S1-2.
+4. **`soilsense.db` is not in git** (`.gitignore` has `*.db`). Existing farmer records exist only on the developer's laptop, so question 2 applies to that local file.
+5. **Chart.js size:** `chart.umd.min.js` is roughly 200 KB minified, about 70 KB gzipped, not 200 KB gzipped. It is still worth removing for low bandwidth and offline use.
+
+Revised dependency graph:
+
+```
+S1-1 ──→ S1-2 ──→ S1-3 ──→ S1-6
+             └──→ S1-4b (backend endpoints)
+S1-4a (firmware + bridge)   independent from day 1
+S1-5  (QualityChecker + tests) independent from day 1; wire-up after S1-2
+S1-7  (rule YAML + validator)  independent from day 1
+```
+
+### 11.3 Ownership problem (needs a decision)
+
+S1-5 puts `backend/quality.py` and S1-7 puts `backend/rule_engine.py` in `backend/`, which spec 8.4 gives to Antigravity, but the tasks go to Claude Code. **Proposal:** put the pure services in their own package, `engine/` (`quality.py`, `trust.py`, `rules.py`, `measures.py`), with no FastAPI imports. Claude Code owns it, and `backend/` only imports and wraps it. This changes spec 8.4, so per spec rule 8 the spec is edited first, after approval.
+
+### 11.4 Answers to section 10 questions known so far
+
+| # | Answer |
+|---|---|
+| 1 | Yes, the repo is on GitHub and is the copy of record |
+| 6 | Not sent yet. Clarification questions for `AGR-1` are drafted in `docs/QUESTIONS_FOR_REVIEWER_1.md` (questions 1 to 5 block code). `AGR-1` will not review or confirm; a second reviewer is pending |
+| 9 | Yes, Claude Code runs alongside Antigravity |
+| 2, 3, 4, 5, 7, 8, 10 | Open: developer to answer |
 
 ---
 

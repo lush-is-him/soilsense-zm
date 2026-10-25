@@ -1,4 +1,6 @@
-# SoilSense ZM: Implementation Spec (v0.1, 26 Oct 2026)
+# SoilSense ZM: Implementation Spec (v0.2, 25 Oct 2026)
+
+Changes in v0.2: first reviewer will not review scenarios or confirm tables (rule status model, 3 and 6); sorghum origin corrected (C-1); new conflicts C-7 lime lead time and C-8 target pH; REF-05 is per crop; about 30 new lab samples replace the earlier twelve (9).
 
 Handoff document for coding agents (Claude Code, Antigravity).
 Sources: dissertation Chapters 1 to 3 (v6) and the agronomist questionnaire v1 (returned Oct 2026).
@@ -178,7 +180,7 @@ Implementation:
 | `sms_messages` | sms_id, rec_id, status, ts | |
 
 Rule `status`: `draft`, `agronomist_input`, `verified`. `source_type`: `published`, `expert_opinion`, `derived`, `proposed`.
-Everything in section 6 starts as `agronomist_input` (for `[AGR]`) or `draft` (for `[PROPOSED]`); nothing is `verified` until the agronomist confirms the written-back tables.
+Everything in section 6 starts as `agronomist_input` (for `[AGR]`) or `draft` (for `[PROPOSED]`). The first reviewer (anonymous) has said they will **not** confirm the written-back tables or review scenarios, so their answers can never move to `verified` on their own authority. A rule becomes `verified` only when a second qualified reviewer confirms it, or when it is matched to a cited published source (then `source_type: published`). `reviewer_alias` for the first reviewer is `AGR-1`; never store a name.
 
 i18n: `i18n/en.yaml`, `i18n/ny.yaml`, `i18n/toi.yaml`. Each key has `text` and `reviewed: true|false`. Unreviewed text is shown with a visible marker (FR12).
 
@@ -216,7 +218,7 @@ Non-functional (all must unless stated): NFR1 transparency, NFR2 never advise fr
 
 ## 6. Rule data v0.1 (from the agronomist questionnaire)
 
-All values below are `[AGR]` unless tagged otherwise. No published source was cited for any of them (G1 asked for a document name and none was given). Store as `source_type: expert_opinion`, `source_doc: null`, `status: agronomist_input`, `ph_method: unconfirmed`.
+All values below are `[AGR]` (reviewer `AGR-1`, anonymous, will not confirm) unless tagged otherwise. No published source was cited for any of them (G1 asked for a document name and none was given). Store as `source_type: expert_opinion`, `source_doc: null`, `status: agronomist_input`, `ph_method: unconfirmed`.
 
 ### 6.1 pH bands (`rules/ph_bands.yaml`)
 
@@ -300,7 +302,7 @@ crops:
     dry_season_irrigation: "yes, with suitable management"
   sorghum:
     in_scope: true                            # per Ch 1
-    data: NONE                                # agronomist did not supply a column
+    data: NONE                                # sorghum was not a column in questionnaire v1, so it was never asked (C-1)
 ```
 
 Unit warning: manure is stored per hectare in **tonnes**. The agronomist wrote "lts/lima", but the numbers only match tonnes per lima (see C-5). Derive per-lima from per-hectare; do not use the per-lima text.
@@ -314,7 +316,7 @@ Defaults: most smallholders are rainfed (B6: no dry-season irrigation locally). 
 ```yaml
 lime:
   products: ["dolomitic lime", "calcitic lime"]      # E2; farmers buy in high-volume orders
-  target_ph: [5.5, 6.5]                              # E3
+  target_ph: [5.5, 6.5]                              # E3; G2 says 5.5-7, see C-8
   trigger_ph: OPEN                                   # E1 says "5.5-6.2"; see C-3
   rates_t_per_ha:                                    # E4, no source column filled
     severe:   {sandy: [1.0, 1.5], loamy: [2.0, 3.0], clay: [3.5, 5.0]}
@@ -323,7 +325,7 @@ lime:
     suitable: {sandy: [0, 0],     loamy: [0, 0],     clay: [0, 0]}
   max_single_application_t_ha: 5                     # E6 says "4 to 5"; confirm which
   texture_required: true                             # C6: texture must be known before lime advice
-  lead_time_before_planting_months: [2, 3]           # E5 (rainfed); irrigated: any time
+  lead_time_before_planting_months: CONFLICT         # E5 says 2-3 (rainfed; irrigated any time), E10 says 1-2; see C-7
   residual_effect_years: [3, 5]                      # E9
   retest_after_years: [2, 3]                         # E9
   partial_approach: CONFLICT                         # E7, see C-2
@@ -365,7 +367,7 @@ lime (rate from 6.3 by band and texture, clamped to the single-application cap, 
 | REF-02 | pH below 4.5: no plan, refer to lab or extension officer | `[PROPOSED]`, anchored on C4 (no fertiliser response below 4.5) and the crop table (no crop workable below 4.8). C5 was left blank, so confirm. |
 | REF-03 | Lime quantity requested but texture unknown (not from field check, lab or trusted map): no lime quantity, ask for texture by feel | `[AGR C6]` plus `[PROPOSED]` enforcement |
 | REF-04 | pH above the crop's highest workable value: no lime, warn, recommend lab test | `[PROPOSED]`, derived from 6.2 |
-| REF-05 | Lime lead time longer than the time left before the crop's planting window: say it is too late to lime for this season, give Plan C for this season and lime-for-next-season guidance | `[AGR E5]` plus `[PROPOSED]` logic, uses `as_of_date` |
+| REF-05 | Lime lead time longer than the time left before **that crop's** planting window: say it is too late to lime for this season, give Plan C for this season and lime-for-next-season guidance | `[AGR E5, E10]` plus `[PROPOSED]` logic, uses `as_of_date`. Evaluate per crop, not per season: on 25 Oct, maize, soybean and millet (Nov-Dec) are too late under 2-3 months, but sunflower (Dec-Jan) is borderline. Until C-7 is resolved, evaluate with both 1 and 3 months; if the outcome differs, say "lime timing uncertain, consult an extension officer" |
 | REF-06 | `method_sensitive` advice: no quantities, lab test recommended | `[PROPOSED]` (2.6) |
 | REF-07 | Lime total above the single-application cap: split into applications, say so | `[AGR E6]`, split guidance `[OPEN]` |
 
@@ -392,18 +394,20 @@ lime (rate from 6.3 by band and texture, clamped to the single-application cap, 
 
 | ID | Issue | Why it matters | Temporary behaviour |
 |---|---|---|---|
-| C-1 | **Crop scope.** Ch 1 says soybean, sunflower, maize, sorghum, millet. The agronomist's table has groundnut and no sorghum. | Scope, objectives and tests all name five crops | Implement maize, soybean, sunflower, millet. Groundnut stored as `pending_supervisor_decision`. Sorghum stubbed `data: NONE` |
+| C-1 | **Crop scope.** Ch 1 says soybean, sunflower, maize, sorghum, millet. Questionnaire v1 itself offered maize, soybean, groundnut, sunflower, millet and sweet potato, so sorghum was never asked; the reviewer did not drop it. | Scope, objectives and tests all name five crops | Implement maize, soybean, sunflower, millet. Groundnut stored as `pending_supervisor_decision`. Sorghum stubbed `data: NONE` |
 | C-2 | **E7 lime-at-planting numbers disagree.** "50 to 100 g per planting basin" vs "approx 200 to 400 kg/ha". At the maize spacing in the same table (75 x 25 cm = 53,333 stations/ha), 50 to 100 g per station is 2.7 to 5.3 t/ha, which is the full rate, not a partial one. 200 to 400 kg/ha would be roughly 4 to 8 g per station. | Plan B lime rate could be off by about 10 times | Plan B blocked |
 | C-3 | **E1 lime trigger "5.5 to 6.2"** vs target pH 5.5 to 6.5 (E3) and E4 rates for 5.5 to 6.5. Is lime recommended when pH is below 5.5, or below 6.2? | Decides whether slightly acidic fields get lime at all | `trigger_ph: OPEN`; pH 5.5 to 6.5 shows "optional, small rate, lab test" |
 | C-4 | **pH method** for the bands and crop table is not stated (labs use CaCl2, probe and map use water, difference 0.5 to 0.8). | Shifts every band decision by up to a full band | `ph_method: unconfirmed` plus method-sensitivity rule (2.6) |
 | C-5 | **Manure unit.** "lts/lima" in the table only works as tonnes per lima (e.g. 5 to 10 t/ha equals 1.25 to 2.5 t/lima). Maize (written 1.25 to 5, computed 1.25 to 3.75) and groundnut (written 1.25 to 2.5, computed 1.25 to 2.0) do not match. | A litres reading would be about 1000 times out | Store per hectare in tonnes; derive per lima |
+| C-7 | **Lime lead time.** E5: 2 to 3 months before planting (rainfed). E10: at least 1 to 2 months before planting. | Drives REF-05 (too late to lime this season) | Evaluate with both; flag when they differ (REF-05) |
+| C-8 | **Target pH.** E3: 5.5 to 6.5. G2: 5.5 to 7. | Plan A target and the over-liming warning | Use 5.5 to 6.5 (narrower, safer against over-liming) |
 | C-6 | **Maize "lowest workable pH" (5.5) equals the bottom of its best range (5.5 to 6.8).** Same for soybean at 5.5 vs 5.8. Unclear if "lowest workable" means yield-limiting or just "below this, do not recommend". | Plan A vs Plan C boundary | Treat as "below this, not recommended without liming" |
 
 ### 7.2 Unanswered questionnaire items
 
 | Section | Status | Consequence |
 |---|---|---|
-| A (about the reviewer) | A2 partly, A6 = No, A7 = not a family member; A1, A3 to A5 blank | Reviewer cannot be named. Credentials unclear ("NRDC lecture and student"). No independent second reviewer named |
+| A (about the reviewer) | A2 partly, A6 = No, A7 = not a family member; A1, A3 to A5 blank. Later: will not review scenarios or confirm tables | Reviewer cannot be named (alias `AGR-1`). Credentials unclear ("NRDC lecture and student"). Second reviewer approached, reply awaited |
 | B | B1 blank, rest answered | Rainfall and agro-ecological region missing |
 | C | C1 to C4, C6 answered; **C5 blank** | Refusal threshold unconfirmed (REF-02) |
 | D | Table partly filled; rotation, yield, source rows blank; sorghum missing | Rates for most crops missing |
@@ -416,25 +420,13 @@ lime (rate from 6.3 by band and texture, clamped to the single-application cap, 
 | K | K1 to K5 answered (depth missing) | Enough for the sampling guide |
 | L | **Blank** | No tone or wording guidance; no extra safety cases |
 | M | M3 = yes (pictures or voice help); M1 and M2 blank | No Nyanja or Tonga terms, no native reviewers |
-| N | **Blank** | No source list; unknown whether the agronomist will review 60 to 100 scenarios (needed for RQ3) |
+| N | **Blank** | No source list. First reviewer will not review scenarios, so RQ3 depends on the second reviewer. Fallback if none by the deadline: redefine RQ3 (see 11) |
 
-### 7.3 Follow-up questions for the agronomist
+### 7.3 Follow-up questions
 
-**Tier 1 (blocks code):**
-1. Are the pH bands (C1) and the crop pH values (D) in water or in CaCl2?
-2. E7: which is right, 50 to 100 g per planting basin or 200 to 400 kg/ha? What basin or station spacing do you mean?
-3. E1: should lime be recommended below pH 5.5, or below 6.2? What do you advise for pH 5.5 to 6.5?
-4. I2: if a farmer can only afford part of the inputs, what is the order of priority (lime, fertiliser, seed, manure)?
-5. Top dressing and basal rates (kg/ha) for each crop, and the name of the ZARI or Ministry document they come from (G1, D).
+**To AGR-1 (clarification only; will not review or confirm):** see `docs/QUESTIONS_FOR_REVIEWER_1.md`. Questions 1 to 5 block code (C-4, C-2, C-3, C-7, I2).
 
-**Tier 2:**
-6. C5: below what pH should the system refuse and refer to a lab? Does 4.5 work?
-7. Sorghum: can you supply the same column, or should it be replaced by groundnut?
-8. Is 1 lima 0.25 ha? (H1) and are the manure figures tonnes per lima, not litres?
-9. Sampling depth for the lab test (K1)? Is one composite per area the limit, or is there a maximum field size per sample (K2)?
-10. N1 to N4: documents you rely on, and whether you can review 60 to 100 scenarios, how much time, in which format.
-11. M1 and M2: Nyanja and Tonga terms, and two native-speaker reviewers.
-12. A7: can you suggest one independent second reviewer?
+**To the second reviewer (if they reply):** the full questionnaire v1 with a sorghum column added; confirmation of the section 6 tables written back as a plain table; the 60 to 100 scenario review for RQ3 (N2, N3); whether they may be named (A6).
 
 ---
 
@@ -542,7 +534,7 @@ Lab results feed RQ1 (probe accuracy) and RQ2 (map accuracy), so sample handling
 3. **Labelling**: one sample ID per composite; keep a sheet of ID, farm alias, date, GPS, accuracy, depth, previous crop, recent manure or fertiliser.
 4. **Prepare and split**: air-dry, sieve, mix, then split into two bags: one for the lab, one **retained** for the probe test (1:2.5 water, 3 replicates within 0.1) so probe and lab measure the same material.
 5. **Ask the lab for**: pH in water at 1:2.5 **and** pH in 0.01 M CaCl2 at 1:2.5, with the method statement; plus organic carbon, P, K and texture if affordable (RQ2). Candidates named by the agronomist: ZARI Mount Makulu; UNZA Soil Science. Contacts and prices not supplied.
-6. If the new samples replace the earlier twelve, the dissertation's sample count and wording change; keep Ch 1 and Ch 3 consistent.
+6. About 30 new composite samples **replace** the earlier twelve (decided). Ch 1 to 3 were updated to "about thirty" in v7; set the exact number once the samples are sent. The earlier twelve are not used for RQ1 or RQ2.
 
 ---
 
@@ -559,8 +551,8 @@ Lab results feed RQ1 (probe accuracy) and RQ2 (map accuracy), so sample handling
 
 ## 11. Dissertation consistency notes
 
-- Ch 3 says the questionnaire went to two agronomists and Ch 1 says one reviewer is related to the author. The reviewer who answered says they are not a family member and may not be named; describe them anonymously. Credentials need clarifying.
+- Done in v7: the reviewer is described as anonymous, not related to the author, not confirming tables. Still pending (marked `% TODO` in the .tex): objective 3, RQ3 and its 80% target, Table 3.4 reviewer count, Ch 3 stakeholder wording. If no second reviewer by the agreed deadline, redefine RQ3 (for example review of a smaller scenario set by an extension officer or lecturer, or move expert agreement to future work).
 - Crop list: Ch 1 scope (five crops with sorghum) vs the reviewer's table (groundnut, no sorghum).
-- Section 3.5.1 asks the lab for water pH, and optionally CaCl2; given the reviewer's statement that Zambian labs use CaCl2, make CaCl2 required in the request and state the conversion issue in Chapter 2 or 3.
+- Done in v7: CaCl2 is now required in Ch 2 Table and Ch 3 section 3.5.1.
 - Table 3.3 (sprints) should match the actual order once Sprint 0 is done.
 - All `[AGR]` values are expert opinion without cited documents; the write-up must say so and not present them as published guidance.
