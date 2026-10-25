@@ -18,8 +18,10 @@ The codebase is a working ML-based soil classifier with a FastAPI backend and a 
 
 ## 2. Repo state
 
-- **Not a git repository.** The directory `C:\Users\USER\SoilSense ZM` has no `.git` folder.
-- The working tree cannot be assessed (no git). **Action needed: `git init` and an initial commit before making any changes.**
+- **Repository:** Initialized on `main`, tracked to private GitHub repo `https://github.com/lush-is-him/soilsense-zm`.
+- **Base commit:** `195280a` (Clean working tree, initial commit of all source files, documentation, and spec).
+- **Ignored assets:** GeoTIFF rasters (`tiff files/` > 1.1GB, exceeding GitHub 100MB limit) and local SQLite `.db` / `__pycache__` excluded via `.gitignore`.
+
 
 ---
 
