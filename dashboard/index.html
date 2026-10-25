@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SoilSense ZM — Soil health monitoring and advisory system for Kafue District, Zambia. Submit soil readings and get instant crop recommendations.">
+  <title>SoilSense ZM — Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ── HEADER ────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="app-logo">
+      <div class="app-logo-icon">🌱</div>
+      <div class="app-logo-text">
+        <h1>SoilSense ZM</h1>
+        <span>Kafue District Soil Health Monitor</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="api-status" id="apiStatus">
+        <div class="api-status-dot" id="apiDot"></div>
+        <span id="apiLabel">Connecting…</span>
+      </div>
+      <div class="view-switcher">
+        <button class="view-btn active" data-view="farmer" id="btnFarmerView">🌾 Farmer</button>
+        <button class="view-btn" data-view="officer" id="btnOfficerView">📊 Officer</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- FARMER VIEW                                                   -->
+  <!-- ============================================================ -->
+  <section class="view active" id="farmerView">
+
+    <!-- Submit Reading Card -->
+    <div class="card" id="readingCard">
+      <div class="card-header">
+        <div class="card-header-icon">📡</div>
+        <div>
+          <div class="card-title">Submit Soil Reading</div>
+          <div class="card-subtitle">Enter sensor values or manual readings</div>
+        </div>
+      </div>
+
+      <form id="readingForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="inputPH">Soil pH <span class="unit">(0–14)</span></label>
+            <input class="form-input" type="number" id="inputPH" name="pH"
+                   placeholder="e.g. 5.8" min="0" max="14" step="0.1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputMoisture">Moisture <span class="unit">(%)</span></label>
+            <input class="form-input" type="number" id="inputMoisture" name="moisture"
+                   placeholder="e.g. 35" min="0" max="100" step="0.1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputTemp">Temperature <span class="unit">(°C)</span></label>
+            <input class="form-input" type="number" id="inputTemp" name="temperature"
+                   placeholder="e.g. 28" min="-10" max="60" step="0.1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputNitrogen">Nitrogen <span class="unit">(mg/kg)</span></label>
+            <input class="form-input" type="number" id="inputNitrogen" name="nitrogen"
+                   placeholder="Optional" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputPhosphorus">Phosphorus <span class="unit">(mg/kg)</span></label>
+            <input class="form-input" type="number" id="inputPhosphorus" name="phosphorus"
+                   placeholder="Optional" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputOC">Organic Carbon <span class="unit">(g/kg)</span></label>
+            <input class="form-input" type="number" id="inputOC" name="organic_carbon"
+                   placeholder="Optional" min="0" step="0.1">
+          </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label class="form-label" for="inputPhone">Farmer Phone <span class="unit">(for SMS)</span></label>
+            <input class="form-input" type="tel" id="inputPhone" name="farmer_phone"
+                   placeholder="+260971234567">
+          </div>
+          <div class="form-group" style="justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary btn-block" id="btnPredict">
+              <span class="btn-text">🔬 Analyse Soil</span>
+              <div class="spinner"></div>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Prediction Result -->
+    <div class="result-panel" id="resultPanel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon">📋</div>
+          <div>
+            <div class="card-title">Soil Health Report</div>
+            <div class="card-subtitle" id="resultTimestamp"></div>
+          </div>
+        </div>
+
+        <!-- Status Banner -->
+        <div class="result-header" id="resultHeader">
+          <div class="result-icon" id="resultIcon"></div>
+          <div>
+            <div class="result-label" id="resultLabel"></div>
+            <div class="result-confidence" id="resultConfidence"></div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="advisory-section">
+          <div class="advisory-section-title">📝 Summary</div>
+          <div class="advisory-text" id="resultSummary"></div>
+        </div>
+
+        <!-- Lime -->
+        <div class="advisory-section">
+          <div class="advisory-section-title">�ite Lime Recommendation</div>
+          <div class="advisory-text" id="resultLime" style="border-left-color: var(--color-moderate);"></div>
+        </div>
+
+        <!-- Fertilizer -->
+        <div class="advisory-section">
+          <div class="advisory-section-title">🧪 Fertilizer Recommendation</div>
+          <div class="advisory-text" id="resultFertilizer" style="border-left-color: #2563eb;"></div>
+        </div>
+
+        <!-- Crops -->
+        <div class="advisory-section">
+          <div class="advisory-section-title">🌽 Crop Suitability</div>
+          <ul class="advisory-list" id="resultCrops"></ul>
+        </div>
+
+        <!-- Management -->
+        <div class="advisory-section">
+          <div class="advisory-section-title">🛠️ Management Advice</div>
+          <ul class="advisory-list" id="resultAdvice"></ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px;">
+          <button class="btn btn-secondary" id="btnNewReading">Submit Another Reading</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- EXTENSION OFFICER VIEW                                        -->
+  <!-- ============================================================ -->
+  <section class="view" id="officerView">
+
+    <!-- Stats Cards -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card" style="--stat-accent: var(--color-primary);">
+        <div class="stat-label">Total Farmers</div>
+        <div class="stat-value" id="statFarmers">—</div>
+        <div class="stat-change">Kafue District</div>
+      </div>
+      <div class="stat-card" style="--stat-accent: #2563eb;">
+        <div class="stat-label">Total Readings</div>
+        <div class="stat-value" id="statReadings">—</div>
+        <div class="stat-change">All time</div>
+      </div>
+      <div class="stat-card" style="--stat-accent: var(--color-healthy);">
+        <div class="stat-label">Healthy Farms</div>
+        <div class="stat-value" id="statHealthy">—</div>
+        <div class="stat-change" id="statHealthyPct"></div>
+      </div>
+      <div class="stat-card" style="--stat-accent: var(--color-critical);">
+        <div class="stat-label">At-Risk Farms</div>
+        <div class="stat-value" id="statAtRisk">—</div>
+        <div class="stat-change" id="statAtRiskPct"></div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon">📊</div>
+          <div class="card-title">Health Distribution</div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="chartHealth"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon">📈</div>
+          <div class="card-title">Recent Activity</div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="chartActivity"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Farmer Directory -->
+    <div class="card">
+      <div class="card-header flex-between">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="card-header-icon">👥</div>
+          <div>
+            <div class="card-title">Farmer Directory</div>
+            <div class="card-subtitle" id="farmerCount"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btnRegisterFarmer">+ Register Farmer</button>
+      </div>
+
+      <div id="farmerTableContainer">
+        <div class="empty-state" id="farmerEmpty">
+          <div class="empty-state-icon">👤</div>
+          <div class="empty-state-text">No farmers registered yet</div>
+          <div class="empty-state-hint">Register a farmer to get started</div>
+        </div>
+        <div class="table-container" id="farmerTableWrap" style="display:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Farmer</th>
+                <th>Location</th>
+                <th>Phone</th>
+                <th>Farm Size</th>
+                <th>Readings</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="farmerTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ── REGISTER FARMER MODAL ──────────────────────────────── -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal">
+    <div class="modal-title">
+      👤 Register New Farmer
+      <button class="modal-close" id="closeRegisterModal">&times;</button>
+    </div>
+    <form id="registerForm">
+      <div class="form-grid" style="grid-template-columns: 1fr;">
+        <div class="form-group">
+          <label class="form-label" for="regName">Full Name</label>
+          <input class="form-input" type="text" id="regName" required placeholder="e.g. Bwalya Mwamba">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regPhone">Phone Number</label>
+          <input class="form-input" type="tel" id="regPhone" required placeholder="+260971234567">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regLocation">Farm Location</label>
+          <input class="form-input" type="text" id="regLocation" required placeholder="e.g. Shimabala, Kafue">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regFarmSize">Farm Size <span class="unit">(hectares)</span></label>
+          <input class="form-input" type="number" id="regFarmSize" step="0.1" min="0" placeholder="e.g. 5.0">
+        </div>
+      </div>
+      <div class="mt-20">
+        <button type="submit" class="btn btn-primary btn-block" id="btnSubmitFarmer">
+          <span class="btn-text">Register Farmer</span>
+          <div class="spinner"></div>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── FARMER DETAIL MODAL ────────────────────────────────── -->
+<div class="modal-overlay" id="farmerDetailModal">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-title">
+      <span id="detailModalTitle">Farmer Details</span>
+      <button class="modal-close" id="closeFarmerDetail">&times;</button>
+    </div>
+    <div class="farmer-detail-header">
+      <div class="farmer-avatar" id="detailAvatar"></div>
+      <div class="farmer-info">
+        <h3 id="detailName"></h3>
+        <p id="detailMeta"></p>
+      </div>
+      <div style="margin-left:auto;" id="detailBadge"></div>
+    </div>
+    <div id="detailReadings">
+      <div class="advisory-section-title">📋 Reading History</div>
+      <div id="detailReadingsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOASTS ─────────────────────────────────────────────── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

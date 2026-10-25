@@ -1,0 +1,30 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Large raster and data files (SoilGrids GeoTIFFs > 1.1GB, exceeding GitHub 100MB limit)
+tiff files/
+*.tif
+*.tiff
+
+# SQLite local databases
+*.db
+*.sqlite3
+
+# Environment files and credentials
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE / OS specific files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
