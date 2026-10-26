@@ -1,0 +1,10 @@
+# Spec 6.6. Text lives in i18n/; `when` says when the engine adds the message.
+rules:
+  - {id: MSG-01, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: E9,  data: {when: lime_advised}}
+  - {id: MSG-02, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: E11, data: {when: lime_advised}}
+  - {id: MSG-03, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: E8,  data: {when: lime_advised}}
+  - {id: MSG-04, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: E10, data: {when: lime_advised}}
+  - {id: MSG-05, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: G3,  data: {when: crop_caution}}
+  - {id: MSG-06, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: D2,  data: {when: crop_caution}}
+  - {id: MSG-07, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: G4,  data: {when: fertiliser_advised}}
+  - {id: MSG-08, domain: message, status: draft, source_type: derived, source_doc: null, reviewer_alias: null, ref: "Ch 1", data: {when: always}}

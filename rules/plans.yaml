@@ -1,0 +1,33 @@
+# Spec 6.5
+rules:
+  - id: PLAN-A
+    domain: plan
+    status: draft
+    source_type: derived
+    source_doc: null
+    reviewer_alias: null
+    ref: "spec 6.5"
+    notes: "Lime by band and texture, clamped to the cap, plus timing, fertiliser, manure, cautions and re-test advice."
+    data: {}
+  - id: PLAN-B-BLOCKED
+    domain: plan
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: "C-2, I2"
+    notes: "Plan B stays blocked until C-2 and I2 are answered."
+    data:
+      budget_bands: [low, medium]   # I1
+      blocked: true
+  - id: PLAN-C-ORDER
+    domain: plan
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: "D1 (millet first); rest [PROPOSED]"
+    ph_method: unconfirmed
+    notes: "In-scope crops whose workable pH range includes the farmer's pH; first preference first, then by lowest workable pH."
+    data:
+      first_preference: [millet]   # AGR D1

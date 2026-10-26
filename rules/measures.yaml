@@ -1,0 +1,18 @@
+# Spec 6.8. Household measures are OPEN until the developer weighs them (H3).
+rules:
+  - id: MEAS-LIMA
+    domain: measure
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: H1 (blank)
+    data: {lima_ha: 0.25}
+  - id: MEAS-HOUSEHOLD
+    domain: measure
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: H (blank)
+    data: {containers: OPEN}

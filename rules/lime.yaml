@@ -1,0 +1,98 @@
+# Spec 6.3
+rules:
+  - id: LIME-PRODUCTS
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: E2
+    data:
+      products: ["dolomitic lime", "calcitic lime"]
+  - id: LIME-TARGET
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: E3
+    ph_method: unconfirmed
+    notes: "C-8: G2 says 5.5-7. The narrower E3 range is used until resolved."
+    data:
+      target_ph: [5.5, 6.5]
+  - id: LIME-TRIGGER
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: E1
+    ph_method: unconfirmed
+    notes: "C-3: E1 says 5.5-6.2. Until resolved: lime below 5.5; for 5.5-6.5 say optional, small rate, lab test first."
+    data:
+      trigger_ph: OPEN
+  - id: LIME-RATES
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: E4
+    ph_method: unconfirmed
+    data:
+      rates_t_per_ha:
+        severe:   {sandy: [1.0, 1.5], loamy: [2.0, 3.0], clay: [3.5, 5.0]}
+        moderate: {sandy: [0.5, 1.0], loamy: [1.5, 2.0], clay: [2.5, 3.5]}
+        slight:   {sandy: [0.0, 0.5], loamy: [0.5, 1.0], clay: [1.0, 1.5]}
+        suitable: {sandy: [0, 0],     loamy: [0, 0],     clay: [0, 0]}
+  - id: LIME-MAX
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: E6
+    notes: "E6 says 4 to 5 t/ha; question 10 asks which. Split guidance is OPEN."
+    data:
+      max_single_application_t_ha: 5
+      split_guidance: OPEN
+  - id: LIME-TEXTURE-REQUIRED
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: C6
+    data:
+      texture_required: true
+  - id: LIME-LEAD-TIME
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: "E5, E10"
+    notes: "C-7. The engine evaluates the full candidate range and reports 'timing uncertain' when the outcome depends on it. Irrigated fields: any time (E5)."
+    data:
+      lead_time_before_planting_months: CONFLICT
+      candidates_months: {E5: [2, 3], E10: [1, 2]}
+  - id: LIME-RESIDUAL
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: E9
+    data:
+      residual_effect_years: [3, 5]
+      retest_after_years: [2, 3]
+  - id: LIME-PARTIAL
+    domain: lime
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: E7
+    notes: "C-2: 50-100 g per basin vs 200-400 kg/ha disagree by about 10 times."
+    data:
+      partial_approach: CONFLICT

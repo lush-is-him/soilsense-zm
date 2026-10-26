@@ -1,0 +1,18 @@
+# Spec 6.6
+rules:
+  - {id: REF-01, domain: refusal, status: draft, source_type: derived, source_doc: null, reviewer_alias: null, ref: "FR4, NFR2", data: {}}
+  - id: REF-02
+    domain: refusal
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: "C4, C5 (blank)"
+    ph_method: unconfirmed
+    notes: "Anchored on C4 (no fertiliser response below 4.5) and no crop workable below 4.8. Question 6 asks AGR-1 to confirm."
+    data: {refuse_below_ph: 4.5}
+  - {id: REF-03, domain: refusal, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: C6, data: {}}
+  - {id: REF-04, domain: refusal, status: draft, source_type: derived, source_doc: null, reviewer_alias: null, ref: "spec 6.2", ph_method: unconfirmed, data: {}}
+  - {id: REF-05, domain: refusal, status: draft, source_type: derived, source_doc: null, reviewer_alias: null, ref: "E5, E10", data: {}}
+  - {id: REF-06, domain: refusal, status: draft, source_type: proposed, source_doc: null, reviewer_alias: null, ref: "spec 2.6", data: {}}
+  - {id: REF-07, domain: refusal, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: E6, data: {}}
