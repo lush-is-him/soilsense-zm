@@ -322,33 +322,33 @@ A pH of 0.5 or 13.0 would get a "Critical" prediction and full advice with lime 
 
 ### Sprint 0 (2–3 days): audit and contract freeze
 
-| # | Task | Owner | Status |
+| # | Task | Done by | Status |
 |---|---|---|---|
 | S0-1 | Initialise git repo, commit current state | Developer | `done` |
 | S0-2 | Copy spec to `docs/SOILSENSE_SPEC.md` (now v0.2; `dissertation/` copy removed) | Developer | `done` |
 | S0-3 | Review this migration plan | Developer | `todo` |
 | S0-4 | Freeze contracts: DB schema (spec S3), API (spec S4), YAML shape (spec S6), i18n key format | Developer | `todo` |
-| S0-5 | Create branches and directory ownership | Developer | `todo` |
+| S0-5 | Create branches and apply the folder split (spec 8.4) | Developer | `todo` |
 | S0-6 | Move analysis scripts to `analysis/` | Antigravity | `todo` |
 
 ### Sprint 1 — Must
 
-| # | Task | Files touched | Size | Dependencies | Owner | Parallel? | Status |
+| # | Task | Files touched | Size | Dependencies | Agent | Parallel? | Status |
 |---|---|---|---|---|---|---|---|
 | **S1-1** | Remove all ML code and dependencies | `train_model.py` (delete), `generate_training_data.py` (delete), `soil_model*.pkl` (delete), `label_encoder*.pkl` (delete), `synthetic_training_data*.csv` (delete), `plots/` (move to `analysis/`), `backend/routes/predict.py` (gut ML parts), `backend/requirements.txt` (remove sklearn/joblib/numpy/pandas), `backend/main.py` (remove ML references), `backend/advisory.py` (delete — will be replaced by rule engine), `backend/models.py` (remove `PredictionResponse`, `Advisory`, `StatusResponse.model_loaded`) | **M** | None | Antigravity (`backend/`) | **Yes** — independent of S1-2 to S1-5 | `todo` |
 | **S1-2** | Schema and migrations for spec S3 | New: `backend/migrations/`, `backend/schema.py`; Modify: `backend/database.py`; Seed script: `backend/seed.py` | **L** | S1-1 (clean imports) | Antigravity (`backend/`) | After S1-1 | `todo` |
 | **S1-3** | Field registration with GPS (accuracy, source; reject >30 m; manual pin) | New: `backend/routes/fields.py`, Modify: `backend/routes/farmers.py` (adapt), `dashboard/index.html` (field form), `dashboard/app.js` (GPS capture) | **M** | S1-2 (schema) | Antigravity (`backend/`, `dashboard/`) | After S1-2 | `todo` |
 | **S1-4** | Firmware, serial bridge, two-buffer calibration | New: `firmware/soilsense.ino`, `bridge/bridge.py`, `backend/routes/devices.py`, `backend/routes/calibrations.py` | **L** | S1-2 (schema for `devices`, `calibrations`), API contract freeze | Claude Code (`firmware/`, `bridge/`) | After S1-2; parallel with S1-3 and S1-5 | `todo` |
-| **S1-5** | `QualityChecker` with tests | New: `backend/quality.py`, `tests/test_quality.py` | **M** | S1-2 (schema for `readings`), S1-4 (reading payload shape) | Claude Code (`tests/`) / Antigravity (`backend/`) | After S1-2; can develop in parallel with S1-4 using mocked readings | `todo` |
+| **S1-5** | `QualityChecker` with tests | New: `engine/quality.py`, `tests/test_quality.py` (see 11.3) | **M** | S1-2 (schema for `readings`), S1-4 (reading payload shape) | Claude Code (`engine/`, `tests/`) | After S1-2; can develop in parallel with S1-4 using mocked readings | `todo` |
 
-**S1-4 ownership note:** The spec suggests Claude Code owns `firmware/` and `bridge/`, but S1-4 also requires `backend/routes/devices.py` and `backend/routes/calibrations.py`, which are in `backend/` (Antigravity's territory). **Recommendation:** Split S1-4 into two sub-tasks: S1-4a (firmware + bridge, Claude Code) and S1-4b (backend endpoints for devices and calibrations, Antigravity). They share the API contract but touch different directories.
+**S1-4 folder note:** The spec assigns Claude Code to `firmware/` and `bridge/`, but S1-4 also requires `backend/routes/devices.py` and `backend/routes/calibrations.py`, which are in `backend/` (Antigravity's territory). **Recommendation:** Split S1-4 into two sub-tasks: S1-4a (firmware + bridge, Claude Code) and S1-4b (backend endpoints for devices and calibrations, Antigravity). They share the API contract but touch different directories.
 
 ### Sprint 1 — Should
 
-| # | Task | Files touched | Size | Dependencies | Owner | Parallel? | Status |
+| # | Task | Files touched | Size | Dependencies | Agent | Parallel? | Status |
 |---|---|---|---|---|---|---|---|
 | **S1-6** | Dashboard shell: login, language switch, field list, reading screen | `dashboard/index.html`, `dashboard/app.js`, `dashboard/style.css` | **L** | S1-2 (API), S1-3 (fields API) | Antigravity (`dashboard/`) | After S1-3; parallel with S1-4, S1-5 | `todo` |
-| **S1-7** | Rule YAML schema, validator and loader with S6 data | New: `rules/ph_bands.yaml`, `rules/crops.yaml`, `rules/lime.yaml`, `rules/messages.yaml`, `rules/refusals.yaml`, `rules/measures.yaml` (empty stub), `backend/rule_engine.py`, `tests/test_rules.py` | **L** | API contract freeze (YAML shape) | Claude Code (`rules/`, `tests/`) | **Yes** — independent of S1-1 to S1-6 (different directories) | `todo` |
+| **S1-7** | Rule YAML schema, validator and loader with S6 data | New: `rules/ph_bands.yaml`, `rules/crops.yaml`, `rules/lime.yaml`, `rules/messages.yaml`, `rules/refusals.yaml`, `rules/measures.yaml` (empty stub), `engine/rules.py`, `tests/test_rules.py` (see 11.3) | **L** | API contract freeze (YAML shape) | Claude Code (`engine/`, `rules/`, `tests/`) | **Yes** — independent of S1-1 to S1-6 (different directories) | `todo` |
 
 ### Dependency graph
 
@@ -448,9 +448,11 @@ S1-5  (QualityChecker + tests) independent from day 1; wire-up after S1-2
 S1-7  (rule YAML + validator)  independent from day 1
 ```
 
-### 11.3 Ownership problem (needs a decision)
+### 11.3 Folder split: `engine/` (approved)
 
-S1-5 puts `backend/quality.py` and S1-7 puts `backend/rule_engine.py` in `backend/`, which spec 8.4 gives to Antigravity, but the tasks go to Claude Code. **Proposal:** put the pure services in their own package, `engine/` (`quality.py`, `trust.py`, `rules.py`, `measures.py`), with no FastAPI imports. Claude Code owns it, and `backend/` only imports and wraps it. This changes spec 8.4, so per spec rule 8 the spec is edited first, after approval.
+S1-5 put `backend/quality.py` and S1-7 put `backend/rule_engine.py` in `backend/`, which spec 8.4 assigns to Antigravity, while the tasks go to Claude Code. **Decision:** the pure logic goes in a new folder, `engine/` (`quality.py`, `trust.py`, `rules.py`, `measures.py`), with no FastAPI or database imports. Claude Code edits it; `backend/` imports and wraps it. Spec 8.4 is updated. The split only stops two AI tools editing the same files; all code belongs to the developer.
+
+Revised file paths: S1-5 becomes `engine/quality.py` + `tests/test_quality.py`; S1-7 becomes `engine/rules.py` + `rules/*.yaml` + `tests/test_rules.py`.
 
 ### 11.4 Answers to section 10 questions known so far
 
@@ -458,8 +460,11 @@ S1-5 puts `backend/quality.py` and S1-7 puts `backend/rule_engine.py` in `backen
 |---|---|
 | 1 | Yes, the repo is on GitHub and is the copy of record |
 | 6 | Not sent yet. Clarification questions for `AGR-1` are drafted in `docs/QUESTIONS_FOR_REVIEWER_1.md` (questions 1 to 5 block code). `AGR-1` will not review or confirm; a second reviewer is pending |
+| 2 | No real farmer data. Start fresh with seed data (S1-2 seed script); the old local `soilsense.db` is not migrated |
+| 3 | Yes, all hardware has been bought (Arduino Uno, pH probe, capacitive moisture sensor, DS18B20). Firmware is written by Claude Code (S1-4a) and tested by the developer on the real hardware |
+| 4 | No, iSDAsoil layers are not downloaded yet (H6). Map service stays a stretch goal until then |
 | 9 | Yes, Claude Code runs alongside Antigravity |
-| 2, 3, 4, 5, 7, 8, 10 | Open: developer to answer |
+| 5, 7, 8, 10 | Open: developer to answer |
 
 ---
 

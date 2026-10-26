@@ -96,7 +96,7 @@ Write `docs/MIGRATION_PLAN.md` with these sections, in this order:
 9. Risks
 10. Conflicts and questions
 
-For section 8, use the spec's tracks (A to H) and Sprint 1 tasks (S1-1 to S1-7). For each task give: the files it will touch, size (S/M/L), dependencies, and a status column (`todo`). Mark which tasks can run in parallel **because they touch different files**, and which must go in order. Propose which agent should take each task using the directory ownership in spec section 8.4, and flag any task where the existing code makes that split impractical.
+For section 8, use the spec's tracks (A to H) and Sprint 1 tasks (S1-1 to S1-7). For each task give: the files it will touch, size (S/M/L), dependencies, and a status column (`todo`). Mark which tasks can run in parallel **because they touch different files**, and which must go in order. Propose which agent should take each task using the folder split in spec section 8.4, and flag any task where the existing code makes that split impractical.
 
 Then **stop and wait for me**. Do not start Phase 2 until I reply.
 

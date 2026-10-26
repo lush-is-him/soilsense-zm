@@ -473,21 +473,25 @@ So the lab dispatch is the **critical path with an external dependency**: send s
 | **G. Delivery** | Household measures; SMS sandbox (Africa's Talking); consent and phone deletion | D, H3 | No |
 | **H. Evaluation** | Probe vs lab; map vs lab; agronomist scenario review; farmer sessions with SUS | H1, H2, tracks A to G | Yes |
 
-### 8.4 Suggested ownership (to avoid merge conflicts)
+### 8.4 Which agent edits which folders (to avoid merge conflicts)
 
-| Agent | Directories |
+All the code belongs to the developer. This table only decides which AI tool works in which folders, so that two tools never edit the same files at the same time. The developer reviews and merges everything.
+
+| Agent | Folders it edits |
 |---|---|
 | Antigravity (knows the existing code) | `backend/` (tracks A, E, G), `dashboard/` (track C) |
-| Claude Code | `rules/`, `tests/`, `firmware/`, `bridge/`, `i18n/` (tracks B, D, F) |
+| Claude Code | `engine/`, `rules/`, `tests/`, `firmware/`, `bridge/`, `i18n/` (tracks B, D, F) |
 
-Swap freely, but never have two agents editing the same directory at once. Shared contracts (schema, API, YAML shape, i18n keys) change only through this spec.
+`engine/` holds the pure logic: `quality.py`, `trust.py`, `rules.py`, `measures.py`. It has no FastAPI or database imports; `backend/` imports it and wraps it in endpoints.
+
+Swap freely, but never have two agents editing the same folder at once. Shared contracts (schema, API, YAML shape, i18n keys) change only through this spec.
 
 ### 8.5 Sprint 0 (2 to 3 days): audit and contract freeze
 
 1. Run the audit prompt; get `docs/MIGRATION_PLAN.md`.
 2. Review it; decide what is kept, adapted, replaced, deleted.
 3. Freeze four contracts: DB schema (section 3), API (section 4), rule YAML shape (section 6), i18n key format.
-4. Create branches and the directory ownership above.
+4. Create branches and apply the folder split above.
 
 ### 8.6 Sprint 1 (2 weeks)
 
