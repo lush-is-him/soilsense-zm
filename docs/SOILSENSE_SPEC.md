@@ -1,5 +1,7 @@
 # SoilSense ZM: Implementation Spec (v0.3, 26 Oct 2026)
 
+Changes in v0.4: Plan B structure `[PROPOSED]` (`rules/plans.yaml` PLAN-B: priority_order, items_by_budget; `rules/lime.yaml` LIME-PARTIAL shape), `rules/measures.yaml` container shape, `rules/prices.yaml`, `GET /i18n/{lang}`, probe serial protocol (`firmware/soilsense_probe.ino`: `P`, `R` JSON lines). Everything still waiting on others is listed in `docs/WAITING_ON.md`.
+
 Changes in v0.3 (contracts changed while building Sprints 1 and 2): data model columns in 3, API in 4, REF-05 timing rule in 6.6, borderline-flag problem in 6.1 and 7.1 (C-9).
 
 Changes in v0.2: first reviewer will not review scenarios or confirm tables (rule status model, 3 and 6); sorghum origin corrected (C-1); new conflicts C-7 lime lead time and C-8 target pH; REF-05 is per crop; about 30 new lab samples replace the earlier twelve (9).

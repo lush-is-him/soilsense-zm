@@ -38,6 +38,20 @@ uvicorn backend.main:app --reload
 
 Open http://localhost:8000 for the dashboard and http://localhost:8000/docs for the API. To use it from a phone on the same Wi-Fi, run with `--host 0.0.0.0` and open `http://<laptop IP>:8000`. Phone GPS only works over HTTPS or on localhost, so for field tests use a tunnel or a certificate.
 
+## Probe
+
+Wiring, firmware upload, calibration and buffers: [`firmware/README.md`](firmware/README.md).
+
+```
+pip install -r bridge\requirements.txt
+python -m bridge.bridge calibrate --port COM3 --board ph4502c --device probe-1
+python -m bridge.bridge read --port COM3 --board ph4502c --device probe-1 --field 1
+```
+
+## Waiting on others
+
+[`docs/WAITING_ON.md`](docs/WAITING_ON.md) lists every outside input (agronomist answers, lab results, reviewers, buffers, weighing) and the file or command it goes into.
+
 ## Test
 
 ```

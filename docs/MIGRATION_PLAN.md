@@ -502,4 +502,20 @@ Tests: `python -m pytest`: 105 passing, 7 expected failures, each naming an OPEN
 
 ---
 
+## 13. Progress, 26 Oct 2026 (Sprints 3 to 5: everything not blocked by others)
+
+| Area | Status | Where |
+|---|---|---|
+| S1-4a firmware and serial bridge | done, **not yet run on hardware** | `firmware/`, `bridge/` (board gain presets unconfirmed; sketch not compiled on the build box) |
+| Plan B | logic done, **blocked by data** (C-2, I2) | `engine/advice.py`, `rules/plans.yaml` (structure `[PROPOSED]`) |
+| Household measures, costs | logic done, **waiting for weighing and prices** (H3, H4) | `engine/measures.py`, `rules/measures.yaml`, `rules/prices.yaml` |
+| Translations | Nyanja draft complete, Tonga partial, **waiting for native reviewers** (H5) | `i18n/`, `scripts/i18n_sheet.py` |
+| Evaluation | scripts done, **waiting for lab results, reviewer, sessions** | `docs/evaluation/`, `scripts/evaluate.py`, `score_review.py`, `sus.py` |
+
+The full list of outside inputs, and where each one goes, is in `docs/WAITING_ON.md`.
+
+Tests: 136 passing, 8 expected failures (each names an OPEN item).
+
+---
+
 *End of Phase 1 audit. Waiting for your review before making any code changes.*
