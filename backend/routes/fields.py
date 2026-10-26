@@ -1,5 +1,7 @@
 """Fields with GPS (FR2, FR5), field checks (FR8), lab results (FR9), map estimate (FR6)."""
 
+import json
+
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -30,6 +32,13 @@ def map_service():
 def set_map_service(service):
     global _map_service
     _map_service = service
+
+
+def reading_out(row):
+    out = dict(row)
+    for key in ("replicates", "replicates_mv", "quality_reasons"):
+        out[key] = json.loads(out[key]) if out[key] else None
+    return out
 
 
 def field_or_404(db, field_id):
@@ -68,7 +77,8 @@ def field_history(field_id: int, db=Depends(get_db)):
     def rows(sql):
         return [dict(r) for r in db.execute(sql, (field_id,))]
     return {
-        "readings": rows("SELECT * FROM readings WHERE field_id = ? ORDER BY ts DESC"),
+        "readings": [reading_out(r) for r in db.execute(
+            "SELECT * FROM readings WHERE field_id = ? ORDER BY reading_id DESC", (field_id,))],
         "lab_results": rows("SELECT * FROM lab_results WHERE field_id = ? ORDER BY lab_id DESC"),
         "field_checks": rows("SELECT * FROM field_checks WHERE field_id = ? ORDER BY ts DESC"),
         "recommendations": rows(

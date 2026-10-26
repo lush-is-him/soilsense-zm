@@ -34,22 +34,31 @@ def migrate(conn):
     return applied
 
 
-_conn = None
+_override = None
+_migrated = False
 
 
 def get_db():
-    """FastAPI dependency: one shared connection, migrated on first use."""
-    global _conn
-    if _conn is None:
-        _conn = connect()
-        migrate(_conn)
-    return _conn
+    """FastAPI dependency: a fresh connection per request (SQLite connections
+    must not be shared across the worker threads FastAPI uses)."""
+    global _migrated
+    if _override is not None:
+        yield _override
+        return
+    conn = connect()
+    try:
+        if not _migrated:
+            migrate(conn)
+            _migrated = True
+        yield conn
+    finally:
+        conn.close()
 
 
 def set_db(conn):
-    """Use a specific connection (tests)."""
-    global _conn
-    _conn = conn
+    """Use one specific connection for every request (tests)."""
+    global _override
+    _override = conn
 
 
 @contextmanager

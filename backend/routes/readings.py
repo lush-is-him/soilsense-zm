@@ -7,19 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.auth import current_user
 from backend.db import get_db
 from backend.routes.devices import device_or_404, latest_calibration
-from backend.routes.fields import field_or_404
+from backend.routes.fields import field_or_404, reading_out
 from backend.schemas import ReadingIn
 from backend.services.probe import mv_to_ph
 from engine.quality import Calibration, check_reading
 
 router = APIRouter(tags=["Readings"])
-
-
-def reading_out(row):
-    out = dict(row)
-    for key in ("replicates", "replicates_mv", "quality_reasons"):
-        out[key] = json.loads(out[key]) if out[key] else None
-    return out
 
 
 @router.post("/readings", status_code=201)

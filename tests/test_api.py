@@ -69,7 +69,7 @@ def test_wrong_password_rejected(client):
 
 
 def test_passwords_are_hashed(client):
-    row = backend_db.get_db().execute("SELECT password_hash FROM users WHERE username='operator'").fetchone()
+    row = backend_db._override.execute("SELECT password_hash FROM users WHERE username='operator'").fetchone()
     assert row["password_hash"].startswith("scrypt$") and "operator-pass" not in row["password_hash"]
 
 
@@ -154,6 +154,8 @@ def test_reading_spread_rejected(client, op):
                                        "replicates_ph": [5.4, 5.5, 5.6], "temp_c": 25.0},
                     headers=op).json()
     assert r["quality_status"] == "rejected" and r["ph_water"] is None
+    history = client.get(f"/fields/{field['field_id']}/history", headers=op).json()
+    assert history["readings"][0]["quality_reasons"] == r["quality_reasons"]
 
 
 # ----- advice (FR7, FR10, NFR2) -----

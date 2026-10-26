@@ -21,7 +21,11 @@ DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "dashboard"
 
 @asynccontextmanager
 async def lifespan(app):
-    sync_rules(get_db())       # migrate the database and mirror the rule tables
+    connection = get_db()
+    try:
+        sync_rules(next(connection))    # migrate the database and mirror the rule tables
+    finally:
+        connection.close()
     yield
 
 
