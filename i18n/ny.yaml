@@ -1,0 +1,68 @@
+# Nyanja (ny). DRAFT written by Claude Code, NOT checked by a native speaker.
+# Every string stays reviewed: false until a native Nyanja reviewer (task H5)
+# corrects it through scripts/i18n_sheet.py. Missing keys fall back to English.
+msg.MSG-01: {text: "Yesaninso nthaka pakatha zaka 2 kapena 3. Laimu imodzi imagwira ntchito zaka 3 mpaka 5.", reviewed: false}
+msg.MSG-02: {text: "Laimu si feteleza. Simungasinthanitse laimu ndi feteleza.", reviewed: false}
+msg.MSG-03: {text: "Musathire laimu yambiri kuposa momwe kuyesa nthaka kukunenera. Laimu yochuluka imachepetsa zokolola.", reviewed: false}
+msg.MSG-04: {text: "Thirani laimu msanga ndipo muisakanize ndi nthaka. Imafunika chinyezi ndi nthawi kuti igwire ntchito.", reviewed: false}
+msg.MSG-05: {text: "Soya: sakanizani mbewu ndi mankhwala a rhizobia oyenera, makamaka komwe soya sanalimidwe posachedwapa.", reviewed: false}
+msg.MSG-06: {text: "Chimanga: gwiritsani ntchito mbewu yoyenera.", reviewed: false}
+msg.MSG-07: {text: "Zolakwa zofala ndi feteleza: kuthira msanga kwambiri, mochedwa kwambiri, kapena osaganizira nyengo.", reviewed: false}
+msg.MSG-08: {text: "Uku ndi kuthandiza kupanga chisankho chabe. Funsani mlangizi wa zaulimi kapena labu ya nthaka musanawononge ndalama zambiri.", reviewed: false}
+ref.REF-01: {text: "Muyeso sunadutse kuyezedwa kwa khalidwe, choncho palibe malangizo. Yesaninso kapena lowetsani pH ya ku labu.", reviewed: false}
+ref.REF-02: {text: "Nthaka ndi yowawasa kwambiri kuti tikulangizeni bwino. Tengani chitsanzo cha nthaka ku labu kapena kwa mlangizi wa zaulimi.", reviewed: false}
+ref.REF-03: {text: "Kuchuluka kwa laimu kumafunika mtundu wa nthaka. Yesani nthaka ndi manja, kenako funsaninso.", reviewed: false}
+ref.REF-04: {text: "pH ndi yokwera kuposa yomwe {crop} imapirira. Musathire laimu. Kayeseni nthaka ku labu.", reviewed: false}
+ref.REF-05: {text: "Nthawi yothira laimu ya {crop} ya nyengo ino yadutsa. Tsatirani Ndondomeko C nyengo ino ndipo thirani laimu msanga nyengo ikubwerayi.", reviewed: false}
+ref.REF-06: {text: "Malangizo amadalira momwe pH inayezedwera (ndi madzi kapena calcium chloride). Kayeseni nthaka ku labu musanagule laimu.", reviewed: false}
+ref.REF-07: {text: "Laimu wochuluka chonchi ayenera kugawidwa ndi kuthiridwa kangapo.", reviewed: false}
+plan.b_blocked: {text: "Ndondomeko yotsika mtengo sinawunikidwebe. Yambani ndi mbewu za Ndondomeko C ndipo kayeseni nthaka ku labu.", reviewed: false}
+plan.c_none: {text: "Palibe mbewu m'dongosolo lino yomwe ingakule bwino m'nthaka iyi momwe ilili. Kayeseni nthaka ku labu.", reviewed: false}
+lime.optional: {text: "Pa pH iyi laimu sikofunikira kwenikweni. Pang'ono ingathandize; kayeseni nthaka ku labu choyamba.", reviewed: false}
+lime.not_needed: {text: "Pa pH iyi laimu sikufunika.", reviewed: false}
+lime.timing_uncertain: {text: "Kuthira laimu tsopano kungakhale mochedwa pokhapokha mutabzala chakumapeto. Funsani mlangizi wa zaulimi.", reviewed: false}
+lime.any_time: {text: "Pa munda wothirira, laimu ingathiridwe nthawi iliyonse musanabzale.", reviewed: false}
+lime.timing_ok: {text: "Thirani laimu nthawi yayitali musanabzale kuti ikhale ndi nthawi yogwira ntchito.", reviewed: false}
+lime.too_late: {text: "Nthawi yothira laimu nyengo ino yadutsa. Thirani laimu msanga nyengo ikubwerayi.", reviewed: false}
+rate.open: {text: "Kuchuluka sikunapezeke. Funsani mlangizi wa zaulimi kapena tsatirani kuyesa nthaka.", reviewed: false}
+crop.no_data: {text: "Dongosolo lilibe zambiri za {crop}. Kayeseni nthaka ku labu.", reviewed: false}
+crop.pending_scope: {text: "{crop} sinatsimikizidwe m'dongosolo lino.", reviewed: false}
+borderline: {text: "pH ili pafupi ndi malire a gulu. Ndi bwino kuyesa nthaka ku labu.", reviewed: false}
+measure.unavailable: {text: "Miyeso ya pakhomo sinapezeke; kuchuluka kuli mu makilogalamu.", reviewed: false}
+trust.moderate: {text: "Kutengera mapu omwe akugwirizana ndi muyeso wanu.", reviewed: false}
+trust.low: {text: "Chidaliro chochepa: kutengera muyeso wanu ndi kuwunika kwa munda kokha. Kayeseni nthaka ku labu musanawononge ndalama zambiri.", reviewed: false}
+plan.b_seed: {text: "Gulani mbewu yovomerezeka ya mtundu woyenera.", reviewed: false}
+ui.confidence: {text: "Chidaliro", reviewed: false}
+ui.trust.high: {text: "chachikulu", reviewed: false}
+ui.trust.moderate: {text: "chapakati", reviewed: false}
+ui.trust.low: {text: "chochepa", reviewed: false}
+ui.trust.none: {text: "palibe", reviewed: false}
+ui.plan_a: {text: "Ndondomeko A: konzani nthaka ndipo limani {crop}", reviewed: false}
+ui.plan_b: {text: "Ndondomeko B: njira yotsika mtengo", reviewed: false}
+ui.plan_c: {text: "Ndondomeko C: mbewu zoyenera nthaka momwe ilili", reviewed: false}
+ui.lime: {text: "Laimu", reviewed: false}
+ui.basal: {text: "Feteleza wobzalira", reviewed: false}
+ui.top_dress: {text: "Feteleza wowonjezera", reviewed: false}
+ui.manure: {text: "Manyowa", reviewed: false}
+ui.seed: {text: "Mbewu", reviewed: false}
+ui.fertiliser: {text: "Feteleza", reviewed: false}
+ui.per_lima: {text: "pa lima", reviewed: false}
+ui.per_station: {text: "pa dzenje lobzala", reviewed: false}
+ui.optional: {text: "Mwakufuna", reviewed: false}
+ui.or: {text: "kapena", reviewed: false}
+ui.about: {text: "pafupifupi", reviewed: false}
+ui.needs_texture: {text: "Kuchuluka kumafunika mtundu wa nthaka. Yesani nthaka ndi manja.", reviewed: false}
+ui.left_out: {text: "Siyani mpaka mutapeza ndalama", reviewed: false}
+ui.cost: {text: "Mtengo", reviewed: false}
+ui.remember: {text: "Kumbukirani", reviewed: false}
+ui.why: {text: "Chifukwa cha malangizo awa", reviewed: false}
+ui.send_sms: {text: "Tumizani SMS", reviewed: false}
+ui.depends_method: {text: "Malangizo amadalira momwe pH inayezedwera", reviewed: false}
+ui.unconfirmed_rules: {text: "Malamulo awa sanatsimikizidwebe ndi wowunika.", reviewed: false}
+ui.lab_test: {text: "Kayeseni nthaka ku labu musanagule laimu.", reviewed: false}
+crop.maize: {text: "chimanga", reviewed: false}
+crop.soybean: {text: "soya", reviewed: false}
+crop.sunflower: {text: "mpendadzuwa", reviewed: false}
+crop.millet: {text: "mawere", reviewed: false}
+crop.sorghum: {text: "mapira", reviewed: false}
+crop.groundnut: {text: "mtedza", reviewed: false}

@@ -339,7 +339,10 @@ function t(key, params = {}) {
 const tPlain = (key) => (STRINGS[key] ? STRINGS[key].text : key);
 const cropName = (crop) => tPlain(`crop.${crop}`);
 
-function range(r, unit) { return r ? `${esc(r.low)}–${esc(r.high)} ${esc(unit || r.unit)}` : ""; }
+function range(r, unit) {
+  if (!r) return "";
+  return `${r.low === r.high ? esc(r.low) : `${esc(r.low)}–${esc(r.high)}`} ${esc(unit || r.unit)}`;
+}
 
 function extras(perLima) {
   if (!perLima) return "";

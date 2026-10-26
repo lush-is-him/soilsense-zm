@@ -1,0 +1,10 @@
+# Tonga (toi). Only a few words are drafted here: Claude Code's Tonga is not
+# reliable enough to draft advice sentences. Everything else falls back to
+# English (marked "not reviewed") until a native Tonga reviewer (task H5)
+# fills docs/translations/review_sheet.csv and runs scripts/i18n_sheet.py import.
+ui.lime: {text: "Laimu", reviewed: false}
+ui.per_lima: {text: "pa lima", reviewed: false}
+crop.maize: {text: "mapopwe", reviewed: false}
+crop.groundnut: {text: "nzungu", reviewed: false}
+crop.sorghum: {text: "mapila", reviewed: false}
+crop.soybean: {text: "soya", reviewed: false}
