@@ -1,4 +1,6 @@
-# SoilSense ZM: Implementation Spec (v0.2, 25 Oct 2026)
+# SoilSense ZM: Implementation Spec (v0.3, 26 Oct 2026)
+
+Changes in v0.3 (contracts changed while building Sprints 1 and 2): data model columns in 3, API in 4, REF-05 timing rule in 6.6, borderline-flag problem in 6.1 and 7.1 (C-9).
 
 Changes in v0.2: first reviewer will not review scenarios or confirm tables (rule status model, 3 and 6); sorghum origin corrected (C-1); new conflicts C-7 lime lead time and C-8 target pH; REF-05 is per crop; about 30 new lab samples replace the earlier twelve (9).
 
@@ -169,14 +171,14 @@ Implementation:
 | `farmers` | farmer_id, alias, preferred_language (`en`, `ny`, `toi`), phone (nullable), sms_consent | Phone deleted after demos (NFR5) |
 | `fields` | field_id, farmer_id, name, lat, lon, gps_accuracy_m, location_source (`gps`/`manual`) | `[PROPOSED]` optional `area_lima` for totals |
 | `devices` | device_id, label | |
-| `calibrations` `[PROPOSED]` | calibration_id, device_id, date, offset, slope_pct, accepted | Replaces slope/offset columns on `devices` so history is kept |
-| `readings` | reading_id, field_id, device_id, operator_id, ph_water (mean), replicates (JSON), moisture, temp_c, quality_status, quality_reasons, calibration_id, ts | |
-| `map_estimates` | estimate_id, field_id (unique), ph_mean, ph_sd, oc, p, k, texture, depth_cm | Max one per field |
+| `calibrations` `[PROPOSED]` | calibration_id, device_id, date, offset_mv, slope_pct, temp_c, accepted, reasons | Replaces slope/offset columns on `devices` so history is kept. Works in electrode mV; the bridge converts board volts to mV |
+| `readings` | reading_id, field_id, device_id, operator_id, ph_water (mean, NULL if rejected), ph_method (`water`), replicates (JSON pH), replicates_mv (JSON, from the bridge), moisture, temp_c, quality_status, quality_reasons, calibration_id, ts | |
+| `map_estimates` | estimate_id, field_id (unique), ph_mean, ph_sd, ph_method (`water`), oc, p, k, texture, depth_cm | Max one per field |
 | `lab_results` | lab_id, field_id, ph, ph_method, soil_water_ratio, oc, p, k, texture, lab_name, date | Takes precedence over the map |
 | `field_checks` | check_id, field_id, texture_by_feel, colour, waterlogging, previous_crop, manure_available | |
-| `recommendations` | rec_id, reading_id, trust_level, crop, budget_band, plan_a, plan_b, plan_c (JSON), language, as_of_date, method_sensitive | |
-| `rules` | rule_id, version, domain, condition, action, status, source_type, source_doc, reviewer_alias, ph_method, notes | Mirror of the YAML for audit; YAML is the source of truth |
-| `recommendation_rules` | rec_id, rule_id | Many-to-many; powers "why this advice" |
+| `recommendations` | rec_id, reading_id (nullable when advice is from a lab result), field_id, trust_level, crop, budget_band, water, plan_a, plan_b, plan_c (JSON), result (full engine output, JSON), language, as_of_date, method_sensitive | |
+| `rules` | rule_id, version, content_hash, domain, data (JSON), status, source_type, source_doc, reviewer_alias, ph_method, notes | Mirror of the YAML for audit; YAML is the source of truth. `data` replaces condition/action: the conditions live in the engine, the values in YAML. The version bumps when the YAML content changes |
+| `recommendation_rules` | rec_id, rule_id, rule_version | Many-to-many; powers "why this advice" and records which version of each rule was used |
 | `sms_messages` | sms_id, rec_id, status, ts | |
 
 Rule `status`: `draft`, `agronomist_input`, `verified`. `source_type`: `published`, `expert_opinion`, `derived`, `proposed`.
@@ -186,25 +188,29 @@ i18n: `i18n/en.yaml`, `i18n/ny.yaml`, `i18n/toi.yaml`. Each key has `text` and `
 
 ---
 
-## 4. API contract `[PROPOSED]`
+## 4. API contract (as built, v0.3)
 
-Reconcile with existing endpoints during the audit; keep what already works.
+All endpoints except `/auth/login` and `/health` need a login token (`Authorization: Bearer ...`).
 
 | Method and path | Purpose |
 |---|---|
-| `POST /auth/login` | Token for operator, agronomist, admin |
-| `POST /farmers`, `GET /farmers/{id}` | Farmer alias, language, optional phone and consent |
+| `POST /auth/login`, `GET /auth/me` | Token for operator, agronomist, admin |
+| `POST /users` | Admin only: create a user |
+| `POST /farmers`, `GET /farmers`, `GET /farmers/{id}` | Farmer alias, language, optional phone (only with consent) |
+| `DELETE /farmers/{id}/phone` | Remove phone and consent after a demonstration (NFR5) |
 | `POST /fields`, `GET /fields/{id}`, `GET /fields/{id}/history` | Field registration with GPS, accuracy, source |
-| `POST /devices/{id}/calibrations` | Submit buffer readings; returns accepted or rejected with slope % |
-| `POST /readings` | Called by the serial bridge: device_id, field_id, raw replicates, moisture, temp |
+| `POST /devices` (admin), `GET /devices` | Register probes; list with latest calibration |
+| `POST /devices/{id}/calibrations` | Body: mv_ph7, mv_ph4, temp_c (electrode mV). Returns accepted or rejected with slope % |
+| `POST /readings` | Body: field_id, device_id, exactly one of replicates_mv (bridge; converted with the device's latest accepted calibration) or replicates_ph (operator), moisture, temp_c. A device with no accepted calibration gives a rejected reading |
 | `GET /readings/{id}` | Reading with quality status and reasons |
 | `GET /fields/{id}/map-estimate` | iSDAsoil values at the field |
 | `POST /fields/{id}/checks` | Field checks (texture by feel etc.) |
 | `POST /fields/{id}/lab-results` | Manual lab entry with method |
-| `POST /advice` | Body: reading_id, crop, budget_band, water (`rainfed`/`irrigated`), previous_crop, manure_available, as_of_date, lang. Returns trust, plans A/B/C, fired rules, method_sensitive |
+| `POST /advice` | Body: field_id, reading_id (optional when a lab result exists), crop, budget_band, water (`rainfed`/`irrigated`), previous_crop, manure_available, as_of_date (default today), lang. Returns trust, texture source, plans A/B/C, refusals, fired rules with status, method_sensitive and alternatives |
 | `GET /advice/{rec_id}?lang=` | Re-render saved advice in another language |
 | `POST /advice/{rec_id}/sms` | Send SMS summary (consent required) |
-| `GET /rules`, `PATCH /rules/{id}` | Agronomist role only; changes bump the rule version |
+| `GET /rules` | Agronomist and admin: rules with provenance plus every OPEN and CONFLICT value. `PATCH /rules/{id}` is not built: rules are edited in `rules/*.yaml` (versions bump automatically). An in-app editor is a later decision |
+| `GET /health` | Status check |
 
 ---
 
@@ -232,6 +238,8 @@ ph_bands:                      # ph_method: unconfirmed  (see 2.6)
   - {id: suitable, gt: 6.5,                label: suitable or near neutral}
 # [PROPOSED] edge convention is as written above (lower bound inclusive).
 # [PROPOSED] if |pH - band_edge| <= E_PROBE, flag the advice "borderline" and recommend a lab test.
+# Problem found while building (C-9): with E_PROBE = 0.5 and edges 1 pH apart, every pH from 4.0
+# to 7.0 is borderline, so the flag says nothing. Config BORDERLINE_MARGIN; decide a value.
 ```
 
 Related answers: expected field pH around Kafue is 4.5 to 5.5 (C3); little or no fertiliser response below pH 4.5 (C4).
@@ -367,7 +375,7 @@ lime (rate from 6.3 by band and texture, clamped to the single-application cap, 
 | REF-02 | pH below 4.5: no plan, refer to lab or extension officer | `[PROPOSED]`, anchored on C4 (no fertiliser response below 4.5) and the crop table (no crop workable below 4.8). C5 was left blank, so confirm. |
 | REF-03 | Lime quantity requested but texture unknown (not from field check, lab or trusted map): no lime quantity, ask for texture by feel | `[AGR C6]` plus `[PROPOSED]` enforcement |
 | REF-04 | pH above the crop's highest workable value: no lime, warn, recommend lab test | `[PROPOSED]`, derived from 6.2 |
-| REF-05 | Lime lead time longer than the time left before **that crop's** planting window: say it is too late to lime for this season, give Plan C for this season and lime-for-next-season guidance | `[AGR E5, E10]` plus `[PROPOSED]` logic, uses `as_of_date`. Evaluate per crop, not per season: on 25 Oct, maize, soybean and millet (Nov-Dec) are too late under 2-3 months, but sunflower (Dec-Jan) is borderline. Until C-7 is resolved, evaluate with both 1 and 3 months; if the outcome differs, say "lime timing uncertain, consult an extension officer" |
+| REF-05 | Lime lead time longer than the time left before **that crop's** planting window: say it is too late to lime for this season, give Plan C for this season and lime-for-next-season guidance | `[AGR E5, E10]` plus `[PROPOSED]` logic, uses `as_of_date`, per crop. Lead time is the range of the candidate answers (1 to 3 months, C-7). **Too late** if even the last day of the planting window is less than the shortest lead time away; **ok** if the first day of the window is at least the longest lead time away; otherwise **timing uncertain** ("liming now only works if you plant late in the window; consult an extension officer"). On 25 Oct: maize (Nov-Dec) and sunflower (Dec-Jan) are uncertain, not too late, because a late-December or January planting is still 2 to 3 months away; on 15 Dec maize is too late. Irrigated: any time |
 | REF-06 | `method_sensitive` advice: no quantities, lab test recommended | `[PROPOSED]` (2.6) |
 | REF-07 | Lime total above the single-application cap: split into applications, say so | `[AGR E6]`, split guidance `[OPEN]` |
 
@@ -401,6 +409,7 @@ lime (rate from 6.3 by band and texture, clamped to the single-application cap, 
 | C-5 | **Manure unit.** "lts/lima" in the table only works as tonnes per lima (e.g. 5 to 10 t/ha equals 1.25 to 2.5 t/lima). Maize (written 1.25 to 5, computed 1.25 to 3.75) and groundnut (written 1.25 to 2.5, computed 1.25 to 2.0) do not match. | A litres reading would be about 1000 times out | Store per hectare in tonnes; derive per lima |
 | C-7 | **Lime lead time.** E5: 2 to 3 months before planting (rainfed). E10: at least 1 to 2 months before planting. | Drives REF-05 (too late to lime this season) | Evaluate with both; flag when they differ (REF-05) |
 | C-8 | **Target pH.** E3: 5.5 to 6.5. G2: 5.5 to 7. | Plan A target and the over-liming warning | Use 5.5 to 6.5 (narrower, safer against over-liming) |
+| C-9 | **Borderline flag** `[PROPOSED]`: margin E_PROBE (0.5) around band edges 1 pH apart flags every pH from 4.0 to 7.0. | The flag carries no information | Implemented behind `BORDERLINE_MARGIN`; decide a smaller margin or drop the flag |
 | C-6 | **Maize "lowest workable pH" (5.5) equals the bottom of its best range (5.5 to 6.8).** Same for soybean at 5.5 vs 5.8. Unclear if "lowest workable" means yield-limiting or just "below this, do not recommend". | Plan A vs Plan C boundary | Treat as "below this, not recommended without liming" |
 
 ### 7.2 Unanswered questionnaire items
