@@ -93,6 +93,10 @@ rules:
     source_doc: null
     reviewer_alias: AGR-1
     ref: E7
-    notes: "C-2: 50-100 g per basin vs 200-400 kg/ha disagree by about 10 times."
+    notes: >
+      C-2: 50-100 g per basin vs 200-400 kg/ha disagree by about 10 times.
+      When resolved, replace CONFLICT with one of
+      {method: per_station, g_per_station: [low, high]} or
+      {method: per_hectare, kg_ha: [low, high]}.
     data:
       partial_approach: CONFLICT

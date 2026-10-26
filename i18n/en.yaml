@@ -29,3 +29,40 @@ borderline: {text: "The pH is close to a band boundary. A lab test is recommende
 measure.unavailable: {text: "Household measure not yet available; amounts are in kg.", reviewed: false}
 trust.moderate: {text: "Based on map estimates that agree with your reading.", reviewed: false}
 trust.low: {text: "Low confidence: based on your reading and field checks only. Get a lab test before major spending.", reviewed: false}
+plan.b_seed: {text: "Buy certified seed of a suitable variety.", reviewed: false}
+lime.timing_ok: {text: "Apply lime well before planting so it has time to react.", reviewed: false}
+lime.too_late: {text: "Too late to lime for this season. Lime early for next season.", reviewed: false}
+ui.confidence: {text: "Confidence", reviewed: false}
+ui.trust.high: {text: "high", reviewed: false}
+ui.trust.moderate: {text: "moderate", reviewed: false}
+ui.trust.low: {text: "low", reviewed: false}
+ui.trust.none: {text: "none", reviewed: false}
+ui.plan_a: {text: "Plan A: fix the soil and grow {crop}", reviewed: false}
+ui.plan_b: {text: "Plan B: cheaper route", reviewed: false}
+ui.plan_c: {text: "Plan C: crops that suit the soil now", reviewed: false}
+ui.lime: {text: "Lime", reviewed: false}
+ui.basal: {text: "Basal fertiliser", reviewed: false}
+ui.top_dress: {text: "Top dressing", reviewed: false}
+ui.manure: {text: "Manure", reviewed: false}
+ui.seed: {text: "Seed", reviewed: false}
+ui.fertiliser: {text: "Fertiliser", reviewed: false}
+ui.per_lima: {text: "per lima", reviewed: false}
+ui.per_station: {text: "per planting station", reviewed: false}
+ui.optional: {text: "Optional", reviewed: false}
+ui.or: {text: "or", reviewed: false}
+ui.about: {text: "about", reviewed: false}
+ui.needs_texture: {text: "The amount needs the soil texture. Do the texture-by-feel check.", reviewed: false}
+ui.left_out: {text: "Leave for later, when money allows", reviewed: false}
+ui.cost: {text: "Cost", reviewed: false}
+ui.remember: {text: "Remember", reviewed: false}
+ui.why: {text: "Why this advice", reviewed: false}
+ui.send_sms: {text: "Send SMS summary", reviewed: false}
+ui.depends_method: {text: "The advice depends on how the pH was measured", reviewed: false}
+ui.unconfirmed_rules: {text: "These rules have not been confirmed by a reviewer yet.", reviewed: false}
+ui.lab_test: {text: "Get a lab test before buying lime.", reviewed: false}
+crop.maize: {text: "maize", reviewed: false}
+crop.soybean: {text: "soybean", reviewed: false}
+crop.sunflower: {text: "sunflower", reviewed: false}
+crop.millet: {text: "millet", reviewed: false}
+crop.sorghum: {text: "sorghum", reviewed: false}
+crop.groundnut: {text: "groundnut", reviewed: false}

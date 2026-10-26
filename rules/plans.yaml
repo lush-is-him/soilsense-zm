@@ -9,17 +9,22 @@ rules:
     ref: "spec 6.5"
     notes: "Lime by band and texture, clamped to the cap, plus timing, fertiliser, manure, cautions and re-test advice."
     data: {}
-  - id: PLAN-B-BLOCKED
+  - id: PLAN-B
     domain: plan
     status: draft
     source_type: proposed
     source_doc: null
     reviewer_alias: null
-    ref: "C-2, I2"
-    notes: "Plan B stays blocked until C-2 and I2 are answered."
+    ref: "I1, I2, E7 (C-2)"
+    notes: >
+      Structure is [PROPOSED]. Plan B takes the first N items of the
+      agronomist's priority order (I2), N set by budget band, and uses the
+      partial lime rate (LIME-PARTIAL, E7). It stays blocked while any of
+      these is OPEN or CONFLICT. Items: lime, fertiliser, manure, seed.
     data:
       budget_bands: [low, medium]   # I1
-      blocked: true
+      priority_order: OPEN          # I2, e.g. [lime, fertiliser, seed, manure]
+      items_by_budget: OPEN         # e.g. {low: 1, medium: 2}
   - id: PLAN-C-ORDER
     domain: plan
     status: draft

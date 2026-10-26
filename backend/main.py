@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.db import get_db
-from backend.routes import advice, auth, devices, farmers, fields, readings, rules
+from backend.routes import advice, auth, devices, farmers, fields, i18n, readings, rules
 from backend.services.rules_sync import sync_rules
 
 DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "dashboard"
@@ -37,7 +37,7 @@ app = FastAPI(
     version="2.0.0",
 )
 
-for module in (auth, farmers, fields, devices, readings, advice, rules):
+for module in (auth, farmers, fields, devices, readings, advice, rules, i18n):
     app.include_router(module.router)
 
 

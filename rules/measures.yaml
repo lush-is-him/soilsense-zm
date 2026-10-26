@@ -14,5 +14,14 @@ rules:
     source_type: proposed
     source_doc: null
     reviewer_alias: null
-    ref: H (blank)
-    data: {containers: OPEN}
+    ref: "H (blank), task H3"
+    notes: >
+      Fill kg per container after weighing (task H3): weigh each container
+      level-full of each material three times and use the average. Leave
+      OPEN where not weighed. Materials: lime, compound_d, urea, manure.
+    data:
+      containers:
+        - {id: bag_50kg,    label: "50 kg bag",          kg: {lime: 50, compound_d: 50, urea: 50, manure: OPEN}}
+        - {id: bucket_20l,  label: "20 litre bucket",    kg: {lime: OPEN, compound_d: OPEN, urea: OPEN, manure: OPEN}}
+        - {id: wheelbarrow, label: "wheelbarrow",        kg: {lime: OPEN, compound_d: OPEN, urea: OPEN, manure: OPEN}}
+        - {id: tin_x,       label: "tin (size to name)", kg: {lime: OPEN, compound_d: OPEN, urea: OPEN, manure: OPEN}}

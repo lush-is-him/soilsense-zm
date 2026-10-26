@@ -13,6 +13,7 @@ from typing import Optional
 
 from .config import DEFAULT_CONFIG
 from .i18n import text
+from .measures import cost, household, material_for
 from .ruleset import RuleSet
 from .trust import LOW, MODERATE, NONE
 
@@ -86,16 +87,17 @@ class Advisor:
             result["plan_c"] = {"crops": safe, "note": None if safe else "plan.c_none",
                                 "basis": "crops suitable under every pH interpretation"}
             messages = ["MSG-08"]
+            result["plan_b"] = {"status": "lab_test_recommended", "note": "ref.REF-06"}
         else:
             fired += chosen["fired"]
             result["refusals"] = chosen["refusals"]
             result["plan_a"] = chosen["plan_a"]
             result["plan_c"] = chosen["plan_c"]
             messages = chosen["messages"] + ["MSG-08"]
+            result["plan_b"] = self._plan_b(chosen, req, fired)
 
         result["borderline"] = any(o["borderline"] for o in outcomes)
-        fired += ["PLAN-B-BLOCKED", "LIME-PARTIAL"]
-        result["plan_b"] = {"status": "blocked", "note": "plan.b_blocked"}
+        fired += ["PLAN-B", "LIME-PARTIAL"]
         return self._finish(result, fired, messages, req.lang)
 
     # ----- pH method (spec 2.6) ---------------------------------------
@@ -147,13 +149,15 @@ class Advisor:
 
         fired.append("PLAN-A")
         lime = self._lime(band, req, crop, fired, refusals)
-        fertiliser = self._fertiliser(crop)
         lima_ha = self._lima_ha(fired)
+        fertiliser = self._fertiliser(crop, lima_ha, fired)
+        manure = self._range_per_lima(crop["manure_t_ha"], lima_ha, "t")
+        manure["household"] = household(manure["low"] * 1000, manure["high"] * 1000, "manure", self.rules)
         out["plan_a"] = {
             "status": "ok",
             "lime": lime,
             "fertiliser": fertiliser,
-            "manure": self._range_per_lima(crop["manure_t_ha"], lima_ha, "t"),
+            "manure": manure,
             "cautions": list(crop.get("cautions", [])),
             "measures_note": "measure.unavailable",
         }
@@ -227,9 +231,11 @@ class Advisor:
                 fired.append("REF-07")
                 refusals.append("REF-07")
                 lime["split"] = True
-            lime.update(texture_group=group, rate_t_ha=[low, min(high, cap)],
-                        per_lima=self._range_per_lima([low, min(high, cap)],
-                                                      self._lima_ha(fired), "kg", 1000))
+            per_lima = self._range_per_lima([low, min(high, cap)], self._lima_ha(fired), "kg", 1000)
+            fired += ["MEAS-HOUSEHOLD", "PRICE-INPUTS"]
+            per_lima["household"] = household(per_lima["low"], per_lima["high"], "lime", self.rules)
+            per_lima["cost"] = cost(per_lima["low"], per_lima["high"], "lime", self.rules)
+            lime.update(texture_group=group, rate_t_ha=[low, min(high, cap)], per_lima=per_lima)
 
         timing = self._timing(req, crop, fired)
         lime["timing"] = timing
@@ -272,13 +278,67 @@ class Advisor:
                 return start, end
         raise AssertionError("unreachable")
 
-    def _fertiliser(self, crop):
+    def _fertiliser(self, crop, lima_ha, fired):
         def item(spec):
             rate = spec.get("rate_kg_ha")
-            if rate in (None, "OPEN"):
+            if not isinstance(rate, (int, float)):
                 return {"product": spec.get("product"), "rate_kg_ha": None, "note": "rate.open"}
-            return {"product": spec.get("product"), "rate_kg_ha": rate}
+            kg = round(rate * lima_ha, 1)
+            material = material_for(spec.get("product"))
+            fired.extend(["MEAS-HOUSEHOLD", "PRICE-INPUTS"])
+            return {"product": spec.get("product"), "rate_kg_ha": rate,
+                    "per_lima": {"low": kg, "high": kg, "unit": "kg",
+                                 "household": household(kg, kg, material, self.rules),
+                                 "cost": cost(kg, kg, material, self.rules)}}
         return {"basal": item(crop["basal"]), "top_dress": item(crop["top_dress"])}
+
+    # ----- Plan B (data-driven; blocked while its inputs are OPEN) ---------
+
+    def _plan_b(self, outcome, req, fired):
+        plan_a = outcome["plan_a"] or {}
+        if outcome["refusals"] and set(outcome["refusals"]) & {"REF-02", "REF-04"} or plan_a.get("status") != "ok":
+            return {"status": "not_applicable"}
+        data = self.rules["PLAN-B"].data
+        partial = self.rules["LIME-PARTIAL"].data["partial_approach"]
+        order, counts = data.get("priority_order"), data.get("items_by_budget")
+        if not isinstance(order, list) or not isinstance(counts, dict) or not isinstance(partial, dict) \
+                or req.budget_band not in counts:
+            return {"status": "blocked", "note": "plan.b_blocked"}
+        crop = self.rules.crop(req.crop).data
+        lima_ha = self._lima_ha(fired)
+        chosen, left_out = order[:counts[req.budget_band]], order[counts[req.budget_band]:]
+        items = []
+        for name in chosen:
+            if name == "lime":
+                items.append(self._partial_lime(partial, plan_a["lime"], crop, lima_ha))
+            elif name == "fertiliser":
+                items.append({"item": "fertiliser", **plan_a["fertiliser"]["basal"]})
+            elif name == "manure":
+                low = crop["manure_t_ha"][0]
+                items.append({"item": "manure", "per_lima": self._range_per_lima([low, low], lima_ha, "t")})
+            elif name == "seed":
+                items.append({"item": "seed", "note": "plan.b_seed"})
+            else:
+                items.append({"item": name, "note": "rate.open"})
+        return {"status": "ok", "budget_band": req.budget_band, "items": items, "left_out": left_out}
+
+    def _partial_lime(self, partial, lime, crop, lima_ha):
+        if not lime.get("advised"):
+            return {"item": "lime", "status": "not_needed", "note": "lime.not_needed"}
+        if partial.get("method") == "per_station":
+            row_cm, plant_cm = crop["spacing_cm"]
+            stations_ha = 10000 / ((row_cm / 100) * (plant_cm / 100))
+            g_low, g_high = partial["g_per_station"]
+            kg_ha = [g_low * stations_ha / 1000, g_high * stations_ha / 1000]
+            extra = {"g_per_station": [g_low, g_high]}
+        else:
+            kg_ha = partial["kg_ha"]
+            extra = {}
+        per_lima = self._range_per_lima(kg_ha, lima_ha, "kg")
+        per_lima["household"] = household(per_lima["low"], per_lima["high"], "lime", self.rules)
+        per_lima["cost"] = cost(per_lima["low"], per_lima["high"], "lime", self.rules)
+        return {"item": "lime", "method": partial.get("method"), "per_lima": per_lima,
+                "timing": lime.get("timing"), **extra}
 
     def _lima_ha(self, fired):
         if "MEAS-LIMA" not in fired:

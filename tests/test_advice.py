@@ -100,7 +100,10 @@ def test_band_edges(water_rules, ph, band):
 def test_moderate_loamy_lime_rate_and_per_lima(water_rules):
     lime = advise(water_rules, 5.0)["plan_a"]["lime"]
     assert lime["status"] == "advised" and lime["rate_t_ha"] == [1.5, 2.0]
-    assert lime["per_lima"] == {"low": 375.0, "high": 500.0, "unit": "kg"}
+    per_lima = lime["per_lima"]
+    assert (per_lima["low"], per_lima["high"], per_lima["unit"]) == (375.0, 500.0, "kg")
+    assert per_lima["household"] == [{"container": "50 kg bag", "low": 7.5, "high": 10.0}]
+    assert per_lima["cost"] is None                  # prices OPEN (H4)
 
 
 def test_slightly_acidic_lime_is_optional(water_rules):
@@ -142,7 +145,9 @@ def test_maize_basal_rate_and_open_top_dress(water_rules):
 
 
 def test_manure_per_lima_derived_from_tonnes_per_ha(water_rules):
-    assert advise(water_rules, 5.0)["plan_a"]["manure"] == {"low": 1.25, "high": 3.75, "unit": "t"}
+    manure = advise(water_rules, 5.0)["plan_a"]["manure"]
+    assert (manure["low"], manure["high"], manure["unit"]) == (1.25, 3.75, "t")
+    assert manure["household"] is None               # manure containers not weighed yet
 
 
 @pytest.mark.parametrize("crop, msg", [("soybean", "msg.MSG-05"), ("maize", "msg.MSG-06")])
@@ -179,6 +184,57 @@ def test_plan_c_millet_first_then_lowest_workable(water_rules):
 
 def test_plan_c_excludes_crops_above_their_maximum(water_rules):
     assert advise(water_rules, 7.8, crop="sunflower")["plan_c"]["crops"] == ["sunflower"]
+
+
+def with_plan_b(ruleset, partial, order=("lime", "fertiliser", "seed", "manure"), counts=None):
+    filled = copy.deepcopy(ruleset)
+    filled["PLAN-B"].data.update(priority_order=list(order), items_by_budget=counts or {"low": 2, "medium": 3})
+    filled["LIME-PARTIAL"].data["partial_approach"] = partial
+    return filled
+
+
+def test_plan_b_per_station_lime_and_priority(water_rules):
+    ruleset = with_plan_b(water_rules, {"method": "per_station", "g_per_station": [4, 8]})
+    plan_b = advise(ruleset, 5.0)["plan_b"]
+    assert plan_b["status"] == "ok" and [i["item"] for i in plan_b["items"]] == ["lime", "fertiliser"]
+    assert plan_b["left_out"] == ["seed", "manure"]
+    lime = plan_b["items"][0]                        # 53,333 stations/ha at 75 x 25 cm
+    assert lime["per_lima"]["low"] == pytest.approx(53.33, abs=0.01)
+    assert lime["per_lima"]["high"] == pytest.approx(106.67, abs=0.01)
+
+
+def test_plan_b_medium_budget_gets_more_items(water_rules):
+    ruleset = with_plan_b(water_rules, {"method": "per_hectare", "kg_ha": [200, 400]})
+    plan_b = Advisor(ruleset).advise(AdviceRequest(5.0, "water", "low", "soybean", AUG, budget_band="medium",
+                                                   texture="loamy", texture_source="field_check"))["plan_b"]
+    assert [i["item"] for i in plan_b["items"]] == ["lime", "fertiliser", "seed"]
+    assert plan_b["items"][0]["per_lima"]["low"] == 50.0
+
+
+def test_plan_b_not_applicable_when_refused(water_rules):
+    ruleset = with_plan_b(water_rules, {"method": "per_hectare", "kg_ha": [200, 400]})
+    assert advise(ruleset, 4.2)["plan_b"]["status"] == "not_applicable"
+
+
+def test_plan_b_no_quantities_when_method_sensitive(rules):
+    ruleset = with_plan_b(rules, {"method": "per_hectare", "kg_ha": [200, 400]})
+    assert advise(ruleset, 5.6)["plan_b"]["status"] == "lab_test_recommended"
+
+
+def test_household_measures_and_cost_when_supplied(water_rules):
+    filled = copy.deepcopy(water_rules)
+    bucket = next(c for c in filled["MEAS-HOUSEHOLD"].data["containers"] if c["id"] == "bucket_20l")
+    bucket["kg"]["lime"] = 25.0
+    filled["PRICE-INPUTS"].data["items"]["lime"]["zmw_per_kg"] = 2.0
+    per_lima = advise(filled, 5.0)["plan_a"]["lime"]["per_lima"]
+    assert {"container": "20 litre bucket", "low": 15.0, "high": 20.0} in per_lima["household"]
+    assert per_lima["cost"]["low"] == 750 and per_lima["cost"]["high"] == 1000
+
+
+def test_basal_per_lima_in_bags(water_rules):
+    basal = advise(water_rules, 5.0)["plan_a"]["fertiliser"]["basal"]
+    assert basal["per_lima"]["low"] == 50.0
+    assert basal["per_lima"]["household"] == [{"container": "50 kg bag", "low": 1.0, "high": 1.0}]
 
 
 # ----- method handling (spec 2.6) -----
@@ -229,7 +285,13 @@ def test_maize_top_dress_rate(water_rules):
 
 @pytest.mark.xfail(strict=True, reason="OPEN: household measures (section H, task H3)")
 def test_household_measures(rules):
-    assert rules["MEAS-HOUSEHOLD"].data["containers"] != "OPEN"
+    bucket = next(c for c in rules["MEAS-HOUSEHOLD"].data["containers"] if c["id"] == "bucket_20l")
+    assert bucket["kg"]["lime"] != "OPEN"
+
+
+@pytest.mark.xfail(strict=True, reason="OPEN: input prices (task H4)")
+def test_prices_supplied(rules):
+    assert rules["PRICE-INPUTS"].data["items"]["lime"]["zmw_per_kg"] != "OPEN"
 
 
 @pytest.mark.xfail(strict=True, reason="OPEN: pH method of the bands and crop table (C-4, question 1)")

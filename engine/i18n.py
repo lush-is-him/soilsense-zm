@@ -13,6 +13,13 @@ I18N_DIR = Path(__file__).resolve().parent.parent / "i18n"
 LANGUAGES = ("en", "ny", "toi")
 
 
+class _KeepMissing(dict):
+    """Leave {placeholders} without a value in place (the dashboard fills them)."""
+
+    def __missing__(self, key):
+        return "{" + key + "}"
+
+
 @lru_cache(maxsize=None)
 def _strings(lang):
     path = I18N_DIR / f"{lang}.yaml"
@@ -28,4 +35,4 @@ def text(key, lang="en", **params):
     if entry is None:
         return {"key": key, "lang": used, "text": key, "reviewed": False}
     reviewed = bool(entry.get("reviewed")) and used == lang
-    return {"key": key, "lang": used, "text": entry["text"].format(**params), "reviewed": reviewed}
+    return {"key": key, "lang": used, "text": entry["text"].format_map(_KeepMissing(params)), "reviewed": reviewed}

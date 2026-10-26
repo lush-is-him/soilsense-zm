@@ -322,64 +322,120 @@ async function viewField(fieldId) {
   });
 }
 
+// ----- advice text (from /i18n, so it follows the language switch) -----
+
+let STRINGS = {};
+async function loadStrings(code) {
+  try { STRINGS = await api(`/i18n/${code}`); } catch (error) { STRINGS = {}; }
+}
+
+// Translated text with the "not reviewed" marker. Placeholders like {crop} are filled from params.
+function t(key, params = {}) {
+  const item = STRINGS[key];
+  if (!item) return esc(key);
+  const filled = item.text.replace(/\{(\w+)\}/g, (_, name) => (name in params ? params[name] : `{${name}}`));
+  return `${esc(filled)}${unreviewedMark(item)}`;
+}
+const tPlain = (key) => (STRINGS[key] ? STRINGS[key].text : key);
+const cropName = (crop) => tPlain(`crop.${crop}`);
+
 function range(r, unit) { return r ? `${esc(r.low)}–${esc(r.high)} ${esc(unit || r.unit)}` : ""; }
 
-function planA(a) {
-  if (!a) return '<p class="muted">No Plan A.</p>';
-  if (a.status !== "ok") return `<p>${esc(a.status.replace(/_/g, " "))}</p>`;
+function extras(perLima) {
+  if (!perLima) return "";
+  const parts = [];
+  if (perLima.household) {
+    parts.push(perLima.household.map((h) => `${t("ui.about")} ${esc(h.low === h.high ? h.low : `${h.low}–${h.high}`)} × ${esc(h.container)}`).join(` ${t("ui.or")} `));
+  }
+  if (perLima.cost) parts.push(`${t("ui.cost")}: ${esc(perLima.cost.currency)} ${esc(perLima.cost.low)}–${esc(perLima.cost.high)} <small>(${esc(perLima.cost.place || "")} ${esc(perLima.cost.date || "")})</small>`);
+  return parts.length ? `<br><small>${parts.join(" · ")}</small>` : "";
+}
+
+function timingText(timing) {
+  return { ok: t("lime.timing_ok"), uncertain: t("lime.timing_uncertain"), too_late: t("lime.too_late"), any_time: t("lime.any_time") }[timing] || "";
+}
+
+function fertItem(item, labelKey) {
+  if (!item) return "";
+  const amount = item.rate_kg_ha != null
+    ? ` — ${esc(item.rate_kg_ha)} kg/ha${item.per_lima ? ` (${range(item.per_lima)} ${t("ui.per_lima")})` : ""}${extras(item.per_lima)}`
+    : ` — ${t("rate.open")}`;
+  return `<li><strong>${t(labelKey)}:</strong> ${esc(item.product)}${amount}</li>`;
+}
+
+function planA(a, crop) {
+  if (!a) return "";
+  if (a.status !== "ok") return a.note ? `<p>${t(a.note, { crop })}</p>` : `<p>${esc(a.status.replace(/_/g, " "))}</p>`;
   const lime = a.lime || {};
-  const f = a.fertiliser || {};
-  const fert = (item, label) => item ? `<li><strong>${label}:</strong> ${esc(item.product)}
-      ${item.rate_kg_ha != null ? ` — ${esc(item.rate_kg_ha)} kg/ha` : ' — <em>rate not yet available</em>'}</li>` : "";
   let limeHtml;
-  if (lime.status === "not_needed") limeHtml = "No lime needed.";
+  if (lime.status === "not_needed") limeHtml = t("lime.not_needed");
   else if (lime.rate_t_ha) {
-    limeHtml = `${esc(lime.status === "optional" ? "Optional: " : "")}${esc(lime.rate_t_ha[0])}–${esc(lime.rate_t_ha[1])} t/ha
-      (${range(lime.per_lima)} per lima), ${esc((lime.products || []).join(" or "))}.
-      Texture: ${esc(lime.texture_group)}.`;
-  } else limeHtml = "Amount needs the soil texture (do the texture-by-feel check).";
-  const timing = { ok: "Apply 2–3 months before planting.", uncertain: "Timing uncertain: liming now may be too late for this season.",
-    too_late: "Too late to lime for this season. Lime early for next season.", any_time: "Irrigated: lime any time before planting." }[lime.timing] || "";
+    limeHtml = `${lime.status === "optional" ? `${t("ui.optional")}: ` : ""}${esc(lime.rate_t_ha[0])}–${esc(lime.rate_t_ha[1])} t/ha
+      (${range(lime.per_lima)} ${t("ui.per_lima")}), ${esc((lime.products || []).join(" / "))}. ${timingText(lime.timing)}${extras(lime.per_lima)}`;
+  } else limeHtml = t("ui.needs_texture");
+  const f = a.fertiliser || {};
   return `<ul>
-      <li><strong>Lime:</strong> ${limeHtml} ${esc(timing)}</li>
-      ${fert(f.basal, "Basal")}${fert(f.top_dress, "Top dressing")}
-      <li><strong>Manure:</strong> ${range(a.manure)} per lima</li>
-    </ul><p class="muted">Household measures not yet available; amounts are in kg or tonnes.</p>`;
+      <li><strong>${t("ui.lime")}:</strong> ${limeHtml}</li>
+      ${fertItem(f.basal, "ui.basal")}${fertItem(f.top_dress, "ui.top_dress")}
+      <li><strong>${t("ui.manure")}:</strong> ${range(a.manure)} ${t("ui.per_lima")}${extras(a.manure)}</li>
+    </ul>${a.measures_note && !(lime.per_lima && lime.per_lima.household) ? `<p class="muted">${t(a.measures_note)}</p>` : ""}`;
+}
+
+function planB(b) {
+  if (!b) return "";
+  if (b.status === "blocked") return `<p>${t("plan.b_blocked")}</p>`;
+  if (b.status === "lab_test_recommended") return `<p>${t("ui.lab_test")}</p>`;
+  if (b.status !== "ok") return `<p class="muted">–</p>`;
+  const line = (item) => {
+    if (item.item === "lime") {
+      if (item.status === "not_needed") return `<li><strong>${t("ui.lime")}:</strong> ${t("lime.not_needed")}</li>`;
+      const station = item.g_per_station ? ` (${esc(item.g_per_station.join("–"))} g ${t("ui.per_station")})` : "";
+      return `<li><strong>${t("ui.lime")}:</strong> ${range(item.per_lima)} ${t("ui.per_lima")}${station}. ${timingText(item.timing)}${extras(item.per_lima)}</li>`;
+    }
+    if (item.item === "fertiliser") return fertItem(item, "ui.fertiliser");
+    if (item.item === "manure") return `<li><strong>${t("ui.manure")}:</strong> ${range(item.per_lima)} ${t("ui.per_lima")}</li>`;
+    if (item.item === "seed") return `<li><strong>${t("ui.seed")}:</strong> ${t("plan.b_seed")}</li>`;
+    return `<li>${esc(item.item)}: ${t("rate.open")}</li>`;
+  };
+  return `<ol>${b.items.map(line).join("")}</ol>
+    ${b.left_out.length ? `<p class="muted">${t("ui.left_out")}: ${b.left_out.map((x) => t(`ui.${x}`)).join(", ")}</p>` : ""}`;
 }
 
 async function viewAdvice(recId) {
-  const a = await api(`/advice/${recId}?lang=${lang()}`);
+  const code = lang();
+  const [a] = await Promise.all([api(`/advice/${recId}?lang=${code}`), loadStrings(code)]);
   const trust = a.trust || { level: a.trust_level, reasons: [] };
+  const crop = cropName(a.crop);
   $app.innerHTML = `
     <p><a href="javascript:history.back()">← Back</a></p>
-    <h1>Advice: ${esc(a.crop)}</h1>
+    <h1>${esc(crop)}</h1>
     <div class="card">
-      <p>Confidence <span class="badge ${esc(trust.level)}">${esc(trust.level)}</span>
+      <p>${t("ui.confidence")} <span class="badge ${esc(trust.level)}">${esc(tPlain(`ui.trust.${trust.level}`))}</span>
         <small>${esc((trust.reasons || []).join("; "))}</small></p>
       ${a.trust_text ? `<p>${say(a.trust_text)}</p>` : ""}
-      <p class="muted">pH ${esc(a.ph_input)} (${esc(a.ph_method_input)}) · as of ${esc(a.as_of_date)}
-        ${a.texture && a.texture.value ? ` · texture ${esc(a.texture.value)} from ${esc(a.texture.source)}` : ""}</p>
-      ${a.unreviewed ? '<p class="notice">These rules have not been confirmed by a reviewer yet.</p>' : ""}
-      ${a.borderline ? '<p class="notice info">pH is close to a band boundary; a lab test is recommended.</p>' : ""}
+      <p class="muted">pH ${esc(a.ph_input)} (${esc(a.ph_method_input)}) · ${esc(a.as_of_date)}
+        ${a.texture && a.texture.value ? ` · ${esc(a.texture.value)} (${esc(a.texture.source)})` : ""}</p>
+      ${a.unreviewed ? `<p class="notice">${t("ui.unconfirmed_rules")}</p>` : ""}
+      ${a.borderline ? `<p class="notice info">${t("borderline")}</p>` : ""}
     </div>
     ${a.refusal_text.map((r) => `<p class="notice stop">${say(r)}</p>`).join("")}
-    ${a.method_sensitive ? `<div class="card"><h2>Depends on the pH method</h2>
-      <table><tr><th>pH as read by the rules</th><th>Band</th><th>Lime t/ha</th><th>Plan C</th></tr>
+    ${a.method_sensitive ? `<div class="card"><h2>${t("ui.depends_method")}</h2>
+      <table><tr><th>pH</th><th>Band</th><th>${t("ui.lime")} t/ha</th><th>Plan C</th></tr>
       ${a.alternatives.map((x) => `<tr><td>${esc(x.ph_in_rule_scale)}</td><td>${esc(x.band)}</td>
         <td>${x.lime_rate_t_ha ? esc(x.lime_rate_t_ha.join("–")) : esc(x.refusals.join(" ") || "–")}</td>
-        <td>${esc(x.plan_c.join(", "))}</td></tr>`).join("")}</table></div>` : ""}
+        <td>${esc(x.plan_c.map(cropName).join(", "))}</td></tr>`).join("")}</table></div>` : ""}
     ${a.trust_level !== "none" ? `
-      <div class="card plan"><h2>Plan A: fix the soil and grow ${esc(a.crop)}</h2>${planA(a.plan_a)}</div>
-      <div class="card plan b"><h2>Plan B: cheaper route</h2><p>Partial plan not yet reviewed. Start with Plan C crops and get a lab test.</p></div>
-      <div class="card plan c"><h2>Plan C: crops that suit the soil now</h2>
-        ${a.plan_c && a.plan_c.crops.length ? `<p>${a.plan_c.crops.map(esc).join(", ")}</p>` : '<p>No crop suits this soil as it is. Get a lab test.</p>'}</div>` : ""}
-    <div class="card"><h2>Remember</h2><ul>${a.messages.map((m) => `<li>${say(m)}</li>`).join("")}</ul></div>
-    <details class="card"><summary>Why this advice (${a.fired_rules.length} rules)</summary>
+      <div class="card plan"><h2>${t("ui.plan_a", { crop })}</h2>${planA(a.plan_a, crop)}</div>
+      <div class="card plan b"><h2>${t("ui.plan_b")}</h2>${planB(a.plan_b)}</div>
+      <div class="card plan c"><h2>${t("ui.plan_c")}</h2>
+        ${a.plan_c && a.plan_c.crops.length ? `<p>${a.plan_c.crops.map((c) => esc(cropName(c))).join(", ")}</p>` : `<p>${t("plan.c_none")}</p>`}</div>` : ""}
+    <div class="card"><h2>${t("ui.remember")}</h2><ul>${a.messages.map((m) => `<li>${say(m)}</li>`).join("")}</ul></div>
+    <details class="card"><summary>${t("ui.why")} (${a.fired_rules.length})</summary>
       <table><tr><th>Rule</th><th>Status</th><th>Source</th></tr>
       ${a.fired_rules.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.status)}</td>
         <td>${esc(r.source_type)}${r.reviewer_alias ? ` (${esc(r.reviewer_alias)})` : ""}</td></tr>`).join("")}</table>
     </details>
-    <button id="sms-btn" class="secondary">Send SMS summary</button>`;
+    <button id="sms-btn" class="secondary">${tPlain("ui.send_sms")}</button>`;
   document.getElementById("sms-btn").addEventListener("click", async () => {
     try { const r = await post(`/advice/${recId}/sms`, {}); toast(`SMS ${r.status}: ${r.message}`); }
     catch (error) { toast(error.message, true); }
