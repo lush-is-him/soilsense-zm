@@ -456,7 +456,7 @@ So the lab dispatch is the **critical path with an external dependency**: send s
 | H3 | Weigh cups, tins, 20 L buckets and 50 kg bags for lime, Compound D, urea, manure and seed; fill `rules/measures.yaml` | Household measures |
 | H4 | Collect current prices with place and date (lime, Compound D, urea, seed, manure, transport) | Cost display (optional) |
 | H5 | Find one native Nyanja and one native Tonga reviewer | FR12 reviewed strings |
-| H6 | Download and clip iSDAsoil layers (pH mean and SD, OC, P, K, texture; 0 to 20 cm) for Kafue District | Map service |
+| H6 | Download and clip iSDAsoil layers (pH mean and SD, OC, P, K, texture; 0 to 20 cm) for Kafue District. Script: `scripts/fetch_isdasoil.py` (raw values plus `layers.json` with each layer's back-transformation) | Map service |
 | H7 | Decide crop scope with the supervisor (C-1) | Rule data |
 | H8 | Confirm pH 4.00 and 7.00 buffers and the capacitive moisture sensor are on hand | Probe calibration |
 
@@ -480,7 +480,7 @@ All the code belongs to the developer. This table only decides which AI tool wor
 | Agent | Folders it edits |
 |---|---|
 | Antigravity (knows the existing code) | `backend/` (tracks A, E, G), `dashboard/` (track C) |
-| Claude Code | `engine/`, `rules/`, `tests/`, `firmware/`, `bridge/`, `i18n/` (tracks B, D, F) |
+| Claude Code | `engine/`, `rules/`, `tests/`, `firmware/`, `bridge/`, `i18n/`, `scripts/` (tracks B, D, F; data preparation) |
 
 `engine/` holds the pure logic: `quality.py`, `trust.py`, `rules.py`, `measures.py`. It has no FastAPI or database imports; `backend/` imports it and wraps it in endpoints.
 

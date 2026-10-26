@@ -461,8 +461,8 @@ Revised file paths: S1-5 becomes `engine/quality.py` + `tests/test_quality.py`; 
 | 1 | Yes, the repo is on GitHub and is the copy of record |
 | 6 | Not sent yet. Clarification questions for `AGR-1` are drafted in `docs/QUESTIONS_FOR_REVIEWER_1.md` (questions 1 to 5 block code). `AGR-1` will not review or confirm; a second reviewer is pending |
 | 2 | No real farmer data. Start fresh with seed data (S1-2 seed script); the old local `soilsense.db` is not migrated |
-| 3 | Yes, all hardware has been bought (Arduino Uno, pH probe, capacitive moisture sensor, DS18B20). Firmware is written by Claude Code (S1-4a) and tested by the developer on the real hardware |
-| 4 | No, iSDAsoil layers are not downloaded yet (H6). Map service stays a stretch goal until then |
+| 3 | Yes, all hardware has been bought. **On hold:** the developer will confirm the exact sensor boards before S1-4a starts. pH 4.00 and 7.00 buffers are **not** bought yet (H8); calibration cannot be tested until they are |
+| 4 | Not yet downloaded. `scripts/fetch_isdasoil.py` now does it (about 1 minute, about 50 MB); the developer runs it with `--boundary` pointing at the local `gadm41_ZMB.gpkg` |
 | 9 | Yes, Claude Code runs alongside Antigravity |
 | 5, 7, 8, 10 | Open: developer to answer |
 
