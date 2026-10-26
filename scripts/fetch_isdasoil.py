@@ -19,7 +19,7 @@ Usage (from the repo root):
 
     pip install -r scripts/requirements.txt
     python scripts/fetch_isdasoil.py --boundary "path/to/gadm41_ZMB.gpkg"
-    python scripts/fetch_isdasoil.py            # fallback box, see below
+    python scripts/fetch_isdasoil.py            # built-in Kafue extent
     python scripts/fetch_isdasoil.py --check 28.18 -15.77
 
 Output goes to data/isdasoil/ (the .tif files are ignored by git).
@@ -76,10 +76,9 @@ TEXTURE_CLASSES = {
 
 NODATA = 255
 
-# Approximate box around Kafue town and Shimabala (lon/lat, WGS84), used
-# only when no boundary file is given. It is deliberately generous; prefer
-# --boundary with the GADM file so the window follows the real district.
-FALLBACK_BBOX = (27.6, -16.2, 28.8, -15.3)
+# Kafue District extent (lon/lat, WGS84) from GADM 4.1, used when no
+# boundary file is given. --boundary reads it from the GADM file instead.
+FALLBACK_BBOX = (27.783, -15.976, 29.342, -15.471)
 
 
 def kafue_bbox_from_gadm(path):
@@ -95,7 +94,7 @@ def kafue_bbox_from_gadm(path):
     kafue = districts[districts["NAME_2"].str.upper() == "KAFUE"]
     if kafue.empty:
         sys.exit(f"Kafue not found in {path}")
-    return tuple(kafue.to_crs(epsg=4326).total_bounds)
+    return tuple(float(v) for v in kafue.to_crs(epsg=4326).total_bounds)
 
 
 def buffer_bbox(bbox, km):
@@ -191,8 +190,8 @@ def main():
         source = f"GADM Kafue District from {Path(args.boundary).name}"
     else:
         bbox = FALLBACK_BBOX
-        source = "fallback box (approximate); rerun with --boundary for the real district"
-        print("No --boundary given: using an approximate box around Kafue town and Shimabala.")
+        source = "built-in Kafue District extent (GADM 4.1)"
+        print("No --boundary given: using the built-in Kafue District extent.")
     bbox = buffer_bbox(bbox, args.buffer_km)
     print(f"Area (lon/lat): {tuple(round(v, 4) for v in bbox)}")
 
