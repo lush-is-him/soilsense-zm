@@ -1,0 +1,17 @@
+# Task H4: current prices with place and date. Optional (cost display only).
+rules:
+  - id: PRICE-INPUTS
+    domain: price
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: "I (blank), task H4"
+    notes: "Fill zmw_per_kg with place and date, e.g. {zmw_per_kg: 2.5, place: Kafue, date: 2026-11-02}."
+    data:
+      currency: ZMW
+      items:
+        lime:       {zmw_per_kg: OPEN, place: null, date: null}
+        compound_d: {zmw_per_kg: OPEN, place: null, date: null}
+        urea:       {zmw_per_kg: OPEN, place: null, date: null}
+        manure:     {zmw_per_kg: OPEN, place: null, date: null}

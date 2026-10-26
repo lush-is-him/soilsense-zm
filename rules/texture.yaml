@@ -1,0 +1,16 @@
+# Maps a texture (USDA class from the map or lab, or texture by feel) to the
+# three groups the lime table uses. This grouping is an engineering proposal,
+# not from the agronomist: confirm it (it changes lime rates by up to 2 times).
+rules:
+  - id: TEX-GROUPS
+    domain: texture
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: "spec 6.3 (E4 uses sandy/loamy/clay)"
+    data:
+      groups:
+        sandy: ["Sand", "Loamy Sand", "Sandy Loam"]
+        loamy: ["Loam", "Silt Loam", "Silt", "Sandy Clay Loam"]
+        clay:  ["Clay", "Silty Clay", "Sandy Clay", "Clay Loam", "Silty Clay Loam"]

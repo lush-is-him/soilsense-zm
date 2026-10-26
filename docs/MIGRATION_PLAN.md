@@ -1,7 +1,7 @@
 # SoilSense ZM — Migration Plan
 
 > **Audit date:** 2026-10-26  
-> **Spec version:** v0.1, 26 Oct 2026 (`dissertation/SOILSENSE_SPEC.md`)  
+> **Spec version:** audited against v0.1; reviewed against v0.2 (25 Oct 2026, `docs/SOILSENSE_SPEC.md`), see section 11  
 > **Auditor:** Antigravity (Phase 1, read-only)
 
 ---
@@ -322,33 +322,33 @@ A pH of 0.5 or 13.0 would get a "Critical" prediction and full advice with lime 
 
 ### Sprint 0 (2–3 days): audit and contract freeze
 
-| # | Task | Owner | Status |
+| # | Task | Done by | Status |
 |---|---|---|---|
-| S0-1 | Initialise git repo, commit current state | Developer | `todo` |
-| S0-2 | Copy `dissertation/SOILSENSE_SPEC.md` to `docs/SOILSENSE_SPEC.md` | Developer | `todo` |
-| S0-3 | Review this migration plan | Developer | `todo` |
-| S0-4 | Freeze contracts: DB schema (spec S3), API (spec S4), YAML shape (spec S6), i18n key format | Developer | `todo` |
-| S0-5 | Create branches and directory ownership | Developer | `todo` |
-| S0-6 | Move analysis scripts to `analysis/` | Antigravity | `todo` |
+| S0-1 | Initialise git repo, commit current state | Developer | `done` |
+| S0-2 | Copy spec to `docs/SOILSENSE_SPEC.md` (now v0.2; `dissertation/` copy removed) | Developer | `done` |
+| S0-3 | Review this migration plan | Developer | `done` |
+| S0-4 | Freeze contracts: DB schema (spec S3), API (spec S4), YAML shape (spec S6), i18n key format | Developer | `done` (contracts as built: spec v0.3) |
+| S0-5 | Create branches and apply the folder split (spec 8.4) | Developer | `todo` |
+| S0-6 | Move analysis scripts to `analysis/` | Antigravity | `done` |
 
 ### Sprint 1 — Must
 
-| # | Task | Files touched | Size | Dependencies | Owner | Parallel? | Status |
+| # | Task | Files touched | Size | Dependencies | Agent | Parallel? | Status |
 |---|---|---|---|---|---|---|---|
-| **S1-1** | Remove all ML code and dependencies | `train_model.py` (delete), `generate_training_data.py` (delete), `soil_model*.pkl` (delete), `label_encoder*.pkl` (delete), `synthetic_training_data*.csv` (delete), `plots/` (move to `analysis/`), `backend/routes/predict.py` (gut ML parts), `backend/requirements.txt` (remove sklearn/joblib/numpy/pandas), `backend/main.py` (remove ML references), `backend/advisory.py` (delete — will be replaced by rule engine), `backend/models.py` (remove `PredictionResponse`, `Advisory`, `StatusResponse.model_loaded`) | **M** | None | Antigravity (`backend/`) | **Yes** — independent of S1-2 to S1-5 | `todo` |
-| **S1-2** | Schema and migrations for spec S3 | New: `backend/migrations/`, `backend/schema.py`; Modify: `backend/database.py`; Seed script: `backend/seed.py` | **L** | S1-1 (clean imports) | Antigravity (`backend/`) | After S1-1 | `todo` |
-| **S1-3** | Field registration with GPS (accuracy, source; reject >30 m; manual pin) | New: `backend/routes/fields.py`, Modify: `backend/routes/farmers.py` (adapt), `dashboard/index.html` (field form), `dashboard/app.js` (GPS capture) | **M** | S1-2 (schema) | Antigravity (`backend/`, `dashboard/`) | After S1-2 | `todo` |
-| **S1-4** | Firmware, serial bridge, two-buffer calibration | New: `firmware/soilsense.ino`, `bridge/bridge.py`, `backend/routes/devices.py`, `backend/routes/calibrations.py` | **L** | S1-2 (schema for `devices`, `calibrations`), API contract freeze | Claude Code (`firmware/`, `bridge/`) | After S1-2; parallel with S1-3 and S1-5 | `todo` |
-| **S1-5** | `QualityChecker` with tests | New: `backend/quality.py`, `tests/test_quality.py` | **M** | S1-2 (schema for `readings`), S1-4 (reading payload shape) | Claude Code (`tests/`) / Antigravity (`backend/`) | After S1-2; can develop in parallel with S1-4 using mocked readings | `todo` |
+| **S1-1** | Remove all ML code and dependencies | `train_model.py` (delete), `generate_training_data.py` (delete), `soil_model*.pkl` (delete), `label_encoder*.pkl` (delete), `synthetic_training_data*.csv` (delete), `plots/` (move to `analysis/`), `backend/routes/predict.py` (gut ML parts), `backend/requirements.txt` (remove sklearn/joblib/numpy/pandas), `backend/main.py` (remove ML references), `backend/advisory.py` (delete — will be replaced by rule engine), `backend/models.py` (remove `PredictionResponse`, `Advisory`, `StatusResponse.model_loaded`) | **M** | None | Antigravity (`backend/`) | **Yes** — independent of S1-2 to S1-5 | `done` |
+| **S1-2** | Schema and migrations for spec S3 | New: `backend/migrations/`, `backend/schema.py`; Modify: `backend/database.py`; Seed script: `backend/seed.py` | **L** | S1-1 (clean imports) | Antigravity (`backend/`) | After S1-1 | `done` |
+| **S1-3** | Field registration with GPS (accuracy, source; reject >30 m; manual pin) | New: `backend/routes/fields.py`, Modify: `backend/routes/farmers.py` (adapt), `dashboard/index.html` (field form), `dashboard/app.js` (GPS capture) | **M** | S1-2 (schema) | Antigravity (`backend/`, `dashboard/`) | After S1-2 | `done` |
+| **S1-4** | Firmware, serial bridge, two-buffer calibration | New: `firmware/soilsense.ino`, `bridge/bridge.py`, `backend/routes/devices.py`, `backend/routes/calibrations.py` | **L** | S1-2 (schema for `devices`, `calibrations`), API contract freeze | Claude Code (`firmware/`, `bridge/`) | After S1-2; parallel with S1-3 and S1-5 | `partial` (S1-4b done; S1-4a firmware and bridge on hold for board details) |
+| **S1-5** | `QualityChecker` with tests | New: `engine/quality.py`, `tests/test_quality.py` (see 11.3) | **M** | S1-2 (schema for `readings`), S1-4 (reading payload shape) | Claude Code (`engine/`, `tests/`) | After S1-2; can develop in parallel with S1-4 using mocked readings | `done` |
 
-**S1-4 ownership note:** The spec suggests Claude Code owns `firmware/` and `bridge/`, but S1-4 also requires `backend/routes/devices.py` and `backend/routes/calibrations.py`, which are in `backend/` (Antigravity's territory). **Recommendation:** Split S1-4 into two sub-tasks: S1-4a (firmware + bridge, Claude Code) and S1-4b (backend endpoints for devices and calibrations, Antigravity). They share the API contract but touch different directories.
+**S1-4 folder note:** The spec assigns Claude Code to `firmware/` and `bridge/`, but S1-4 also requires `backend/routes/devices.py` and `backend/routes/calibrations.py`, which are in `backend/` (Antigravity's territory). **Recommendation:** Split S1-4 into two sub-tasks: S1-4a (firmware + bridge, Claude Code) and S1-4b (backend endpoints for devices and calibrations, Antigravity). They share the API contract but touch different directories.
 
 ### Sprint 1 — Should
 
-| # | Task | Files touched | Size | Dependencies | Owner | Parallel? | Status |
+| # | Task | Files touched | Size | Dependencies | Agent | Parallel? | Status |
 |---|---|---|---|---|---|---|---|
-| **S1-6** | Dashboard shell: login, language switch, field list, reading screen | `dashboard/index.html`, `dashboard/app.js`, `dashboard/style.css` | **L** | S1-2 (API), S1-3 (fields API) | Antigravity (`dashboard/`) | After S1-3; parallel with S1-4, S1-5 | `todo` |
-| **S1-7** | Rule YAML schema, validator and loader with S6 data | New: `rules/ph_bands.yaml`, `rules/crops.yaml`, `rules/lime.yaml`, `rules/messages.yaml`, `rules/refusals.yaml`, `rules/measures.yaml` (empty stub), `backend/rule_engine.py`, `tests/test_rules.py` | **L** | API contract freeze (YAML shape) | Claude Code (`rules/`, `tests/`) | **Yes** — independent of S1-1 to S1-6 (different directories) | `todo` |
+| **S1-6** | Dashboard shell: login, language switch, field list, reading screen | `dashboard/index.html`, `dashboard/app.js`, `dashboard/style.css` | **L** | S1-2 (API), S1-3 (fields API) | Antigravity (`dashboard/`) | After S1-3; parallel with S1-4, S1-5 | `done` (UI labels English only; ny/toi advice text in track F) |
+| **S1-7** | Rule YAML schema, validator and loader with S6 data | New: `rules/ph_bands.yaml`, `rules/crops.yaml`, `rules/lime.yaml`, `rules/messages.yaml`, `rules/refusals.yaml`, `rules/measures.yaml` (empty stub), `engine/rules.py`, `tests/test_rules.py` (see 11.3) | **L** | API contract freeze (YAML shape) | Claude Code (`engine/`, `rules/`, `tests/`) | **Yes** — independent of S1-1 to S1-6 (different directories) | `done` |
 
 ### Dependency graph
 
@@ -366,7 +366,7 @@ S1-7 (independent, parallel from day 1)
 
 | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|
-| **Not a git repo** — any mistake is unrecoverable | Critical | Certain (it is not a repo right now) | `git init` and commit immediately before any changes |
+| ~~**Not a git repo**~~ | — | Resolved | Repo is on GitHub (`lush-is-him/soilsense-zm`) |
 | **advisory.py deletion is a one-way door** — the hardcoded advice is the only working output | High | Certain (must delete per spec) | Back up the file to `analysis/advisory_old.py`; the rule engine replaces it |
 | **iSDAsoil rasters not yet obtained** — the spec requires iSDAsoil, the repo has SoilGrids | High | High (task H6 not done) | SoilGrids can be used for development; swap to iSDAsoil before evaluation |
 | **No Arduino hardware tested** — firmware is being written without hardware in the repo | High | Unknown | S1-4 must be verified against real hardware |
@@ -389,6 +389,8 @@ S1-7 (independent, parallel from day 1)
 | **C-4** (pH method for bands and crops) | All pH comparisons — use `ph_method: unconfirmed` + method-sensitivity rule |
 | **C-5** (manure unit) | Crop manure display — store tonnes/ha, derive per lima |
 | **C-6** (maize lowest workable = best range bottom) | Plan A vs Plan C boundary — treat as "below this, not recommended without liming" |
+| **C-7** (lime lead time 2–3 vs 1–2 months) — added v0.2 | REF-05 and Plan A timing — evaluate with both, flag when they differ |
+| **C-8** (target pH 5.5–6.5 vs 5.5–7) — added v0.2 | Plan A target and over-liming warning — use 5.5–6.5 |
 
 ### Spec problems
 
@@ -408,6 +410,111 @@ S1-7 (independent, parallel from day 1)
 8. **For the dashboard, do you want to keep vanilla HTML/CSS/JS or move to a framework (e.g., Vite + vanilla, or a lightweight framework)?** The current approach works but will get harder to maintain as pages multiply.
 9. **The spec assigns some tasks to Claude Code. Are you running Claude Code alongside, or should I handle everything?**
 10. **Do you want me to proceed to Phase 2 (Sprint 1 tasks) after you approve this plan?**
+
+---
+
+## 11. Review against spec v0.2 (25 Oct 2026)
+
+This section was added after the audit. It covers what the audit got wrong, what is now out of date, and how the spec v0.2 changes affect the tasks above. Sections 1 to 10 are left as audited, apart from status updates.
+
+### 11.1 Spec changes in v0.2 that affect code
+
+| Change | Affects | What to do |
+|---|---|---|
+| First reviewer (`AGR-1`, anonymous) will not review scenarios or confirm tables | S1-2 (`rules.reviewer_alias`), S1-7 | Store the alias only, never a name. The validator must reject `status: verified` on a rule whose only support is `AGR-1` expert opinion (no `source_doc` and no second reviewer) |
+| **C-7** lime lead time: E5 says 2 to 3 months, E10 says 1 to 2 | REF-05, Plan A timing text (Sprint 3) | `lead_time_before_planting_months: CONFLICT`. The validator must report `CONFLICT` values alongside `OPEN` ones |
+| **C-8** target pH: E3 says 5.5 to 6.5, G2 says 5.5 to 7 | Plan A target, over-liming warning | Use 5.5 to 6.5 until resolved |
+| REF-05 is evaluated **per crop**, with both 1 and 3 months | REF-05 tests | Scenarios with `as_of_date = 2026-10-25` give "timing uncertain" for maize and sunflower; 15 Dec gives "too late" for maize (rule refined in spec v0.3) |
+| C-1: sorghum was never in questionnaire v1 | `rules/crops.yaml` comment only | No behaviour change |
+| About 30 new lab samples replace the earlier 12 | Track H (evaluation) only | No Sprint 1 impact |
+
+C-7 and C-8 are also added to the conflict table in section 10.
+
+### 11.2 Corrections to the audit
+
+1. **The second "spec problem" is already covered.** Spec section 3 `readings` holds both `ph_water (mean)` and `replicates (JSON)`. No spec change is needed.
+2. **S1-5 does not depend on S1-2 or S1-4.** `QualityChecker` is a pure function (spec 2.1). It takes calibration, replicates, temperature and moisture and returns accepted or rejected with reasons. Its tests can be written on day 1. Only persisting the result needs S1-2.
+3. **S1-4a (firmware and bridge) can also start on day 1.** It depends only on the `POST /readings` payload in spec section 4, not on the schema. Only S1-4b (backend endpoints) waits for S1-2.
+4. **`soilsense.db` is not in git** (`.gitignore` has `*.db`). Existing farmer records exist only on the developer's laptop, so question 2 applies to that local file.
+5. **Chart.js size:** `chart.umd.min.js` is roughly 200 KB minified, about 70 KB gzipped, not 200 KB gzipped. It is still worth removing for low bandwidth and offline use.
+
+Revised dependency graph:
+
+```
+S1-1 ──→ S1-2 ──→ S1-3 ──→ S1-6
+             └──→ S1-4b (backend endpoints)
+S1-4a (firmware + bridge)   independent from day 1
+S1-5  (QualityChecker + tests) independent from day 1; wire-up after S1-2
+S1-7  (rule YAML + validator)  independent from day 1
+```
+
+### 11.3 Folder split: `engine/` (approved)
+
+S1-5 put `backend/quality.py` and S1-7 put `backend/rule_engine.py` in `backend/`, which spec 8.4 assigns to Antigravity, while the tasks go to Claude Code. **Decision:** the pure logic goes in a new folder, `engine/` (`quality.py`, `trust.py`, `rules.py`, `measures.py`), with no FastAPI or database imports. Claude Code edits it; `backend/` imports and wraps it. Spec 8.4 is updated. The split only stops two AI tools editing the same files; all code belongs to the developer.
+
+Revised file paths: S1-5 becomes `engine/quality.py` + `tests/test_quality.py`; S1-7 becomes `engine/rules.py` + `rules/*.yaml` + `tests/test_rules.py`.
+
+### 11.4 Answers to section 10 questions known so far
+
+| # | Answer |
+|---|---|
+| 1 | Yes, the repo is on GitHub and is the copy of record |
+| 6 | Not sent yet. Clarification questions for `AGR-1` are drafted in `docs/QUESTIONS_FOR_REVIEWER_1.md` (questions 1 to 5 block code). `AGR-1` will not review or confirm; a second reviewer is pending |
+| 2 | No real farmer data. Start fresh with seed data (S1-2 seed script); the old local `soilsense.db` is not migrated |
+| 3 | Yes, all hardware has been bought. **On hold:** the developer will confirm the exact sensor boards before S1-4a starts. pH 4.00 and 7.00 buffers are **not** bought yet (H8); calibration cannot be tested until they are |
+| 4 | Not yet downloaded. `scripts/fetch_isdasoil.py` now does it (about 1 minute, about 50 MB); the developer runs it with `--boundary` pointing at the local `gadm41_ZMB.gpkg` |
+| 9 | Yes, Claude Code runs alongside Antigravity |
+| 5, 7, 8, 10 | Open: developer to answer |
+
+---
+
+## 12. Progress, 26 Oct 2026 (Sprints 1 and 2, done by Claude Code)
+
+Antigravity was offline, so Claude Code did both sprints on branch `engine/sprint2`. The folder split in spec 8.4 still applies when both agents work.
+
+| Area | Status | Where |
+|---|---|---|
+| S1-1 ML removed | done | analysis scripts and figures moved to `analysis/`; `tests/test_no_ml.py` guards it |
+| S1-2 schema, migrations, seed, auth | done | `backend/migrations/001_initial.sql`, `backend/db.py`, `backend/seed.py`, `backend/auth.py` (scrypt + signed tokens, stdlib only). New DB at `data/soilsense.db`; the old `backend/soilsense.db` is untouched |
+| S1-3 field registration with GPS | done | `POST /fields` rejects fixes worse than 30 m; manual pins stored as `manual`; dashboard uses the phone's GPS |
+| S1-4a firmware and serial bridge | **on hold** | needs the exact sensor boards; buffers not bought yet |
+| S1-4b calibrations and readings API | done | `backend/routes/devices.py`, `readings.py`; electrode mV in, slope 95-105% |
+| S1-5 quality checker | done | `engine/quality.py`, `tests/test_quality.py` |
+| S1-6 dashboard shell | done | `dashboard/`: login, fields, GPS, probe calibration, readings, field checks, lab results, advice, sampling help; no external libraries |
+| S1-7 rule YAML and validator | done | `rules/*.yaml`, `python -m engine.validate` |
+| Sprint 2: map service | done | `engine/map_service.py`, `GET /fields/{id}/map-estimate` (needs `scripts/fetch_isdasoil.py` run once) |
+| Sprint 2: trust checker | done | `engine/trust.py` |
+| Sprint 2: field checks | done | `POST /fields/{id}/checks`, dashboard form |
+| Sprint 2: rule engine Plans A and C | done | `engine/advice.py`; Plan B returns the blocked message |
+| Sprint 2: scenario harness | done | `scripts/run_scenarios.py` writes `docs/scenarios/scenarios.csv` (96 synthetic scenarios, blank reviewer columns) |
+| Not built | — | `PATCH /rules` (rules are edited in YAML), household measures (H3), Nyanja and Tonga text (track F), real SMS (needs an Africa's Talking key) |
+
+Tests: `python -m pytest`: 105 passing, 7 expected failures, each naming an OPEN or CONFLICT item.
+
+### Findings while building
+
+1. **The pH method question blocks most advice.** With `ph_method: unconfirmed`, 87 of the 96 scenarios give different advice under water and CaCl2 readings, so the engine returns "lab test recommended" instead of quantities. Question 1 to AGR-1 (water or CaCl2?) is the most valuable answer to get.
+2. **The iSDAsoil map says Kafue is less acidic than the agronomist expects.** District mean pH 6.15 (water), none below 5.5, about a quarter below 6.0. AGR-1 expects 4.5 to 5.5 (C3). That fits his numbers being CaCl2. The 30 lab samples (water and CaCl2) will show which.
+3. **The map's pH SD is small** (median 0.1, max 1.0, stored in steps of 0.1), so the agreement threshold T = 0.5 + SD is set almost entirely by `E_PROBE`. RQ1 matters for the trust design.
+4. **The borderline flag is meaningless as specified** (C-9).
+5. **Texture grouping is an engineering proposal** (`rules/texture.yaml`): USDA classes are mapped to sandy, loamy and clay for the lime table. It changes lime rates by up to 2 times and needs a reviewer.
+6. **REF-05 refined** (spec v0.3): on 25 Oct, maize and sunflower give "timing uncertain", not "too late".
+
+---
+
+## 13. Progress, 26 Oct 2026 (Sprints 3 to 5: everything not blocked by others)
+
+| Area | Status | Where |
+|---|---|---|
+| S1-4a firmware and serial bridge | done, **not yet run on hardware** | `firmware/`, `bridge/` (board gain presets unconfirmed; sketch not compiled on the build box) |
+| Plan B | logic done, **blocked by data** (C-2, I2) | `engine/advice.py`, `rules/plans.yaml` (structure `[PROPOSED]`) |
+| Household measures, costs | logic done, **waiting for weighing and prices** (H3, H4) | `engine/measures.py`, `rules/measures.yaml`, `rules/prices.yaml` |
+| Translations | Nyanja draft complete, Tonga partial, **waiting for native reviewers** (H5) | `i18n/`, `scripts/i18n_sheet.py` |
+| Evaluation | scripts done, **waiting for lab results, reviewer, sessions** | `docs/evaluation/`, `scripts/evaluate.py`, `score_review.py`, `sus.py` |
+
+The full list of outside inputs, and where each one goes, is in `docs/WAITING_ON.md`.
+
+Tests: 136 passing, 8 expected failures (each names an OPEN item).
 
 ---
 

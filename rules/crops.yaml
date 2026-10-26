@@ -1,0 +1,121 @@
+# Spec 6.2. Manure is tonnes per hectare (C-5); per-lima values are derived.
+rules:
+  - id: CROP-MAIZE
+    domain: crop
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: "D, G1, D2"
+    ph_method: unconfirmed
+    data:
+      name: maize
+      in_scope: true
+      ph: {lowest_workable: 5.5, best: [5.5, 6.8], highest_workable: 7.5}
+      acid_tolerance: low-medium
+      planting_window_rainfed: [Nov, Dec]
+      spacing_cm: [75, 25]
+      basal: {product: "Compound D", rate_kg_ha: 200}
+      top_dress: {product: "Urea (46% N) or CAN, two splits: 3-4 and 6-8 weeks after emergence", rate_kg_ha: OPEN}
+      manure_t_ha: [5, 15]
+      acid_soil_problem: "poor root growth and nutrient availability"
+      cautions: [MSG-06]
+  - id: CROP-SOYBEAN
+    domain: crop
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: "D, G3"
+    ph_method: unconfirmed
+    data:
+      name: soybean
+      in_scope: true
+      ph: {lowest_workable: 5.5, best: [5.8, 7.0], highest_workable: 7.5}
+      acid_tolerance: low
+      planting_window_rainfed: [Nov, Dec]
+      spacing_cm: [45, 5]
+      basal: {product: "phosphorus-based fertiliser, according to soil test", rate_kg_ha: OPEN}
+      top_dress: {product: "nil, or light ammonium nitrate", rate_kg_ha: OPEN}
+      manure_t_ha: [5, 10]
+      acid_soil_problem: "poor nodulation and phosphorus availability"
+      cautions: [MSG-05]
+  - id: CROP-SUNFLOWER
+    domain: crop
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: D
+    ph_method: unconfirmed
+    data:
+      name: sunflower
+      in_scope: true
+      ph: {lowest_workable: 5.0, best: [6.0, 7.5], highest_workable: 8.5}
+      acid_tolerance: medium
+      planting_window_rainfed: [Dec, Jan]
+      spacing_cm: [75, 30]
+      basal: {product: "Compound D", rate_kg_ha: OPEN}
+      top_dress: {product: "Urea or CAN, plus boron and potassium", rate_kg_ha: OPEN}
+      manure_t_ha: [10, 20]
+      acid_soil_problem: "poor root development and nutrient availability"
+      cautions: []
+  - id: CROP-MILLET
+    domain: crop
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: D
+    ph_method: unconfirmed
+    data:
+      name: millet
+      in_scope: true
+      ph: {lowest_workable: 4.8, best: [5.5, 7.0], highest_workable: 7.5}
+      acid_tolerance: medium-high
+      planting_window_rainfed: [Nov, Dec]
+      spacing_cm: [45, 10]
+      basal: {product: "fertiliser (product not specified)", rate_kg_ha: OPEN}
+      top_dress: {product: "Urea", rate_kg_ha: OPEN}
+      manure_t_ha: [3, 5]
+      acid_soil_problem: "tolerance varies by species and variety"
+      cautions: []
+  - id: CROP-GROUNDNUT
+    domain: crop
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: D
+    ph_method: unconfirmed
+    notes: "C-1: scope pending supervisor decision. Best range 5.8-6.0 may be a typo (question 9)."
+    data:
+      name: groundnut
+      in_scope: pending_supervisor_decision
+      ph: {lowest_workable: 5.0, best: [5.8, 6.0], highest_workable: 7.5}
+      acid_tolerance: medium
+      planting_window_rainfed: [Nov, Dec]
+      spacing_cm: [45, 10]
+      basal: {product: "phosphorus-based fertiliser", rate_kg_ha: OPEN}
+      top_dress: {product: "Gypsum", rate_kg_ha: OPEN}
+      manure_t_ha: [5, 8]
+      acid_soil_problem: "calcium availability"
+      cautions: []
+  - id: CROP-SORGHUM
+    domain: crop
+    status: draft
+    source_type: proposed
+    source_doc: null
+    reviewer_alias: null
+    ref: "Ch 1 scope, C-1"
+    ph_method: unconfirmed
+    notes: "In scope per Chapter 1, but questionnaire v1 never asked about it. No data."
+    data:
+      name: sorghum
+      in_scope: true
+      ph: OPEN
+      planting_window_rainfed: OPEN
+      basal: {product: OPEN, rate_kg_ha: OPEN}
+      top_dress: {product: OPEN, rate_kg_ha: OPEN}
+      manure_t_ha: OPEN
+      cautions: []

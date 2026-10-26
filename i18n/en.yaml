@@ -1,0 +1,68 @@
+# English source text. Each key has `text` and `reviewed` (spec 3, FR12).
+# reviewed: false until the developer (and, for agronomy wording, a reviewer) checks it.
+# Nyanja (ny.yaml) and Tonga (toi.yaml) come in track F.
+msg.MSG-01: {text: "Re-test the soil after 2 to 3 years. One lime application lasts 3 to 5 years.", reviewed: false}
+msg.MSG-02: {text: "Lime is not a substitute for fertiliser.", reviewed: false}
+msg.MSG-03: {text: "Never apply more lime than a soil test supports. Too much lime reduces yield.", reviewed: false}
+msg.MSG-04: {text: "Apply lime early and work it into the soil. It needs moisture and time to react.", reviewed: false}
+msg.MSG-05: {text: "Soybean: inoculate the seed with the right rhizobia, especially where soybean has not been grown recently.", reviewed: false}
+msg.MSG-06: {text: "Maize: use a suitable seed variety.", reviewed: false}
+msg.MSG-07: {text: "Common fertiliser mistakes: applying too early, too late, or ignoring the weather.", reviewed: false}
+msg.MSG-08: {text: "This is decision support only. Consult an extension officer or a soil lab before major spending.", reviewed: false}
+ref.REF-01: {text: "The reading did not pass the quality check, so no advice is given. Retake the reading or enter a lab pH.", reviewed: false}
+ref.REF-02: {text: "The soil is too acidic for the system to advise safely. Take a sample to a soil lab or an extension officer.", reviewed: false}
+ref.REF-03: {text: "Lime amount needs the soil texture. Do the texture-by-feel check, then ask again.", reviewed: false}
+ref.REF-04: {text: "The pH is above what {crop} tolerates. Do not apply lime. Get a lab test.", reviewed: false}
+ref.REF-05: {text: "It is too late to lime for this season's {crop}. Follow Plan C this season and lime early for next season.", reviewed: false}
+ref.REF-06: {text: "The advice depends on how the pH was measured (water or calcium chloride). Get a lab test before buying lime.", reviewed: false}
+ref.REF-07: {text: "This much lime must be split into more than one application.", reviewed: false}
+plan.b_blocked: {text: "Partial plan not yet reviewed. Start with Plan C crops and get a lab test.", reviewed: false}
+plan.c_none: {text: "No crop in the system suits this soil as it is. Get a lab test.", reviewed: false}
+lime.optional: {text: "Lime is optional at this pH. A small amount may help; get a lab test first.", reviewed: false}
+lime.not_needed: {text: "Lime is not needed at this pH.", reviewed: false}
+lime.timing_uncertain: {text: "Liming now may be too late unless you plant late in the window. Ask an extension officer.", reviewed: false}
+lime.any_time: {text: "On irrigated land, lime can be applied at any time before planting.", reviewed: false}
+rate.open: {text: "Rate not yet available. Ask an extension officer or follow a soil test.", reviewed: false}
+crop.no_data: {text: "The system has no data for {crop} yet. Get a lab test.", reviewed: false}
+crop.pending_scope: {text: "{crop} is not yet confirmed for this system.", reviewed: false}
+borderline: {text: "The pH is close to a band boundary. A lab test is recommended.", reviewed: false}
+measure.unavailable: {text: "Household measure not yet available; amounts are in kg.", reviewed: false}
+trust.moderate: {text: "Based on map estimates that agree with your reading.", reviewed: false}
+trust.low: {text: "Low confidence: based on your reading and field checks only. Get a lab test before major spending.", reviewed: false}
+plan.b_seed: {text: "Buy certified seed of a suitable variety.", reviewed: false}
+lime.timing_ok: {text: "Apply lime well before planting so it has time to react.", reviewed: false}
+lime.too_late: {text: "Too late to lime for this season. Lime early for next season.", reviewed: false}
+ui.confidence: {text: "Confidence", reviewed: false}
+ui.trust.high: {text: "high", reviewed: false}
+ui.trust.moderate: {text: "moderate", reviewed: false}
+ui.trust.low: {text: "low", reviewed: false}
+ui.trust.none: {text: "none", reviewed: false}
+ui.plan_a: {text: "Plan A: fix the soil and grow {crop}", reviewed: false}
+ui.plan_b: {text: "Plan B: cheaper route", reviewed: false}
+ui.plan_c: {text: "Plan C: crops that suit the soil now", reviewed: false}
+ui.lime: {text: "Lime", reviewed: false}
+ui.basal: {text: "Basal fertiliser", reviewed: false}
+ui.top_dress: {text: "Top dressing", reviewed: false}
+ui.manure: {text: "Manure", reviewed: false}
+ui.seed: {text: "Seed", reviewed: false}
+ui.fertiliser: {text: "Fertiliser", reviewed: false}
+ui.per_lima: {text: "per lima", reviewed: false}
+ui.per_station: {text: "per planting station", reviewed: false}
+ui.optional: {text: "Optional", reviewed: false}
+ui.or: {text: "or", reviewed: false}
+ui.about: {text: "about", reviewed: false}
+ui.needs_texture: {text: "The amount needs the soil texture. Do the texture-by-feel check.", reviewed: false}
+ui.left_out: {text: "Leave for later, when money allows", reviewed: false}
+ui.cost: {text: "Cost", reviewed: false}
+ui.remember: {text: "Remember", reviewed: false}
+ui.why: {text: "Why this advice", reviewed: false}
+ui.send_sms: {text: "Send SMS summary", reviewed: false}
+ui.depends_method: {text: "The advice depends on how the pH was measured", reviewed: false}
+ui.unconfirmed_rules: {text: "These rules have not been confirmed by a reviewer yet.", reviewed: false}
+ui.lab_test: {text: "Get a lab test before buying lime.", reviewed: false}
+crop.maize: {text: "maize", reviewed: false}
+crop.soybean: {text: "soybean", reviewed: false}
+crop.sunflower: {text: "sunflower", reviewed: false}
+crop.millet: {text: "millet", reviewed: false}
+crop.sorghum: {text: "sorghum", reviewed: false}
+crop.groundnut: {text: "groundnut", reviewed: false}

@@ -1,0 +1,16 @@
+rules:
+  - id: BAND-01
+    domain: ph_band
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-1
+    ref: C1
+    ph_method: unconfirmed          # C-4
+    notes: "Agronomist agreed with the draft bands. Edge convention (lower bound inclusive) is [PROPOSED]."
+    data:
+      bands:
+        - {id: severe,   lt: 4.5}
+        - {id: moderate, gte: 4.5, lt: 5.5}
+        - {id: slight,   gte: 5.5, lte: 6.5}
+        - {id: suitable, gt: 6.5}
