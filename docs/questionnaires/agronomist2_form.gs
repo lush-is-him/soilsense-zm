@@ -57,7 +57,7 @@ function createForm() {
   }
 
   // ----- Part 1: about you -----
-  section('Part 1 of 6: About you', 'For the dissertation. You may stay anonymous.');
+  section('Part 1 of 5: About you', 'For the dissertation. You may stay anonymous.');
   text('Name and title as you would like it written (leave blank to stay anonymous)');
   choice('May I name you and your credentials in the dissertation as a reviewer?',
          ['Yes', 'Yes, but anonymised (role only)', 'No'], null, true);
@@ -68,8 +68,8 @@ function createForm() {
   choice('Are you related to the student (Lushomo Sibalwa)?', ['No', 'Yes'], 'Asked so the dissertation can report independence honestly.', true);
 
   // ----- Part 2: key decisions (independent) -----
-  section('Part 2 of 6: Key decisions',
-          'Please answer from your own knowledge before seeing any draft values (those come in Part 4).');
+  section('Part 2 of 5: Key decisions',
+          'Please answer from your own knowledge before seeing any draft values (those come in Part 3).');
   choice('When you give pH thresholds for liming and crops, which method are they in?',
          ['pH in water', 'pH in calcium chloride (CaCl2)', 'Unsure'],
          'Labs usually report CaCl2; field probes and soil maps read pH in water, about 0.5 to 0.8 higher.', true);
@@ -95,18 +95,8 @@ function createForm() {
   text('How large is one lima, in hectares?', 'e.g. 0.25', false, true);
   text('Soil sampling depth for a lab pH test (cm)', 'e.g. 0-20', true);
 
-  // ----- Part 3: sorghum (no data yet) -----
-  section('Part 3 of 6: Sorghum', 'The system has no sorghum data yet.');
-  text('Sorghum: lowest workable pH', null, false, true);
-  text('Sorghum: best pH range', 'e.g. 5.5-7.0');
-  text('Sorghum: highest workable pH', null, false, true);
-  text('Sorghum: rainfed planting window (months) around Kafue', 'e.g. Nov-Dec');
-  text('Sorghum: basal fertiliser product and rate (kg/ha)');
-  text('Sorghum: top dressing product, rate (kg/ha) and timing');
-  text('Sorghum: manure rate (tonnes per hectare)');
-
-  // ----- Part 4: confirm crop values -----
-  section('Part 4 of 6: Check the draft crop values',
+  // ----- Part 3: confirm crop values -----
+  section('Part 3 of 5: Check the draft crop values',
           'Another agronomist supplied these draft values. Please say whether you agree, and correct them where needed. ' +
           'pH thresholds use the method you chose in Part 2.');
   var crops = [
@@ -128,8 +118,8 @@ function createForm() {
   });
   choice('Should groundnut be one of the crops in the system?', yesNoUnsure);
 
-  // ----- Part 5: lime table and soil texture -----
-  section('Part 5 of 6: Lime rates and soil texture');
+  // ----- Part 4: lime table and soil texture -----
+  section('Part 4 of 5: Lime rates and soil texture');
   form.addSectionHeaderItem().setTitle('Draft lime rates (tonnes per hectare)').setHelpText(
     'pH below 4.5:   sandy 1.0-1.5 | loamy 2.0-3.0 | clay 3.5-5.0\n' +
     'pH 4.5 to 5.5:  sandy 0.5-1.0 | loamy 1.5-2.0 | clay 2.5-3.5\n' +
@@ -144,8 +134,8 @@ function createForm() {
   choice('Do you agree with this grouping?', agree, null, true);
   para('Corrections to the grouping');
 
-  // ----- Part 6: sources and review -----
-  section('Part 6 of 6: Sources and scenario review');
+  // ----- Part 5: sources and review -----
+  section('Part 5 of 5: Sources and scenario review');
   para('Which documents, guidelines or textbooks do you rely on? (title, year, publisher)');
   choice('Would you review about 60 to 100 test scenarios (soil pH, crop, texture, budget) and say whether the system\'s advice is right?',
          ['Yes', 'Maybe, fewer scenarios', 'No'], null, true);
