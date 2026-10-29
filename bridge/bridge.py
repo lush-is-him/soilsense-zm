@@ -251,6 +251,11 @@ def main(argv=None):
     except RuntimeError as error:
         print(f"ERROR: {error}")
         return 1
+    except OSError as error:          # pyserial's SerialException, e.g. "Write timeout"
+        print(f"ERROR: the Arduino stopped responding on {args.port} ({error}).")
+        print("  Unplug the USB cable, wait 5 seconds, plug it back in and try again.")
+        print("  If this keeps happening, see 'Port problems' in firmware/README.md.")
+        return 1
 
 
 if __name__ == "__main__":
