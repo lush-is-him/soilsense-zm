@@ -199,7 +199,15 @@ def main(argv=None):
     if not board["confirmed"]:
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
-    probe = Probe(open_serial(args.port))
+    try:
+        probe = Probe(open_serial(args.port))
+    except Exception as error:     # pyserial raises SerialException or OSError
+        print(f"ERROR: cannot open {args.port}: {error}")
+        print("  - Close the Arduino IDE (and its Serial Monitor); only one program can use the port.")
+        print("  - Unplug the USB cable, wait 5 seconds, plug it back in, and try again.")
+        print("  - 'A device attached to the system is not functioning' usually means the CH340")
+        print("    USB chip stopped responding: see 'Port problems' in firmware/README.md.")
+        return 1
     try:
         if args.action == "test":
             print("Firmware:", probe.ping())
