@@ -15,6 +15,7 @@ import getpass
 import json
 import statistics
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -34,11 +35,17 @@ class Probe:
     def __init__(self, port):
         self.port = port
 
-    def command(self, letter):
-        self.port.write(f"{letter}\n".encode())
-        line = self.port.readline().decode(errors="replace").strip()
-        if not line:
-            raise RuntimeError("no reply from the probe: check the USB cable and --port")
+    def command(self, letter, attempts=3):
+        line = ""
+        for attempt in range(attempts):
+            self.port.write(f"{letter}\n".encode())
+            line = self.port.readline().decode(errors="replace").strip()
+            if line.startswith("{"):
+                break
+            time.sleep(1)                     # board still starting up, or a stray partial line
+        if not line.startswith("{"):
+            raise RuntimeError("no reply from the probe: unplug the USB cable, wait 5 seconds, "
+                               "plug it back in and try again (see 'Port problems' in firmware/README.md)")
         reply = json.loads(line)
         if not reply.get("ok"):
             raise RuntimeError(f"probe error: {reply.get('error')}")
@@ -55,8 +62,7 @@ def open_serial(name):
     import serial      # pyserial
 
     port = serial.Serial(name, 9600, timeout=5)
-    import time
-    time.sleep(2)      # the Uno resets when the port opens
+    time.sleep(2.5)    # the Uno resets when the port opens
     port.reset_input_buffer()
     return port
 
