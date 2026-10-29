@@ -100,3 +100,13 @@ Hold the sensor in air, then in water. Send the two numbers to the developer: th
 - **Distilled water:** from a pharmacy. Use it to mix buffers and rinse the probe between buffers and samples.
 - **Use:** pour a little buffer into a clean cup for each calibration and throw it away afterwards; never pour used buffer back. Note the buffer temperature (the bridge does this). Made-up powder buffer lasts a few weeks in a closed bottle; check the expiry date.
 - **Probe care:** keep the probe tip wet in its storage cap (storage solution or pH 4 buffer), never in distilled water for long, and never let it dry out.
+
+## Port problems (Windows, CH340 clone boards)
+
+Symptom: uploads or `python -m bridge.bridge test` work after a restart, then fail with "cannot set com-state", "unable to open port" or "A device attached to the system is not functioning".
+
+1. **Only one program at a time.** Close the Arduino IDE completely (check Task Manager for "Arduino IDE") before running the bridge. The firmware stays on the Arduino; the IDE is only needed to upload it again.
+2. **Unplug and replug** the USB cable instead of restarting the laptop.
+3. **Find out whether the sensors cause it.** Pull the two 5V wires (pH board V+, temperature middle) out of the Arduino, replug the USB, and run `test` several times over a few minutes. If it now stays working, a sensor wire is shorting or loose: recheck the wiring against the table.
+4. **Driver.** Device Manager → Ports → USB-SERIAL CH340 → Properties → Driver: if **Roll Back Driver** is available, use it. Otherwise Update driver → Browse my computer → Let me pick → choose an older CH340 version if more than one is listed. Recent CH340 drivers are known to misbehave with the copied CH340 chips on clone boards.
+5. **USB power saving.** Device Manager → Universal Serial Bus controllers → each USB Root Hub → Properties → Power Management → untick "Allow the computer to turn off this device to save power".

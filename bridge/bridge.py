@@ -2,6 +2,7 @@
 
     python -m bridge.bridge ports
     python -m bridge.bridge test      --port COM3
+    python -m bridge.bridge watch     --port COM3     (live pH volts; Ctrl+C to stop)
     python -m bridge.bridge calibrate --port COM3 --board ph4502c --device probe-1
     python -m bridge.bridge read      --port COM3 --board ph4502c --device probe-1 --field 1
     python -m bridge.bridge moisture  --port COM3
@@ -15,6 +16,7 @@ import getpass
 import json
 import statistics
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -34,11 +36,17 @@ class Probe:
     def __init__(self, port):
         self.port = port
 
-    def command(self, letter):
-        self.port.write(f"{letter}\n".encode())
-        line = self.port.readline().decode(errors="replace").strip()
-        if not line:
-            raise RuntimeError("no reply from the probe: check the USB cable and --port")
+    def command(self, letter, attempts=3):
+        line = ""
+        for attempt in range(attempts):
+            self.port.write(f"{letter}\n".encode())
+            line = self.port.readline().decode(errors="replace").strip()
+            if line.startswith("{"):
+                break
+            time.sleep(1)                     # board still starting up, or a stray partial line
+        if not line.startswith("{"):
+            raise RuntimeError("no reply from the probe: unplug the USB cable, wait 5 seconds, "
+                               "plug it back in and try again (see 'Port problems' in firmware/README.md)")
         reply = json.loads(line)
         if not reply.get("ok"):
             raise RuntimeError(f"probe error: {reply.get('error')}")
@@ -55,8 +63,7 @@ def open_serial(name):
     import serial      # pyserial
 
     port = serial.Serial(name, 9600, timeout=5)
-    import time
-    time.sleep(2)      # the Uno resets when the port opens
+    time.sleep(2.5)    # the Uno resets when the port opens
     port.reset_input_buffer()
     return port
 
@@ -161,6 +168,19 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
     return result
 
 
+def watch(probe, say=print, count=None):
+    """Print the pH board voltage about once a second, e.g. while setting the zero screw."""
+    say("Showing the pH board voltage. Press Ctrl+C to stop.")
+    shown = 0
+    try:
+        while count is None or shown < count:
+            reply = probe.read()
+            say(f"  pH board: {reply['ph_v']:.3f} V    temperature: {reply['temp_c']:.1f} C")
+            shown += 1
+    except KeyboardInterrupt:
+        say("Stopped.")
+
+
 def moisture_points(probe, ask=input, say=print):
     """Two-point moisture calibration (spec 2.3, thresholds OPEN): print raw values."""
     ask("Hold the moisture sensor in open air (dry), press Enter.")
@@ -176,7 +196,7 @@ def moisture_points(probe, ask=input, say=print):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("action", choices=["ports", "test", "calibrate", "read", "moisture"])
+    parser.add_argument("action", choices=["ports", "test", "watch", "calibrate", "read", "moisture"])
     parser.add_argument("--port", help="serial port, e.g. COM3 (Windows) or /dev/ttyACM0")
     parser.add_argument("--board", choices=sorted(BOARDS), default="ph4502c")
     parser.add_argument("--gain", type=float, help="override the board gain")
@@ -199,11 +219,22 @@ def main(argv=None):
     if not board["confirmed"]:
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
-    probe = Probe(open_serial(args.port))
+    try:
+        probe = Probe(open_serial(args.port))
+    except Exception as error:     # pyserial raises SerialException or OSError
+        print(f"ERROR: cannot open {args.port}: {error}")
+        print("  - Close the Arduino IDE (and its Serial Monitor); only one program can use the port.")
+        print("  - Unplug the USB cable, wait 5 seconds, plug it back in, and try again.")
+        print("  - 'A device attached to the system is not functioning' usually means the CH340")
+        print("    USB chip stopped responding: see 'Port problems' in firmware/README.md.")
+        return 1
     try:
         if args.action == "test":
             print("Firmware:", probe.ping())
             print("Reading:", probe.read())
+            return 0
+        if args.action == "watch":
+            watch(probe)
             return 0
         if args.action == "moisture":
             moisture_points(probe)

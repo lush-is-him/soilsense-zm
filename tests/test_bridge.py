@@ -116,3 +116,10 @@ def test_drifting_buffer_reading_is_repeated(api):
 def test_read_needs_calibration_first(api):
     with pytest.raises(RuntimeError, match="calibrate"):
         read_field(Probe(FakeArduino([5.5] * 3)), api, BOARD, "probe-1", 1, ask=quiet, say=quiet, state={})
+
+
+def test_watch_prints_voltage():
+    from bridge.bridge import watch
+    lines = []
+    watch(Probe(FakeArduino([7.0, 7.0])), say=lines.append, count=2)
+    assert len(lines) == 3 and "2.500 V" in lines[1]
