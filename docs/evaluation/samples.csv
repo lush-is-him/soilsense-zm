@@ -1,21 +1,21 @@
 sample_id,farm_alias,date,lat,lon,gps_accuracy_m,depth_cm,previous_crop,recent_manure_or_fertiliser,probe_ph_1,probe_ph_2,probe_ph_3,probe_temp_c,lab_ph_water,lab_ph_cacl2,lab_oc_pct,lab_p_mg_kg,lab_p_method,lab_k_cmol_kg,lab_texture,lab_name,notes
-S01,,,,,,,,,,,,,,,,,,,,,
-S02,,,,,,,,,,,,,,,,,,,,,
-S03,,,,,,,,,,,,,,,,,,,,,
-S04,,,,,,,,,,,,,,,,,,,,,
-S05,,,,,,,,,,,,,,,,,,,,,
-S06,,,,,,,,,,,,,,,,,,,,,
-S07,,,,,,,,,,,,,,,,,,,,,
-S08,,,,,,,,,,,,,,,,,,,,,
-S09,,,,,,,,,,,,,,,,,,,,,
-S10,,,,,,,,,,,,,,,,,,,,,
-S11,,,,,,,,,,,,,,,,,,,,,
-S12,,,,,,,,,,,,,,,,,,,,,
-S13,,,,,,,,,,,,,,,,,,,,,
-S14,,,,,,,,,,,,,,,,,,,,,
-S15,,,,,,,,,,,,,,,,,,,,,
-S16,,,,,,,,,,,,,,,,,,,,,
-S17,,,,,,,,,,,,,,,,,,,,,
-S18,,,,,,,,,,,,,,,,,,,,,
-S19,,,,,,,,,,,,,,,,,,,,,
-S20,,,,,,,,,,,,,,,,,,,,,
+S01,,2026-10-28 12:31,-15.679223,28.217512,3,,,,,,,,,,,,,,,,SW Maps point 'point 1' (iSDA_Soil_Sampling project)
+S02,,2026-10-28 12:39,-15.679295,28.217410,2.5,,,,,,,,,,,,,,,,SW Maps point 'Point 2' (iSDA_Soil_Sampling project)
+S03,,2026-10-28 12:42,-15.679632,28.217347,2.5,,,,,,,,,,,,,,,,SW Maps point 'point 3' (iSDA_Soil_Sampling project)
+S04,,2026-10-28 12:46,-15.679593,28.217562,2.5,,,,,,,,,,,,,,,,SW Maps point 'Point 3' (iSDA_Soil_Sampling project)
+S05,,2026-10-28 12:50,-15.679387,28.217705,3,,,,,,,,,,,,,,,,SW Maps point 'point 5' (iSDA_Soil_Sampling project)
+S06,,2026-10-28 12:54,-15.678997,28.217328,2.5,,,,,,,,,,,,,,,,SW Maps point 'Point 6' (iSDA_Soil_Sampling project)
+S07,,2026-10-28 12:58,-15.679295,28.217055,2.5,,,,,,,,,,,,,,,,SW Maps point 'Point 7' (iSDA_Soil_Sampling project)
+S08,,2026-10-28 13:00,-15.679553,28.216665,2.5,,,,,,,,,,,,,,,,SW Maps point 'point 8' (iSDA_Soil_Sampling project)
+S09,,2026-10-28 13:05,-15.679740,28.216647,2.5,,,,,,,,,,,,,,,,SW Maps point 'point 9' (iSDA_Soil_Sampling project)
+S10,,2026-10-28 13:08,-15.680043,28.216418,2.5,,,,,,,,,,,,,,,,SW Maps point 'Point 10' (iSDA_Soil_Sampling project)
+S11,,2026-10-28 13:11,-15.679950,28.215933,2.5,,,,,,,,,,,,,,,,SW Maps point 'Point 11' (iSDA_Soil_Sampling project)
+S12,,2026-10-28 13:17,-15.679442,28.215853,3,,,,,,,,,,,,,,,,SW Maps point 'Point 12' (iSDA_Soil_Sampling project)
+S13,,2026-10-28 13:21,-15.679037,28.215593,2.5,,,,,,,,,,,,,,,,SW Maps point 'Point 13' (iSDA_Soil_Sampling project)
+S14,,2026-10-28 13:24,-15.678590,28.215618,2.5,,,,,,,,,,,,,,,,SW Maps point 'point 14' (iSDA_Soil_Sampling project)
+S15,,2026-10-28 13:28,-15.678542,28.215130,3,,,,,,,,,,,,,,,,SW Maps point 'Point 15' (iSDA_Soil_Sampling project)
+S16,,2026-10-28 13:31,-15.678877,28.215032,2,,,,,,,,,,,,,,,,SW Maps point 'point 6' (iSDA_Soil_Sampling project)
+S17,,2026-10-28 13:37,-15.679258,28.215022,2.5,,,,,,,,,,,,,,,,SW Maps point 'P 17' (iSDA_Soil_Sampling project)
+S18,,2026-10-28 13:40,-15.679608,28.215032,2.5,,,,,,,,,,,,,,,,SW Maps point 'P18' (iSDA_Soil_Sampling project)
+S19,,2026-10-28 13:45,-15.679877,28.214767,2.5,,,,,,,,,,,,,,,,SW Maps point 'P 19' (iSDA_Soil_Sampling project)
+S20,,2026-10-28 13:47,-15.679892,28.214295,3,,,,,,,,,,,,,,,,SW Maps point 'P 20' (iSDA_Soil_Sampling project)
