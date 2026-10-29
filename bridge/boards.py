@@ -12,7 +12,9 @@ shifts the offset, which the pH 7.00 calibration absorbs.
 """
 
 BOARDS = {
-    # PH-4502C (blue board, BNC socket, two potentiometers). Typically
+    # PH-4502C (the board in use, confirmed from photo 29 Oct 2026; the gain is
+    # still a typical value until the first calibration). BNC socket, two
+    # potentiometers, pins To Do Po G G V+. Typically
     # about 0.18 V per pH around 2.5 V at pH 7, i.e. gain about 3.
     "ph4502c": {"gain": 3.0, "mid_v": 2.5, "confirmed": False},
     # DFRobot Gravity SEN0161 (v1). Seller formula pH = 3.5 * V + offset,

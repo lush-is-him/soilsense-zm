@@ -121,7 +121,7 @@ Reject unless all hold:
 
 - Calibration is valid: pH 7.00 buffer sets offset, pH 4.00 buffer sets slope; slope must be **95% to 105%** of theoretical.
 - Three replicate pH values lie within **0.1 pH** of each other.
-- Suspension temperature (DS18B20) is inside the calibrated range (range value: config, `[PROPOSED]` default is the calibration temperature plus or minus 5 C, confirm).
+- Suspension temperature (DS18B20) is inside the calibrated range. Hardware note (29 Oct 2026): the DS18B20 in hand is a KY-001 board module, not waterproof; until a waterproof probe is bought it measures room temperature beside the cup, a stated limitation (range value: config, `[PROPOSED]` default is the calibration temperature plus or minus 5 C, confirm).
 - Moisture sensor flags waterlogged spots. Thresholds: `[OPEN]`, needs a two-point calibration of the capacitive sensor (air and water) on the actual hardware. `[AGR K4]` also says do not sample extremely dry, dusty soil or saturated soil.
 - `[PROPOSED]` A pH outside 3.5 to 9.5 is treated as a probe fault (quality failure), not as soil.
 
@@ -549,7 +549,7 @@ Lab results feed RQ1 (probe accuracy) and RQ2 (map accuracy), so sample handling
 3. **Labelling**: one sample ID per composite; keep a sheet of ID, farm alias, date, GPS, accuracy, depth, previous crop, recent manure or fertiliser.
 4. **Prepare and split**: air-dry, sieve, mix, then split into two bags: one for the lab, one **retained** for the probe test (1:2.5 water, 3 replicates within 0.1) so probe and lab measure the same material.
 5. **Ask the lab for**: pH in water at 1:2.5 **and** pH in 0.01 M CaCl2 at 1:2.5, with the method statement; plus organic carbon, P, K and texture if affordable (RQ2). Candidates named by the agronomist: ZARI Mount Makulu; UNZA Soil Science. Contacts and prices not supplied.
-6. About 30 new composite samples **replace** the earlier twelve (decided). Ch 1 to 3 were updated to "about thirty" in v7; set the exact number once the samples are sent. The earlier twelve are not used for RQ1 or RQ2.
+6. **20** new composite samples **replace** the earlier twelve. They were sent to the lab on 29 Oct 2026; results are expected in about two weeks. Ch 1 to 3 say "twenty" from v8. The earlier twelve are not used for RQ1 or RQ2.
 
 ---
 

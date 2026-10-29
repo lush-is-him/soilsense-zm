@@ -426,7 +426,7 @@ This section was added after the audit. It covers what the audit got wrong, what
 | **C-8** target pH: E3 says 5.5 to 6.5, G2 says 5.5 to 7 | Plan A target, over-liming warning | Use 5.5 to 6.5 until resolved |
 | REF-05 is evaluated **per crop**, with both 1 and 3 months | REF-05 tests | Scenarios with `as_of_date = 2026-10-25` give "timing uncertain" for maize and sunflower; 15 Dec gives "too late" for maize (rule refined in spec v0.3) |
 | C-1: sorghum was never in questionnaire v1 | `rules/crops.yaml` comment only | No behaviour change |
-| About 30 new lab samples replace the earlier 12 | Track H (evaluation) only | No Sprint 1 impact |
+| 20 new lab samples (sent 29 Oct 2026, results due in about 2 weeks) replace the earlier 12 | Track H (evaluation) only | No Sprint 1 impact |
 
 C-7 and C-8 are also added to the conflict table in section 10.
 
