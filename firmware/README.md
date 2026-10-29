@@ -2,32 +2,47 @@
 
 The Arduino measures; the laptop bridge talks to it over USB and sends readings to the SoilSense server. Calibration is stored on the server.
 
-> **Not yet checked on real hardware.** The sketch has not been compiled here (the build machine could not download the Arduino board files) and the board gain values in `bridge/boards.py` are typical figures, not confirmed for your boards. Steps 2 and 5 below are where you confirm both.
+> **Not yet checked on real hardware.** Parts confirmed from photos: PH-4502C, capacitive moisture v2.0, KY-001. The sketch has not been compiled here (the build machine could not download the Arduino board files) and the board gain values in `bridge/boards.py` are typical figures, not confirmed for your boards. Steps 2 and 5 below are where you confirm both.
 
-## What you need
+## Your parts (identified from photos, 29 Oct 2026)
 
-- Arduino Uno and USB cable
-- pH sensor board with probe (PH-4502C or DFRobot SEN0161, or similar)
-- Capacitive soil moisture sensor v1.2
-- DS18B20 waterproof temperature probe and one 4.7 kΩ resistor
-- Jumper wires, breadboard
-- **pH 7.00 and pH 4.00 buffer** (sachets or bottles) and **distilled water** (see "Buffers" below)
+| Part | What it is | Notes |
+|---|---|---|
+| Green board with BNC socket, pins `To Do Po G G V+`, two blue potentiometers | **PH-4502C** pH board | Use `--board ph4502c` with the bridge |
+| pH probe (white and blue top, glass bulb in a storage bottle) | Combination pH electrode (BNC) | Keep the bulb wet in its storage bottle |
+| Black board "Capacitive Soil Moisture Sensor v2.0", 3-wire plug | Capacitive moisture sensor | Wires: usually black GND, red VCC, yellow AOUT; check the labels next to the plug |
+| Small black board, 3 pins marked `S`, middle, `-`, with a 3-leg chip and a small LED | **KY-001** temperature module (DS18B20 chip, pull-up resistor already on the board) | **Not waterproof.** See "Temperature" below |
+| Arduino Uno and USB cable | | |
+
+You also need: **pH 4.00 and 7.00 buffer** and **distilled water** (see "Buffers"), jumper wires, and a breadboard if you have one (two GND and two 5V wires need to share the Uno's pins).
 
 ## 1. Wiring
 
-| Part | Part pin | Arduino pin |
-|---|---|---|
-| pH board | V+ / VCC | 5V |
-| pH board | G / GND (both GND pins if there are two) | GND |
-| pH board | Po / analogue out | **A0** |
-| Moisture sensor | VCC | 5V |
-| Moisture sensor | GND | GND |
-| Moisture sensor | AOUT | **A1** |
-| DS18B20 | red (VCC) | 5V |
-| DS18B20 | black (GND) | GND |
-| DS18B20 | yellow (data) | **D2**, plus the 4.7 kΩ resistor between D2 and 5V |
+Unplug the Uno from USB while wiring.
 
-PH-4502C boards also have `Do` and `To` pins: leave them unconnected.
+| From | Pin on the part | To Arduino pin |
+|---|---|---|
+| PH-4502C | **V+** | **5V** |
+| PH-4502C | **G** (either of the two) | **GND** |
+| PH-4502C | **Po** | **A0** |
+| PH-4502C | To, Do, the other G | nothing |
+| Moisture sensor | VCC (red) | **5V** |
+| Moisture sensor | GND (black) | **GND** |
+| Moisture sensor | AOUT (yellow) | **A1** |
+| KY-001 | **middle pin** | **5V** |
+| KY-001 | **-** | **GND** |
+| KY-001 | **S** | **D2** |
+
+The Uno has one 5V pin and three GND pins. For three parts on 5V, put the 5V wire on the breadboard's red (+) rail and plug all three VCC/V+ wires into that rail. Without a breadboard you can twist the three 5V wire ends together with the one from the Uno and tape them, but a breadboard is much more reliable.
+
+The KY-001 already has its 4.7 kΩ resistor on the board: do not add another.
+
+### Temperature
+
+The KY-001 cannot go into the soil-water mix: it is a bare chip on a circuit board. Two options:
+
+1. **Best:** buy a *waterproof DS18B20 probe* (a steel tube on a cable, three wires; very cheap where Arduino parts are sold). It plugs into the same pins (red 5V, black GND, yellow D2) and needs a 4.7 kΩ resistor between yellow and 5V, or keep the KY-001 board and connect the probe's wires to its pins instead of the chip. No code change.
+2. **For now:** keep the KY-001 next to the cup. Indoors, when the buffers and the soil mix have stood in the same room for 30 minutes, they are close to room temperature, so the reading is a fair stand-in. Say so in the dissertation (method limitation).
 
 ## 2. Upload the firmware
 

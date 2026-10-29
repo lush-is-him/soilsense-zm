@@ -4,13 +4,13 @@ Everything here turns results you are waiting for into dissertation numbers with
 
 | You receive | Put it in | Run | You get |
 |---|---|---|---|
-| Lab results for the 30 samples, plus your probe readings of the retained bags | `docs/evaluation/samples.csv` | `python scripts/evaluate.py` | `docs/evaluation/results.md`: RQ1 probe error, measured water-CaCl2 gap, RQ2 map vs lab |
+| Lab results for the 20 samples, plus your probe readings of the retained bags | `docs/evaluation/samples.csv` | `python scripts/evaluate.py` | `docs/evaluation/results.md`: RQ1 probe error, measured water-CaCl2 gap, RQ2 map vs lab |
 | The reviewer's filled-in scenario sheet | `docs/scenarios/scenarios.csv` (columns `agronomist_*`) | `python scripts/score_review.py` | RQ3 agreement % and the list of disagreements |
 | SUS forms from usability sessions | `docs/evaluation/sus.csv` | `python scripts/sus.py` | SUS scores, mean and spread |
 
 ## Filling in `samples.csv`
 
-One row per composite sample (S01 to S30 are pre-filled; add rows if you send more).
+One row per composite sample (S01 to S20 are pre-filled; add rows if you send more).
 
 | Column | What to write |
 |---|---|
