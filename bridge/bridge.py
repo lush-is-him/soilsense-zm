@@ -2,6 +2,7 @@
 
     python -m bridge.bridge ports
     python -m bridge.bridge test      --port COM3
+    python -m bridge.bridge watch     --port COM3     (live pH volts; Ctrl+C to stop)
     python -m bridge.bridge calibrate --port COM3 --board ph4502c --device probe-1
     python -m bridge.bridge read      --port COM3 --board ph4502c --device probe-1 --field 1
     python -m bridge.bridge moisture  --port COM3
@@ -167,6 +168,19 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
     return result
 
 
+def watch(probe, say=print, count=None):
+    """Print the pH board voltage about once a second, e.g. while setting the zero screw."""
+    say("Showing the pH board voltage. Press Ctrl+C to stop.")
+    shown = 0
+    try:
+        while count is None or shown < count:
+            reply = probe.read()
+            say(f"  pH board: {reply['ph_v']:.3f} V    temperature: {reply['temp_c']:.1f} C")
+            shown += 1
+    except KeyboardInterrupt:
+        say("Stopped.")
+
+
 def moisture_points(probe, ask=input, say=print):
     """Two-point moisture calibration (spec 2.3, thresholds OPEN): print raw values."""
     ask("Hold the moisture sensor in open air (dry), press Enter.")
@@ -182,7 +196,7 @@ def moisture_points(probe, ask=input, say=print):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("action", choices=["ports", "test", "calibrate", "read", "moisture"])
+    parser.add_argument("action", choices=["ports", "test", "watch", "calibrate", "read", "moisture"])
     parser.add_argument("--port", help="serial port, e.g. COM3 (Windows) or /dev/ttyACM0")
     parser.add_argument("--board", choices=sorted(BOARDS), default="ph4502c")
     parser.add_argument("--gain", type=float, help="override the board gain")
@@ -218,6 +232,9 @@ def main(argv=None):
         if args.action == "test":
             print("Firmware:", probe.ping())
             print("Reading:", probe.read())
+            return 0
+        if args.action == "watch":
+            watch(probe)
             return 0
         if args.action == "moisture":
             moisture_points(probe)
