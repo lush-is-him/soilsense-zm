@@ -100,4 +100,4 @@ rules:
       (about 0.8 t/ha), citing the Conservation Farming Unit (no document title).
       AGR-1 had given 50-100 g per basin and 200-400 kg/ha, which disagree.
     data:
-      partial_approach: {method: per_station, g_per_station: [15, 15]}   # AGR-2, maize 75 x 25 cm, citing the Conservation Farming Unit (CFU)
+      partial_approach: {method: per_station, g_per_station: [15, 15], spacing_cm: [75, 25]}   # AGR-2, citing the Conservation Farming Unit (CFU)
