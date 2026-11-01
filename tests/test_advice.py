@@ -228,6 +228,12 @@ def test_plan_b_per_station_lime_and_priority(water_rules):
     assert lime["per_lima"]["high"] == pytest.approx(106.67, abs=0.01)
 
 
+def test_plan_b_station_lime_uses_the_experts_spacing(water_rules):
+    for crop in ("maize", "soybean", "sunflower"):
+        lime = next(i for i in advise(water_rules, 5.0, crop=crop)["plan_b"]["items"] if i["item"] == "lime")
+        assert lime["per_lima"]["low"] == pytest.approx(200, abs=0.1), crop
+
+
 def test_plan_b_medium_budget_gets_more_items(water_rules):
     ruleset = with_plan_b(water_rules, {"method": "per_hectare", "kg_ha": [200, 400]})
     plan_b = Advisor(ruleset).advise(AdviceRequest(5.0, "water", "low", "soybean", AUG, budget_band="medium",

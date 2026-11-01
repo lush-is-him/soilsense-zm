@@ -341,7 +341,9 @@ class Advisor:
         if not lime.get("advised"):
             return {"item": "lime", "status": "not_needed", "note": "lime.not_needed"}
         if partial.get("method") == "per_station":
-            row_cm, plant_cm = crop["spacing_cm"]
+            # The grams per station were given for a particular station spacing;
+            # use that spacing, not the crop's (a soybean row has far more plants).
+            row_cm, plant_cm = partial.get("spacing_cm") or crop["spacing_cm"]
             stations_ha = 10000 / ((row_cm / 100) * (plant_cm / 100))
             g_low, g_high = partial["g_per_station"]
             kg_ha = [g_low * stations_ha / 1000, g_high * stations_ha / 1000]

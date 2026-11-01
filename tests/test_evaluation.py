@@ -77,3 +77,17 @@ def test_sus_score(answers, expected):
 def test_sus_rejects_bad_answers():
     with pytest.raises(ValueError):
         sus.sus_score([6] * 10)
+
+
+def test_short_review_workbook_round_trip(tmp_path):
+    openpyxl = pytest.importorskip("openpyxl")
+    import make_review_sheet
+    path, count = make_review_sheet.build(tmp_path / "sheet.xlsx")
+    assert count == 30
+    wb = openpyxl.load_workbook(path)
+    sheet = wb["System advice"]
+    for i, row in enumerate(sheet.iter_rows(min_row=2), start=0):
+        row[3].value = ["Agree", "Partly", "Disagree", "Agree"][i % 4]
+    wb.save(path)
+    answered, _, disagreements = score_review.score(score_review.rows_from_workbook(path))
+    assert len(answered) == 30 and len(disagreements) == 15
