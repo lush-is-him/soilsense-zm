@@ -281,15 +281,17 @@ class Advisor:
     def _fertiliser(self, crop, lima_ha, fired):
         def item(spec):
             rate = spec.get("rate_kg_ha")
-            if not isinstance(rate, (int, float)):
+            if isinstance(rate, (int, float)):
+                rate = [rate, rate]
+            if not (isinstance(rate, list) and all(isinstance(r, (int, float)) for r in rate)):
                 return {"product": spec.get("product"), "rate_kg_ha": None, "note": "rate.open"}
-            kg = round(rate * lima_ha, 1)
+            low, high = round(rate[0] * lima_ha, 1), round(rate[1] * lima_ha, 1)
             material = material_for(spec.get("product"))
             fired.extend(["MEAS-HOUSEHOLD", "PRICE-INPUTS"])
             return {"product": spec.get("product"), "rate_kg_ha": rate,
-                    "per_lima": {"low": kg, "high": kg, "unit": "kg",
-                                 "household": household(kg, kg, material, self.rules),
-                                 "cost": cost(kg, kg, material, self.rules)}}
+                    "per_lima": {"low": low, "high": high, "unit": "kg",
+                                 "household": household(low, high, material, self.rules),
+                                 "cost": cost(low, high, material, self.rules)}}
         return {"basal": item(crop["basal"]), "top_dress": item(crop["top_dress"])}
 
     # ----- Plan B (data-driven; blocked while its inputs are OPEN) ---------
@@ -301,18 +303,30 @@ class Advisor:
         data = self.rules["PLAN-B"].data
         partial = self.rules["LIME-PARTIAL"].data["partial_approach"]
         order, counts = data.get("priority_order"), data.get("items_by_budget")
-        if not isinstance(order, list) or not isinstance(counts, dict) or not isinstance(partial, dict) \
-                or req.budget_band not in counts:
+        if not isinstance(order, list) or not isinstance(partial, dict):
             return {"status": "blocked", "note": "plan.b_blocked"}
         crop = self.rules.crop(req.crop).data
         lima_ha = self._lima_ha(fired)
-        chosen, left_out = order[:counts[req.budget_band]], order[counts[req.budget_band]:]
+        if isinstance(counts, dict) and req.budget_band in counts:
+            mode = "budget"
+            chosen, left_out = order[:counts[req.budget_band]], order[counts[req.budget_band]:]
+        else:
+            # How far each budget band reaches is not known yet: list every item
+            # in the expert's order and let the farmer stop where the money ends.
+            mode = "in_order"
+            chosen, left_out = list(order), []
         items = []
         for name in chosen:
             if name == "lime":
                 items.append(self._partial_lime(partial, plan_a["lime"], crop, lima_ha))
             elif name == "fertiliser":
-                items.append({"item": "fertiliser", **plan_a["fertiliser"]["basal"]})
+                basal = dict(plan_a["fertiliser"]["basal"])
+                if basal.get("per_lima"):                  # the cheaper route: low end of the range
+                    low = basal["per_lima"]["low"]
+                    basal["per_lima"] = {**basal["per_lima"], "high": low,
+                                         "household": household(low, low, material_for(basal["product"]), self.rules),
+                                         "cost": cost(low, low, material_for(basal["product"]), self.rules)}
+                items.append({"item": "fertiliser", **basal})
             elif name == "manure":
                 low = crop["manure_t_ha"][0]
                 items.append({"item": "manure", "per_lima": self._range_per_lima([low, low], lima_ha, "t")})
@@ -320,7 +334,8 @@ class Advisor:
                 items.append({"item": "seed", "note": "plan.b_seed"})
             else:
                 items.append({"item": name, "note": "rate.open"})
-        return {"status": "ok", "budget_band": req.budget_band, "items": items, "left_out": left_out}
+        return {"status": "ok", "mode": mode, "budget_band": req.budget_band, "items": items,
+                "left_out": left_out, "note": "plan.b_in_order" if mode == "in_order" else None}
 
     def _partial_lime(self, partial, lime, crop, lima_ha):
         if not lime.get("advised"):

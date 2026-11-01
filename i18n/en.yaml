@@ -66,3 +66,4 @@ crop.sunflower: {text: "sunflower", reviewed: false}
 crop.millet: {text: "millet", reviewed: false}
 crop.sorghum: {text: "sorghum", reviewed: false}
 crop.groundnut: {text: "groundnut", reviewed: false}
+plan.b_in_order: {text: "Buy these in this order, as far as your money goes. Stop where the money ends; the first items matter most.", reviewed: false}

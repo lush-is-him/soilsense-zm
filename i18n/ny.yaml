@@ -66,3 +66,4 @@ crop.sunflower: {text: "mpendadzuwa", reviewed: false}
 crop.millet: {text: "mawere", reviewed: false}
 crop.sorghum: {text: "mapira", reviewed: false}
 crop.groundnut: {text: "mtedza", reviewed: false}
+plan.b_in_order: {text: "Gulani zinthu izi motsatana chonchi, mpaka ndalama zanu zitatha. Zoyambirira ndizo zofunika kwambiri.", reviewed: false}

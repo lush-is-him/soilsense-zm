@@ -14,7 +14,7 @@ rules:
     status: draft
     source_type: proposed
     source_doc: null
-    reviewer_alias: null
+    reviewer_alias: AGR-2
     ref: "I1, I2, E7 (C-2)"
     notes: >
       Structure is [PROPOSED]. Plan B takes the first N items of the
@@ -23,8 +23,8 @@ rules:
       these is OPEN or CONFLICT. Items: lime, fertiliser, manure, seed.
     data:
       budget_bands: [low, medium]   # I1
-      priority_order: OPEN          # I2, e.g. [lime, fertiliser, seed, manure]
-      items_by_budget: OPEN         # e.g. {low: 1, medium: 2}
+      priority_order: [seed, fertiliser, lime, manure]   # I2, from AGR-2
+      items_by_budget: OPEN         # not asked; while OPEN, Plan B lists every item in priority order
   - id: PLAN-C-ORDER
     domain: plan
     status: draft
@@ -32,7 +32,7 @@ rules:
     source_doc: null
     reviewer_alias: null
     ref: "D1 (millet first); rest [PROPOSED]"
-    ph_method: unconfirmed
+    ph_method: water
     notes: "In-scope crops whose workable pH range includes the farmer's pH; first preference first, then by lowest workable pH."
     data:
       first_preference: [millet]   # AGR D1

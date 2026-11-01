@@ -5,9 +5,10 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: "D, G1, D2"
-    ph_method: unconfirmed
+    ph_method: water
+    notes: "AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
     data:
       name: maize
       in_scope: true
@@ -15,8 +16,8 @@ rules:
       acid_tolerance: low-medium
       planting_window_rainfed: [Nov, Dec]
       spacing_cm: [75, 25]
-      basal: {product: "Compound D", rate_kg_ha: 200}
-      top_dress: {product: "Urea (46% N) or CAN, two splits: 3-4 and 6-8 weeks after emergence", rate_kg_ha: OPEN}
+      basal: {product: "Compound D", rate_kg_ha: [200, 350]}
+      top_dress: {product: "Urea (46% N) or CAN, two splits: 3-4 and 6-8 weeks after emergence", rate_kg_ha: [150, 350]}
       manure_t_ha: [5, 15]
       acid_soil_problem: "poor root growth and nutrient availability"
       cautions: [MSG-06]
@@ -25,9 +26,10 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: "D, G3"
-    ph_method: unconfirmed
+    ph_method: water
+    notes: "AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
     data:
       name: soybean
       in_scope: true
@@ -35,7 +37,7 @@ rules:
       acid_tolerance: low
       planting_window_rainfed: [Nov, Dec]
       spacing_cm: [45, 5]
-      basal: {product: "phosphorus-based fertiliser, according to soil test", rate_kg_ha: OPEN}
+      basal: {product: "phosphorus-based fertiliser, according to soil test", rate_kg_ha: [150, 200]}
       top_dress: {product: "nil, or light ammonium nitrate", rate_kg_ha: OPEN}
       manure_t_ha: [5, 10]
       acid_soil_problem: "poor nodulation and phosphorus availability"
@@ -45,9 +47,10 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: D
-    ph_method: unconfirmed
+    ph_method: water
+    notes: "AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
     data:
       name: sunflower
       in_scope: true
@@ -55,8 +58,8 @@ rules:
       acid_tolerance: medium
       planting_window_rainfed: [Dec, Jan]
       spacing_cm: [75, 30]
-      basal: {product: "Compound D", rate_kg_ha: OPEN}
-      top_dress: {product: "Urea or CAN, plus boron and potassium", rate_kg_ha: OPEN}
+      basal: {product: "Compound D", rate_kg_ha: [150, 200]}
+      top_dress: {product: "Urea or CAN, plus boron and potassium", rate_kg_ha: [100, 150]}
       manure_t_ha: [10, 20]
       acid_soil_problem: "poor root development and nutrient availability"
       cautions: []
@@ -65,9 +68,10 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: D
-    ph_method: unconfirmed
+    ph_method: water
+    notes: "AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
     data:
       name: millet
       in_scope: true
@@ -75,8 +79,8 @@ rules:
       acid_tolerance: medium-high
       planting_window_rainfed: [Nov, Dec]
       spacing_cm: [45, 10]
-      basal: {product: "fertiliser (product not specified)", rate_kg_ha: OPEN}
-      top_dress: {product: "Urea", rate_kg_ha: OPEN}
+      basal: {product: "Compound D", rate_kg_ha: 150}
+      top_dress: {product: "Urea", rate_kg_ha: [100, 150]}
       manure_t_ha: [3, 5]
       acid_soil_problem: "tolerance varies by species and variety"
       cautions: []
@@ -85,10 +89,10 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: D
-    ph_method: unconfirmed
-    notes: "C-1: scope pending supervisor decision. Best range 5.8-6.0 may be a typo (question 9)."
+    ph_method: water
+    notes: "C-1: scope pending supervisor decision. Best range 5.8-6.0 may be a typo (question 9). AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
     data:
       name: groundnut
       in_scope: pending_supervisor_decision
@@ -96,8 +100,8 @@ rules:
       acid_tolerance: medium
       planting_window_rainfed: [Nov, Dec]
       spacing_cm: [45, 10]
-      basal: {product: "phosphorus-based fertiliser", rate_kg_ha: OPEN}
-      top_dress: {product: "Gypsum", rate_kg_ha: OPEN}
+      basal: {product: "Compound D (AGR-2; AGR-1 said phosphorus-based)", rate_kg_ha: 200}
+      top_dress: {product: "Gypsum", rate_kg_ha: [200, 400]}
       manure_t_ha: [5, 8]
       acid_soil_problem: "calcium availability"
       cautions: []

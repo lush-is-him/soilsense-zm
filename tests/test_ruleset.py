@@ -18,13 +18,14 @@ def test_project_rules_load_and_report_open_items():
     ruleset = load()
     assert "BAND-01" in ruleset.rules and ruleset.crop("maize") is not None
     open_paths = {(i["rule"], i["path"]) for i in ruleset.open_items}
-    assert ("LIME-TRIGGER", "trigger_ph") in open_paths
-    assert ("LIME-PARTIAL", "partial_approach") in open_paths
-    assert ("CROP-MAIZE", "top_dress.rate_kg_ha") in open_paths
+    assert ("PLAN-B", "items_by_budget") in open_paths
+    assert ("CROP-SOYBEAN", "top_dress.rate_kg_ha") in open_paths
+    assert ("LIME-TRIGGER", "trigger_ph") not in open_paths          # answered by AGR-2
 
 
-def test_no_project_rule_is_verified_yet():
-    assert all(rule.status != "verified" for rule in load().rules.values())
+def test_verified_rules_are_confirmed_by_agr2_not_agr1():
+    verified = [r for r in load().rules.values() if r.status == "verified"]
+    assert verified and all(r.reviewer_alias == "AGR-2" for r in verified)
 
 
 def test_rule_without_source_type_rejected(tmp_path):

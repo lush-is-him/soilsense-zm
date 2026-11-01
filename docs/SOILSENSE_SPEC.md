@@ -402,6 +402,8 @@ lime (rate from 6.3 by band and texture, clamped to the single-application cap, 
 
 ### 7.1 Conflicts to resolve before coding the affected rule
 
+**Update 1 Nov 2026:** the second reviewer (AGR-2, related to the student; see `docs/questionnaires/AGR-2_answers.md`) resolved C-4 (water), C-3 for maize (5.5), C-7 (2-3 months), C-8 (5.5-6.0) and C-2 (15 g per station, Plan B unblocked), and confirmed the crop and lime tables. C-1, C-5, C-6 and C-9 remain.
+
 | ID | Issue | Why it matters | Temporary behaviour |
 |---|---|---|---|
 | C-1 | **Crop scope.** Ch 1 says soybean, sunflower, maize, sorghum, millet. Questionnaire v1 itself offered maize, soybean, groundnut, sunflower, millet and sweet potato, so sorghum was never asked; the reviewer did not drop it. | Scope, objectives and tests all name five crops | Implement maize, soybean, sunflower, millet. Groundnut stored as `pending_supervisor_decision`. Sorghum stubbed `data: NONE` |
