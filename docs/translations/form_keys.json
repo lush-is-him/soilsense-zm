@@ -86,6 +86,7 @@
   "ui.send_sms",
   "ui.depends_method",
   "ui.unconfirmed_rules",
-  "ui.lab_test"
+  "ui.lab_test",
+  "plan.b_in_order"
  ]
 }

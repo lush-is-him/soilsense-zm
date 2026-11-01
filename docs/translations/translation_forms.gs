@@ -416,6 +416,11 @@ var DATA = {
     "S59",
     "Get a lab test before buying lime.",
     "Kayeseni nthaka ku labu musanagule laimu."
+   ],
+   [
+    "S60",
+    "Buy these in this order, as far as your money goes. Stop where the money ends; the first items matter most.",
+    "Gulani zinthu izi motsatana chonchi, mpaka ndalama zanu zitatha. Zoyambirira ndizo zofunika kwambiri."
    ]
   ]
  },
@@ -499,32 +504,32 @@ var DATA = {
    [
     "C1",
     "maize",
-    "mapopwe"
+    "Mapopwe"
    ],
    [
     "C2",
     "soybean",
-    "soya"
+    "Chileemba naa bunyangu"
    ],
    [
     "C3",
     "sunflower",
-    ""
+    "Malanga zuba"
    ],
    [
     "C4",
     "millet",
-    ""
+    "Nzembwe"
    ],
    [
     "C5",
     "sorghum",
-    "mapila"
+    "Maila mucheme"
    ],
    [
     "C6",
     "groundnut",
-    "nzungu"
+    "Inyemu"
    ]
   ],
   "sentences": [
@@ -541,32 +546,32 @@ var DATA = {
    [
     "S3",
     "Never apply more lime than a soil test supports. Too much lime reduces yield.",
-    ""
+    "Kwiina kubika liimu munji mubulongo  kwiindilizya mbuli mbwiiyandika mubulongo"
    ],
    [
     "S4",
     "Apply lime early and work it into the soil. It needs moisture and time to react.",
-    ""
+    "Kubika liimu kufwaambana mubulongo. Liimu iyaanda tuumeenda alimwi a chiindi kutegwa isangane a bulongo"
    ],
    [
     "S5",
     "Soybean: inoculate the seed with the right rhizobia, especially where soybean has not been grown recently.",
-    ""
+    "Inseke zya soybeans zyeelele kubika inoculant chiindi chakushanga maka- maka mumasena ataaningwa shangidwe soya beans kale"
    ],
    [
     "S6",
     "Maize: use a suitable seed variety.",
-    ""
+    "Kushanga mapopwe kweelela imbuto yeelele"
    ],
    [
     "S7",
     "Common fertiliser mistakes: applying too early, too late, or ignoring the weather.",
-    ""
+    "Bulubizyi bwakubika chamutuzhya: kubika chaamutunzhya  kufwambaana, kumuka kubika chaamutunzhya  olo kutalanga or kuchilila chiinda"
    ],
    [
     "S8",
     "This is decision support only. Consult an extension officer or a soil lab before major spending.",
-    ""
+    "Eeci cheendelana aakusa. Amubuzye beendelezi ba zyabulimi muchilawo chenu."
    ],
    [
     "S9",
@@ -601,17 +606,17 @@ var DATA = {
    [
     "S15",
     "This much lime must be split into more than one application.",
-    ""
+    "Liimu muyandanye muzhyi-beela-beela zyaandene"
    ],
    [
     "S16",
     "Partial plan not yet reviewed. Start with Plan C crops and get a lab test.",
-    ""
+    "Muzeezo musyoonto tauranga kujanwa. Mutalike amuzeezo (c)wazhyishango mwamana mupime bulongo."
    ],
    [
     "S17",
     "No crop in the system suits this soil as it is. Get a lab test.",
-    ""
+    "Mu system (munzhyila eeyi) kwiina zishango zyeelele mubulongo oobu."
    ],
    [
     "S18",
@@ -621,7 +626,7 @@ var DATA = {
    [
     "S19",
     "Lime is not needed at this pH.",
-    ""
+    "Liimu tayiiyandi a pH eeyi."
    ],
    [
     "S20",
@@ -651,12 +656,12 @@ var DATA = {
    [
     "S25",
     "The pH is close to a band boundary. A lab test is recommended.",
-    ""
+    "PH ili afwafwi kuzhyinji. Kupima bulongo kulayandika."
    ],
    [
     "S26",
     "Household measure not yet available; amounts are in kg.",
-    ""
+    "Kipima kwamukwashi takuko pe. Kuli buyo mu ma kilograms"
    ],
    [
     "S27",
@@ -671,7 +676,7 @@ var DATA = {
    [
     "S29",
     "Buy certified seed of a suitable variety.",
-    ""
+    "A muule imbuto zhyi pimidwe iizhyeelela."
    ],
    [
     "S30",
@@ -686,12 +691,12 @@ var DATA = {
    [
     "S32",
     "Confidence",
-    ""
+    "Ndasyooma"
    ],
    [
     "S33",
     "high",
-    ""
+    "Maningi"
    ],
    [
     "S34",
@@ -701,12 +706,12 @@ var DATA = {
    [
     "S35",
     "low",
-    ""
+    "Asyoonto"
    ],
    [
     "S36",
     "none",
-    ""
+    "Kwiina"
    ],
    [
     "S37",
@@ -721,42 +726,42 @@ var DATA = {
    [
     "S39",
     "Plan C: crops that suit the soil now",
-    ""
+    "Muzeezo C:zhyishango zhyeelela bulongo oobu ono"
    ],
    [
     "S40",
     "Lime",
-    "Laimu"
+    "Liimu"
    ],
    [
     "S41",
     "Basal fertiliser",
-    ""
+    "Chaamutunzhya  waansi"
    ],
    [
     "S42",
     "Top dressing",
-    ""
+    "Chaamutunzhya  waazeulu"
    ],
    [
     "S43",
     "Manure",
-    ""
+    "Manuwa"
    ],
    [
     "S44",
     "Seed",
-    ""
+    "Imbuto"
    ],
    [
     "S45",
     "Fertiliser",
-    ""
+    "Chaamutunzhya"
    ],
    [
     "S46",
     "per lima",
-    "pa lima"
+    "A muunda amuunda"
    ],
    [
     "S47",
@@ -766,47 +771,47 @@ var DATA = {
    [
     "S48",
     "Optional",
-    ""
+    "Kusala"
    ],
    [
     "S49",
     "or",
-    ""
+    "Olo"
    ],
    [
     "S50",
     "about",
-    ""
+    "Ambweni"
    ],
    [
     "S51",
     "The amount needs the soil texture. Do the texture-by-feel check.",
-    ""
+    "Mweelwe uzandikana kuzhyiba bulongo mbobuteeleka kuumaanza. A mutelele bulongo kubelesha maanza"
    ],
    [
     "S52",
     "Leave for later, when money allows",
-    ""
+    "Musiye kusika mane Mali a kajanike"
    ],
    [
     "S53",
     "Cost",
-    ""
+    "Mweelwe"
    ],
    [
     "S54",
     "Remember",
-    ""
+    "Kuyeeya"
    ],
    [
     "S55",
     "Why this advice",
-    ""
+    "Nkaambo nzi muzeezo ooyu"
    ],
    [
     "S56",
     "Send SMS summary",
-    ""
+    "A mutume  Sms mubufwaafwi"
    ],
    [
     "S57",
@@ -821,6 +826,11 @@ var DATA = {
    [
     "S59",
     "Get a lab test before buying lime.",
+    ""
+   ],
+   [
+    "S60",
+    "Buy these in this order, as far as your money goes. Stop where the money ends; the first items matter most.",
     ""
    ]
   ]
