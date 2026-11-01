@@ -18,7 +18,7 @@ All code is in place. What remains depends on people, hardware or results outsid
 | 12 | Native Nyanja and Tonga reviewers (H5) | Reviewers | `python scripts/i18n_sheet.py export`, they fill `docs/translations/review_sheet.csv` | `python scripts/i18n_sheet.py import` |
 | 13 | Usability sessions | Farmers and operators | `docs/evaluation/sus.csv` (form: `docs/evaluation/sus_form.md`) | `python scripts/sus.py` |
 | 14 | Africa's Talking key (optional, SMS demo) | You | `AT_API_KEY`, `AT_USERNAME` environment variables | Send SMS from the advice screen |
-| 15 | Crop scope decision (C-1: sorghum, groundnut) | Supervisor | `in_scope:` in `rules/crops.yaml` | — |
+| 15 | ~~Crop scope~~ decided: groundnut in, sorghum out (Nov 2026) | — | — | — |
 
 ## For field use
 

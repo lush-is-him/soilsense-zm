@@ -92,10 +92,10 @@ rules:
     reviewer_alias: AGR-2
     ref: D
     ph_method: water
-    notes: "C-1: scope pending supervisor decision. Best range 5.8-6.0 may be a typo (question 9). AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
+    notes: "C-1 decided (Nov 2026): groundnut replaces sorghum; AGR-2 also says groundnut should be in. Best range 5.8-6.0 is unusually narrow: ask once more. AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
     data:
       name: groundnut
-      in_scope: pending_supervisor_decision
+      in_scope: true
       ph: {lowest_workable: 5.0, best: [5.8, 6.0], highest_workable: 7.5}
       acid_tolerance: medium
       planting_window_rainfed: [Nov, Dec]
@@ -104,22 +104,4 @@ rules:
       top_dress: {product: "Gypsum", rate_kg_ha: [200, 400]}
       manure_t_ha: [5, 8]
       acid_soil_problem: "calcium availability"
-      cautions: []
-  - id: CROP-SORGHUM
-    domain: crop
-    status: draft
-    source_type: proposed
-    source_doc: null
-    reviewer_alias: null
-    ref: "Ch 1 scope, C-1"
-    ph_method: unconfirmed
-    notes: "In scope per Chapter 1, but questionnaire v1 never asked about it. No data."
-    data:
-      name: sorghum
-      in_scope: true
-      ph: OPEN
-      planting_window_rainfed: OPEN
-      basal: {product: OPEN, rate_kg_ha: OPEN}
-      top_dress: {product: OPEN, rate_kg_ha: OPEN}
-      manure_t_ha: OPEN
       cautions: []

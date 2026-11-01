@@ -23,7 +23,7 @@ from engine.advice import AdviceRequest, Advisor  # noqa: E402
 from engine.ruleset import load  # noqa: E402
 
 PH_VALUES = [4.2, 4.5, 4.9, 5.2, 5.5, 5.8, 6.2, 6.5, 6.8, 7.8]
-CROPS = ["maize", "soybean", "sunflower", "millet"]
+CROPS = ["maize", "soybean", "sunflower", "millet", "groundnut"]
 
 
 def scenarios():

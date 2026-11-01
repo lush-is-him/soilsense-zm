@@ -47,7 +47,7 @@ A rule-based soil and crop advisory system for smallholder farmers in Shimabala,
   - **Plan A**: fix the soil and grow the target crop.
   - **Plan B**: cheaper or partial route.
   - **Plan C**: crops that suit the soil as it is.
-- Crops: soybean, sunflower, maize, sorghum, millet `[DISS]`. See conflict C-1 (the agronomist's table has groundnut and no sorghum).
+- Crops: soybean, sunflower, maize, millet, groundnut (C-1 decided Nov 2026: groundnut replaces sorghum). See conflict C-1 (the agronomist's table has groundnut and no sorghum).
 - Users: field operator (lead farmer or extension officer) is the main user; the farmer receives SMS on a basic phone; agronomist reviews rules; administrator manages users and devices.
 - Primary interface is the web dashboard (phone browser, low bandwidth). SMS is for demonstration only.
 - Out of scope: ML, weather forecasts (US13), market prices, other crops, government integrations, wireless probe-to-phone link.
@@ -406,7 +406,7 @@ lime (rate from 6.3 by band and texture, clamped to the single-application cap, 
 
 | ID | Issue | Why it matters | Temporary behaviour |
 |---|---|---|---|
-| C-1 | **Crop scope.** Ch 1 says soybean, sunflower, maize, sorghum, millet. Questionnaire v1 itself offered maize, soybean, groundnut, sunflower, millet and sweet potato, so sorghum was never asked; the reviewer did not drop it. | Scope, objectives and tests all name five crops | Implement maize, soybean, sunflower, millet. Groundnut stored as `pending_supervisor_decision`. Sorghum stubbed `data: NONE` |
+| C-1 | **Resolved Nov 2026: groundnut in, sorghum out.** **Crop scope.** Ch 1 says soybean, sunflower, maize, sorghum, millet. Questionnaire v1 itself offered maize, soybean, groundnut, sunflower, millet and sweet potato, so sorghum was never asked; the reviewer did not drop it. | Scope, objectives and tests all name five crops | Implement maize, soybean, sunflower, millet. Groundnut stored as `pending_supervisor_decision`. Sorghum stubbed `data: NONE` |
 | C-2 | **E7 lime-at-planting numbers disagree.** "50 to 100 g per planting basin" vs "approx 200 to 400 kg/ha". At the maize spacing in the same table (75 x 25 cm = 53,333 stations/ha), 50 to 100 g per station is 2.7 to 5.3 t/ha, which is the full rate, not a partial one. 200 to 400 kg/ha would be roughly 4 to 8 g per station. | Plan B lime rate could be off by about 10 times | Plan B blocked |
 | C-3 | **E1 lime trigger "5.5 to 6.2"** vs target pH 5.5 to 6.5 (E3) and E4 rates for 5.5 to 6.5. Is lime recommended when pH is below 5.5, or below 6.2? | Decides whether slightly acidic fields get lime at all | `trigger_ph: OPEN`; pH 5.5 to 6.5 shows "optional, small rate, lab test" |
 | C-4 | **pH method** for the bands and crop table is not stated (labs use CaCl2, probe and map use water, difference 0.5 to 0.8). | Shifts every band decision by up to a full band | `ph_method: unconfirmed` plus method-sensitivity rule (2.6) |

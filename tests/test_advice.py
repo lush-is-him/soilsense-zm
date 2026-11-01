@@ -176,12 +176,26 @@ def test_lime_messages_when_lime_advised(water_rules):
 
 # ----- crops out of scope or without data -----
 
-def test_sorghum_has_no_data(water_rules):
-    assert advise(water_rules, 6.0, crop="sorghum")["plan_a"]["status"] == "no_data"
+def test_crop_without_data_gives_no_plan(water_rules):
+    no_data = copy.deepcopy(water_rules)
+    no_data["CROP-MILLET"].data["ph"] = "OPEN"
+    assert advise(no_data, 6.0, crop="millet")["plan_a"]["status"] == "no_data"
 
 
-def test_groundnut_pending_supervisor_decision(water_rules):
-    assert advise(water_rules, 6.0, crop="groundnut")["plan_a"]["status"] == "crop_not_confirmed"
+def test_crop_not_in_scope_gives_no_plan(water_rules):
+    pending = copy.deepcopy(water_rules)
+    pending["CROP-MILLET"].data["in_scope"] = "pending_supervisor_decision"
+    assert advise(pending, 6.0, crop="millet")["plan_a"]["status"] == "crop_not_confirmed"
+
+
+def test_groundnut_in_scope(water_rules):
+    result = advise(water_rules, 6.0, crop="groundnut")
+    assert result["plan_a"]["status"] == "ok"
+    assert result["plan_a"]["fertiliser"]["top_dress"]["rate_kg_ha"] == [200, 400]
+
+
+def test_sorghum_removed(rules):
+    assert rules.crop("sorghum") is None
 
 
 # ----- Plans B and C -----
@@ -203,7 +217,7 @@ def test_plan_b_in_priority_order_from_agr2(water_rules):
 
 
 def test_plan_c_millet_first_then_lowest_workable(water_rules):
-    assert advise(water_rules, 5.6)["plan_c"]["crops"] == ["millet", "sunflower", "maize", "soybean"]
+    assert advise(water_rules, 5.6)["plan_c"]["crops"] == ["millet", "groundnut", "sunflower", "maize", "soybean"]
     assert advise(water_rules, 4.9)["plan_c"]["crops"] == ["millet"]
 
 

@@ -24,7 +24,7 @@ from engine.ruleset import load  # noqa: E402
 from run_scenarios import run, scenarios  # noqa: E402
 
 OUT = Path(__file__).resolve().parent.parent / "docs" / "scenarios" / "review_sheet.xlsx"
-GRID = [(4.2, "maize"), (4.5, "soybean"), (4.9, "millet"), (4.9, "sunflower"), (5.2, "millet"),
+GRID = [(4.2, "maize"), (4.5, "soybean"), (4.9, "millet"), (4.9, "sunflower"), (5.2, "groundnut"),
         (5.5, "maize"), (5.5, "sunflower"), (5.8, "soybean"), (6.2, "sunflower"), (6.5, "maize"),
         (6.8, "maize"), (7.8, "soybean")]
 VARIANTS = ["texture unknown", "clay", "sandy", "map agrees, map texture", "map disagrees, map texture",
