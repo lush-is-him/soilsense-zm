@@ -91,3 +91,20 @@ def test_short_review_workbook_round_trip(tmp_path):
     wb.save(path)
     answered, _, disagreements = score_review.score(score_review.rows_from_workbook(path))
     assert len(answered) == 30 and len(disagreements) == 15
+
+
+def test_review_form_csv_scoring(tmp_path):
+    import json
+    keys = json.loads((Path(__file__).resolve().parent.parent / "docs" / "scenarios" / "review_keys.json").read_text())
+    header = ["Timestamp"] + [f"A{n}. Situation {n}: your advice" for n in keys] \
+        + [f"R{n}. Situation {n}: do you agree?" for n in keys] + [f"C{n}. Situation {n}: if not Agree, what is wrong?" for n in keys]
+    answers = ["Agree"] * (len(keys) - 2) + ["Partly", "Disagree"]
+    row = ["2026-11-20"] + ["my advice"] * len(keys) + answers + [""] * len(keys)
+    path = tmp_path / "responses.csv"
+    import csv
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(header)
+        writer.writerow(row)
+    answered, _, disagreements = score_review.score(score_review.rows_from_form_csv(path))
+    assert len(answered) == 30 and sum(answered) == 28.5 and len(disagreements) == 2
