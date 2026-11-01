@@ -2,11 +2,11 @@
 rules:
   - id: MEAS-LIMA
     domain: measure
-    status: draft
-    source_type: proposed
+    status: verified
+    source_type: expert_opinion
     source_doc: null
-    reviewer_alias: null
-    ref: H1 (blank)
+    reviewer_alias: AGR-2
+    ref: "H1 (blank); confirmed by AGR-2"
     data: {lima_ha: 0.25}
   - id: MEAS-HOUSEHOLD
     domain: measure

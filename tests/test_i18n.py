@@ -39,9 +39,12 @@ def test_missing_translation_falls_back_to_english_unreviewed():
     assert result["lang"] == "en" and result["reviewed"] is False
 
 
-def test_nothing_is_marked_reviewed_yet():
-    for code in ("en", "ny", "toi"):
-        assert not any(e.get("reviewed") for e in keys(code).values())
+def test_reviewed_strings_name_their_reviewer():
+    for code in ("ny", "toi"):
+        for key, entry in keys(code).items():
+            if entry.get("reviewed"):
+                assert entry.get("reviewer"), f"{code} {key} is reviewed but has no reviewer"
+    assert not any(e.get("reviewed") for e in keys("en").values())
 
 
 def test_sheet_round_trip_marks_reviewed(tmp_path, monkeypatch):

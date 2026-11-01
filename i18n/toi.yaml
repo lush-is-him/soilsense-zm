@@ -1,10 +1,161 @@
-# Tonga (toi). Only a few words are drafted here: Claude Code's Tonga is not
-# reliable enough to draft advice sentences. Everything else falls back to
-# English (marked "not reviewed") until a native Tonga reviewer (task H5)
-# fills docs/translations/review_sheet.csv and runs scripts/i18n_sheet.py import.
-ui.lime: {text: "Laimu", reviewed: false}
-ui.per_lima: {text: "pa lima", reviewed: false}
-crop.maize: {text: "mapopwe", reviewed: false}
-crop.groundnut: {text: "nzungu", reviewed: false}
-crop.sorghum: {text: "mapila", reviewed: false}
-crop.soybean: {text: "soya", reviewed: false}
+# Tonga (toi). Imported from docs/translations/review_sheet.csv.
+msg.MSG-03:
+  text: Kwiina kubika liimu munji mubulongo  kwiindilizya mbuli mbwiiyandika mubulongo
+  reviewed: true
+  reviewer: TOI-1
+msg.MSG-04:
+  text: Kubika liimu kufwaambana mubulongo. Liimu iyaanda tuumeenda alimwi a chiindi kutegwa isangane a bulongo
+  reviewed: true
+  reviewer: TOI-1
+msg.MSG-05:
+  text: Inseke zya soybeans zyeelele kubika inoculant chiindi chakushanga maka- maka mumasena ataaningwa shangidwe soya beans kale
+  reviewed: true
+  reviewer: TOI-1
+msg.MSG-06:
+  text: Kushanga mapopwe kweelela imbuto yeelele
+  reviewed: true
+  reviewer: TOI-1
+msg.MSG-07:
+  text: 'Bulubizyi bwakubika chamutuzhya: kubika chaamutunzhya  kufwambaana, kumuka kubika chaamutunzhya  olo kutalanga or kuchilila chiinda'
+  reviewed: true
+  reviewer: TOI-1
+msg.MSG-08:
+  text: Eeci cheendelana aakusa. Amubuzye beendelezi ba zyabulimi muchilawo chenu.
+  reviewed: true
+  reviewer: TOI-1
+ref.REF-07:
+  text: Liimu muyandanye muzhyi-beela-beela zyaandene
+  reviewed: true
+  reviewer: TOI-1
+plan.b_blocked:
+  text: Muzeezo musyoonto tauranga kujanwa. Mutalike amuzeezo (c)wazhyishango mwamana mupime bulongo.
+  reviewed: true
+  reviewer: TOI-1
+plan.c_none:
+  text: Mu system (munzhyila eeyi) kwiina zishango zyeelele mubulongo oobu.
+  reviewed: true
+  reviewer: TOI-1
+lime.not_needed:
+  text: Liimu tayiiyandi a pH eeyi.
+  reviewed: true
+  reviewer: TOI-1
+borderline:
+  text: PH ili afwafwi kuzhyinji. Kupima bulongo kulayandika.
+  reviewed: true
+  reviewer: TOI-1
+measure.unavailable:
+  text: Kipima kwamukwashi takuko pe. Kuli buyo mu ma kilograms
+  reviewed: true
+  reviewer: TOI-1
+plan.b_seed:
+  text: A muule imbuto zhyi pimidwe iizhyeelela.
+  reviewed: true
+  reviewer: TOI-1
+ui.confidence:
+  text: Ndasyooma
+  reviewed: true
+  reviewer: TOI-1
+ui.trust.high:
+  text: Maningi
+  reviewed: true
+  reviewer: TOI-1
+ui.trust.low:
+  text: Asyoonto
+  reviewed: true
+  reviewer: TOI-1
+ui.trust.none:
+  text: Kwiina
+  reviewed: true
+  reviewer: TOI-1
+ui.plan_c:
+  text: Muzeezo C:zhyishango zhyeelela bulongo oobu ono
+  reviewed: true
+  reviewer: TOI-1
+ui.lime:
+  text: Liimu
+  reviewed: true
+  reviewer: TOI-1
+ui.basal:
+  text: Chaamutunzhya  waansi
+  reviewed: true
+  reviewer: TOI-1
+ui.top_dress:
+  text: Chaamutunzhya  waazeulu
+  reviewed: true
+  reviewer: TOI-1
+ui.manure:
+  text: Manuwa
+  reviewed: true
+  reviewer: TOI-1
+ui.seed:
+  text: Imbuto
+  reviewed: true
+  reviewer: TOI-1
+ui.fertiliser:
+  text: Chaamutunzhya
+  reviewed: true
+  reviewer: TOI-1
+ui.per_lima:
+  text: A muunda amuunda
+  reviewed: true
+  reviewer: TOI-1
+ui.optional:
+  text: Kusala
+  reviewed: true
+  reviewer: TOI-1
+ui.or:
+  text: Olo
+  reviewed: true
+  reviewer: TOI-1
+ui.about:
+  text: Ambweni
+  reviewed: true
+  reviewer: TOI-1
+ui.needs_texture:
+  text: Mweelwe uzandikana kuzhyiba bulongo mbobuteeleka kuumaanza. A mutelele bulongo kubelesha maanza
+  reviewed: true
+  reviewer: TOI-1
+ui.left_out:
+  text: Musiye kusika mane Mali a kajanike
+  reviewed: true
+  reviewer: TOI-1
+ui.cost:
+  text: Mweelwe
+  reviewed: true
+  reviewer: TOI-1
+ui.remember:
+  text: Kuyeeya
+  reviewed: true
+  reviewer: TOI-1
+ui.why:
+  text: Nkaambo nzi muzeezo ooyu
+  reviewed: true
+  reviewer: TOI-1
+ui.send_sms:
+  text: A mutume  Sms mubufwaafwi
+  reviewed: true
+  reviewer: TOI-1
+crop.maize:
+  text: Mapopwe
+  reviewed: true
+  reviewer: TOI-1
+crop.soybean:
+  text: Chileemba naa bunyangu
+  reviewed: true
+  reviewer: TOI-1
+crop.sunflower:
+  text: Malanga zuba
+  reviewed: true
+  reviewer: TOI-1
+crop.millet:
+  text: Nzembwe
+  reviewed: true
+  reviewer: TOI-1
+crop.sorghum:
+  text: Maila mucheme
+  reviewed: true
+  reviewer: TOI-1
+crop.groundnut:
+  text: Inyemu
+  reviewed: true
+  reviewer: TOI-1

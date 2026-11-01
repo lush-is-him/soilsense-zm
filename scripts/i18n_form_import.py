@@ -48,7 +48,7 @@ def translator_alias(row, lang, given):
     return f"{lang.upper()}-translator"
 
 
-def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET):
+def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET, skip=()):
     keys = json.loads(KEYS.read_text(encoding="utf-8"))
     with open(responses_path, newline="", encoding="utf-8-sig") as handle:
         rows = list(csv.DictReader(handle))
@@ -59,20 +59,37 @@ def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET
     who = translator_alias(row, lang, alias)
     column = COLUMN[lang]
 
-    if not sheet.exists():
-        i18n_sheet.export(sheet)
-    with sheet.open(newline="", encoding="utf-8") as handle:
-        sheet_rows = list(csv.DictReader(handle))
+    sheet_rows = []
+    if sheet.exists():
+        with sheet.open(newline="", encoding="utf-8") as handle:
+            sheet_rows = list(csv.DictReader(handle))
+    if {r["key"] for r in sheet_rows} != set(i18n_sheet.load("en")):
+        i18n_sheet.export(sheet)                   # sheet is older than i18n/en.yaml: refresh it
+        with sheet.open(newline="", encoding="utf-8") as handle:
+            sheet_rows = list(csv.DictReader(handle))
     by_key = {r["key"]: r for r in sheet_rows}
 
-    updated = 0
+    english = i18n_sheet.load("en")
+    updated, set_aside = 0, []
     for kind in ("C", "S"):
         for number, key in enumerate(keys[kind], 1):
             answer = answers.get((kind, number))
             if not answer or key not in by_key:
                 continue
+            code = f"{kind}{number}"
             draft = by_key[key].get(f"{column}_draft", "")
-            final = draft if answer.strip().lower() in {"ok", "ok.", "correct"} and draft else answer
+            if answer.strip().lower() in {"ok", "ok.", "correct"}:
+                if not draft:
+                    continue                       # "OK" with nothing to approve
+                final = draft
+            else:
+                final = answer
+            if code in skip:
+                set_aside.append(f"{code} ({key}): marked for the translator to check")
+                continue
+            if i18n_sheet.placeholders(final) != i18n_sheet.placeholders(english[key]["text"]):
+                set_aside.append(f"{code} ({key}): must keep {{crop}} exactly as written")
+                continue
             by_key[key][f"{column}_final"] = final
             by_key[key][f"{column}_reviewer"] = who
             updated += 1
@@ -89,6 +106,10 @@ def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET
             writer.writerow([f"W{number}", word, answers.get(("W", number), ""), who])
 
     print(f"{lang}: {updated} strings from {who}; key words in {glossary_path.name}")
+    if set_aside:
+        print(f"Set aside {len(set_aside)} (English stays until fixed):")
+        for line in set_aside:
+            print(f"  {line}")
     return i18n_sheet.import_sheet(sheet)
 
 
@@ -98,8 +119,10 @@ def main():
     parser.add_argument("--lang", choices=sorted(COLUMN), required=True)
     parser.add_argument("--row", type=int, default=1)
     parser.add_argument("--alias", help="name or alias to record as the reviewer")
+    parser.add_argument("--skip", nargs="*", default=[], metavar="CODE",
+                        help="question codes to set aside, e.g. S12 S13 (autocorrect damage, typos)")
     args = parser.parse_args()
-    return apply(args.responses, args.lang, args.row, args.alias)
+    return apply(args.responses, args.lang, args.row, args.alias, skip=set(args.skip))
 
 
 if __name__ == "__main__":

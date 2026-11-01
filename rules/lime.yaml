@@ -14,31 +14,33 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: E3
-    ph_method: unconfirmed
-    notes: "C-8: G2 says 5.5-7. The narrower E3 range is used until resolved."
+    ph_method: water
+    notes: "C-8: AGR-1 E3 5.5-6.5, G2 5.5-7; AGR-2 5.5-6.0. The range all answers share (5.5-6.0) is used: it also guards best against over-liming."
     data:
-      target_ph: [5.5, 6.5]
+      target_ph: [5.5, 6.0]
   - id: LIME-TRIGGER
     domain: lime
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: E1
-    ph_method: unconfirmed
-    notes: "C-3: E1 says 5.5-6.2. Until resolved: lime below 5.5; for 5.5-6.5 say optional, small rate, lab test first."
+    ph_method: water
+    notes: "C-3: AGR-2 says lime below pH 5.5 for maize (AGR-1 E1 said 5.5-6.2). For other crops AGR-2 wrote 5.1 to 6.1, which is unclear. The engine advises lime below 5.5 and calls 5.5-6.5 optional."
     data:
-      trigger_ph: OPEN
+      trigger_ph: 5.5
+      other_crops: OPEN   # AGR-2 wrote '5.1 to 6.1': ask what it means
   - id: LIME-RATES
     domain: lime
-    status: agronomist_input
+    status: verified
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: E4
-    ph_method: unconfirmed
+    ph_method: water
+    notes: "AGR-1 table (E4) confirmed by AGR-2 ('according to the international lime standards'; no document named)."
     data:
       rates_t_per_ha:
         severe:   {sandy: [1.0, 1.5], loamy: [2.0, 3.0], clay: [3.5, 5.0]}
@@ -52,7 +54,7 @@ rules:
     source_doc: null
     reviewer_alias: AGR-1
     ref: E6
-    notes: "E6 says 4 to 5 t/ha; question 10 asks which. Split guidance is OPEN."
+    notes: "E6 says 4 to 5 t/ha. AGR-2 answered 100000, which cannot be t/ha (probably a slip): 5 kept, ask again. Split guidance is OPEN."
     data:
       max_single_application_t_ha: 5
       split_guidance: OPEN
@@ -70,12 +72,12 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: "E5, E10"
-    notes: "C-7. The engine evaluates the full candidate range and reports 'timing uncertain' when the outcome depends on it. Irrigated fields: any time (E5)."
+    notes: "C-7 resolved by majority: AGR-1 E5 says 2-3 months, AGR-2 says at least 3; AGR-1 E10 (1-2) is the outlier. The engine uses 2 to 3. Irrigated fields: any time (E5)."
     data:
-      lead_time_before_planting_months: CONFLICT
-      candidates_months: {E5: [2, 3], E10: [1, 2]}
+      lead_time_before_planting_months: [2, 3]
+      candidates_months: {E5: [2, 3], E10: [1, 2], AGR-2: [3, 3]}
   - id: LIME-RESIDUAL
     domain: lime
     status: agronomist_input
@@ -91,12 +93,11 @@ rules:
     status: agronomist_input
     source_type: expert_opinion
     source_doc: null
-    reviewer_alias: AGR-1
+    reviewer_alias: AGR-2
     ref: E7
     notes: >
-      C-2: 50-100 g per basin vs 200-400 kg/ha disagree by about 10 times.
-      When resolved, replace CONFLICT with one of
-      {method: per_station, g_per_station: [low, high]} or
-      {method: per_hectare, kg_ha: [low, high]}.
+      C-2 resolved by AGR-2: 15 g of lime per planting station at 75 x 25 cm
+      (about 0.8 t/ha), citing the Conservation Farming Unit (no document title).
+      AGR-1 had given 50-100 g per basin and 200-400 kg/ha, which disagree.
     data:
-      partial_approach: CONFLICT
+      partial_approach: {method: per_station, g_per_station: [15, 15]}   # AGR-2, maize 75 x 25 cm, citing the Conservation Farming Unit (CFU)

@@ -21,6 +21,14 @@ def rules():
 
 
 @pytest.fixture
+def unconfirmed_rules(rules):
+    """Rules as before AGR-2 answered: pH method unconfirmed, so method-sensitive."""
+    variant = copy.deepcopy(rules)
+    variant["BAND-01"].ph_method = "unconfirmed"
+    return variant
+
+
+@pytest.fixture
 def water_rules(rules):
     """Rules read as water pH, so outcomes are not method-sensitive."""
     fixed = copy.deepcopy(rules)
@@ -74,8 +82,8 @@ def test_ref05_too_late_to_lime(water_rules):
     assert "REF-05" in result["refusals"] and result["plan_a"]["lime"]["timing"] == "too_late"
 
 
-def test_ref06_method_sensitive_advice_has_no_quantities(rules):
-    result = advise(rules, 5.6)                     # 5.6 water vs 4.8-5.1 if the bands are CaCl2
+def test_ref06_method_sensitive_advice_has_no_quantities(unconfirmed_rules):
+    result = advise(unconfirmed_rules, 5.6)                     # 5.6 water vs 4.8-5.1 if the bands are CaCl2
     assert result["method_sensitive"] and "REF-06" in result["refusals"]
     assert result["plan_a"] == {"status": "lab_test_recommended", "note": "ref.REF-06"}
     assert len(result["alternatives"]) == 3
@@ -138,10 +146,15 @@ def test_irrigated_can_lime_any_time(water_rules):
 
 # ----- fertiliser, manure, cautions -----
 
-def test_maize_basal_rate_and_open_top_dress(water_rules):
+def test_maize_fertiliser_rates_from_agr2(water_rules):
     fert = advise(water_rules, 5.0)["plan_a"]["fertiliser"]
-    assert fert["basal"]["rate_kg_ha"] == 200
-    assert fert["top_dress"]["rate_kg_ha"] is None and fert["top_dress"]["note"] == "rate.open"
+    assert fert["basal"]["rate_kg_ha"] == [200, 350] and fert["top_dress"]["rate_kg_ha"] == [150, 350]
+    assert fert["basal"]["per_lima"]["low"] == 50.0 and fert["basal"]["per_lima"]["high"] == 87.5
+
+
+def test_open_rate_stays_open(water_rules):
+    top = advise(water_rules, 6.0, crop="soybean")["plan_a"]["fertiliser"]["top_dress"]
+    assert top["rate_kg_ha"] is None and top["note"] == "rate.open"
 
 
 def test_manure_per_lima_derived_from_tonnes_per_ha(water_rules):
@@ -173,8 +186,20 @@ def test_groundnut_pending_supervisor_decision(water_rules):
 
 # ----- Plans B and C -----
 
-def test_plan_b_blocked(water_rules):
-    assert advise(water_rules, 5.0)["plan_b"]["status"] == "blocked"
+def test_plan_b_blocked_without_priority_order(water_rules):
+    blocked = copy.deepcopy(water_rules)
+    blocked["PLAN-B"].data["priority_order"] = "OPEN"
+    assert advise(blocked, 5.0)["plan_b"]["status"] == "blocked"
+
+
+def test_plan_b_in_priority_order_from_agr2(water_rules):
+    plan_b = advise(water_rules, 5.0)["plan_b"]
+    assert plan_b["status"] == "ok" and plan_b["mode"] == "in_order" and plan_b["note"] == "plan.b_in_order"
+    assert [i["item"] for i in plan_b["items"]] == ["seed", "fertiliser", "lime", "manure"]
+    lime = plan_b["items"][2]                     # 15 g x 53,333 stations/ha = 800 kg/ha
+    assert lime["g_per_station"] == [15, 15] and lime["per_lima"]["low"] == pytest.approx(200, abs=0.1)
+    fertiliser = plan_b["items"][1]               # low end of the basal range
+    assert fertiliser["per_lima"]["low"] == fertiliser["per_lima"]["high"] == 50.0
 
 
 def test_plan_c_millet_first_then_lowest_workable(water_rules):
@@ -216,8 +241,8 @@ def test_plan_b_not_applicable_when_refused(water_rules):
     assert advise(ruleset, 4.2)["plan_b"]["status"] == "not_applicable"
 
 
-def test_plan_b_no_quantities_when_method_sensitive(rules):
-    ruleset = with_plan_b(rules, {"method": "per_hectare", "kg_ha": [200, 400]})
+def test_plan_b_no_quantities_when_method_sensitive(unconfirmed_rules):
+    ruleset = with_plan_b(unconfirmed_rules, {"method": "per_hectare", "kg_ha": [200, 400]})
     assert advise(ruleset, 5.6)["plan_b"]["status"] == "lab_test_recommended"
 
 
@@ -233,8 +258,7 @@ def test_household_measures_and_cost_when_supplied(water_rules):
 
 def test_basal_per_lima_in_bags(water_rules):
     basal = advise(water_rules, 5.0)["plan_a"]["fertiliser"]["basal"]
-    assert basal["per_lima"]["low"] == 50.0
-    assert basal["per_lima"]["household"] == [{"container": "50 kg bag", "low": 1.0, "high": 1.0}]
+    assert basal["per_lima"]["household"] == [{"container": "50 kg bag", "low": 1.0, "high": 2.0}]
 
 
 # ----- method handling (spec 2.6) -----
@@ -244,8 +268,8 @@ def test_lab_cacl2_converted_when_rules_are_water(water_rules):
     assert result["method_sensitive"]          # 5.3 (moderate) vs 5.6 (slight)
 
 
-def test_not_method_sensitive_when_all_readings_agree(rules):
-    result = advise(rules, 6.4)                     # 6.4, 5.9, 5.6: all slight, same Plan C
+def test_not_method_sensitive_when_all_readings_agree(unconfirmed_rules):
+    result = advise(unconfirmed_rules, 6.4)                     # 6.4, 5.9, 5.6: all slight, same Plan C
     assert not result["method_sensitive"] and result["alternatives"] == []
     assert result["plan_a"]["lime"]["rate_t_ha"] == [0.5, 1.0]
 
@@ -263,24 +287,22 @@ def test_borderline_flag(water_rules):
 
 # ----- OPEN and CONFLICT items stay stubbed (spec 0 rule 2) -----
 
-@pytest.mark.xfail(strict=True, reason="OPEN: LIME-TRIGGER trigger_ph (C-3, question 3)")
-def test_lime_trigger_confirmed(rules):
-    assert rules["LIME-TRIGGER"].data["trigger_ph"] != "OPEN"
+def test_answers_from_agr2_resolve_c3_c4_c7_and_plan_b(rules):
+    assert rules["BAND-01"].ph_method == "water"                                   # C-4
+    assert rules["LIME-TRIGGER"].data["trigger_ph"] == 5.5                         # C-3 (maize)
+    assert rules["LIME-LEAD-TIME"].data["lead_time_before_planting_months"] == [2, 3]   # C-7
+    assert rules["LIME-PARTIAL"].data["partial_approach"]["g_per_station"] == [15, 15]  # C-2
+    assert rules["PLAN-B"].data["priority_order"] == ["seed", "fertiliser", "lime", "manure"]  # I2
 
 
-@pytest.mark.xfail(strict=True, reason="CONFLICT: Plan B lime-at-planting rate (C-2) and priority order (I2)")
-def test_plan_b_available(water_rules):
-    assert advise(water_rules, 5.0)["plan_b"]["status"] != "blocked"
+def test_real_rules_are_no_longer_method_sensitive(rules):
+    result = advise(rules, 5.6)
+    assert not result["method_sensitive"] and result["plan_a"]["status"] == "ok"
 
 
-@pytest.mark.xfail(strict=True, reason="CONFLICT: lime lead time 2-3 vs 1-2 months (C-7, question 4)")
-def test_lime_lead_time_resolved(rules):
-    assert rules["LIME-LEAD-TIME"].data["lead_time_before_planting_months"] != "CONFLICT"
-
-
-@pytest.mark.xfail(strict=True, reason="OPEN: maize top-dressing rate (G1, question 8)")
-def test_maize_top_dress_rate(water_rules):
-    assert advise(water_rules, 5.0)["plan_a"]["fertiliser"]["top_dress"]["rate_kg_ha"]
+@pytest.mark.xfail(strict=True, reason="OPEN: how far each budget band reaches in Plan B (not asked)")
+def test_plan_b_budget_bands(rules):
+    assert isinstance(rules["PLAN-B"].data["items_by_budget"], dict)
 
 
 @pytest.mark.xfail(strict=True, reason="OPEN: household measures (section H, task H3)")
@@ -292,11 +314,6 @@ def test_household_measures(rules):
 @pytest.mark.xfail(strict=True, reason="OPEN: input prices (task H4)")
 def test_prices_supplied(rules):
     assert rules["PRICE-INPUTS"].data["items"]["lime"]["zmw_per_kg"] != "OPEN"
-
-
-@pytest.mark.xfail(strict=True, reason="OPEN: pH method of the bands and crop table (C-4, question 1)")
-def test_ph_method_confirmed(rules):
-    assert rules["BAND-01"].ph_method != "unconfirmed"
 
 
 # ----- NFR8: every rule fires somewhere -----

@@ -361,7 +361,7 @@ function timingText(timing) {
 function fertItem(item, labelKey) {
   if (!item) return "";
   const amount = item.rate_kg_ha != null
-    ? ` — ${esc(item.rate_kg_ha)} kg/ha${item.per_lima ? ` (${range(item.per_lima)} ${t("ui.per_lima")})` : ""}${extras(item.per_lima)}`
+    ? ` — ${esc(Array.isArray(item.rate_kg_ha) && item.rate_kg_ha[0] !== item.rate_kg_ha[1] ? item.rate_kg_ha.join("–") : [].concat(item.rate_kg_ha)[0])} kg/ha${item.per_lima ? ` (${range(item.per_lima)} ${t("ui.per_lima")})` : ""}${extras(item.per_lima)}`
     : ` — ${t("rate.open")}`;
   return `<li><strong>${t(labelKey)}:</strong> ${esc(item.product)}${amount}</li>`;
 }
@@ -400,7 +400,7 @@ function planB(b) {
     if (item.item === "seed") return `<li><strong>${t("ui.seed")}:</strong> ${t("plan.b_seed")}</li>`;
     return `<li>${esc(item.item)}: ${t("rate.open")}</li>`;
   };
-  return `<ol>${b.items.map(line).join("")}</ol>
+  return `${b.note ? `<p>${t(b.note)}</p>` : ""}<ol>${b.items.map(line).join("")}</ol>
     ${b.left_out.length ? `<p class="muted">${t("ui.left_out")}: ${b.left_out.map((x) => t(`ui.${x}`)).join(", ")}</p>` : ""}`;
 }
 
