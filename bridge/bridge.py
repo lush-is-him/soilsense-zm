@@ -3,7 +3,9 @@
     python -m bridge.bridge ports
     python -m bridge.bridge test
     python -m bridge.bridge watch                     (live pH volts; Ctrl+C to stop)
-    python -m bridge.bridge calibrate --board ph4502c --device probe-1
+    python -m bridge.bridge cal7      --device probe-1            (probe in pH 7.00)
+    python -m bridge.bridge cal4      --board ph4502c --device probe-1   (probe in pH 4.00)
+    python -m bridge.bridge calibrate --board ph4502c --device probe-1   (both in one run)
     python -m bridge.bridge read      --board ph4502c --device probe-1 --field 1
     python -m bridge.bridge moisture
 
@@ -59,7 +61,7 @@ class Probe:
             self.port.close()
         except Exception:
             pass
-        time.sleep(2)
+        time.sleep(5)                   # give the USB chip time before reopening
         self.port = self.reopen()
 
     def command(self, letter, attempts=3):
@@ -163,31 +165,26 @@ def save_state(state):
 
 # ----- steps -----------------------------------------------------------
 
-def stable_volts(probe, ask, label, say=print):
-    """Read until three consecutive readings agree; return their mean volts and temperature."""
-    while True:
-        say(f"  Measuring {label} (about 10 seconds)...")
-        probe.fresh()
-        readings = []
-        for i in range(3):
-            readings.append(probe.read())
-            say(f"    {readings[-1]['ph_v']:.3f} V")
-        volts = [r["ph_v"] for r in readings]
-        if max(volts) - min(volts) <= STABLE_V:
-            return statistics.mean(volts), statistics.mean(r["temp_c"] for r in readings)
-        ask(f"  {label}: still drifting ({min(volts):.3f}-{max(volts):.3f} V). "
-            "Wait 30 seconds, then press Enter to try again.")
+def stable_volts(probe, label, say=print, max_readings=180):
+    """Read continuously until the last three readings agree; return their mean volts and temperature.
+
+    Reading without pauses keeps the clone board's USB chip awake (it tends to drop
+    off after quiet periods or quick reconnects).
+    """
+    say(f"  Measuring {label}: reading until steady (Ctrl+C to stop)...")
+    readings = []
+    for _ in range(max_readings):
+        readings.append(probe.read())
+        last = readings[-3:]
+        volts = [r["ph_v"] for r in last]
+        spread = max(volts) - min(volts)
+        say(f"    {volts[-1]:.3f} V" + ("" if len(last) < 3 or spread <= STABLE_V else "   (still settling)"))
+        if len(last) == 3 and spread <= STABLE_V:
+            return statistics.mean(volts), statistics.mean(r["temp_c"] for r in last)
+    raise RuntimeError(f"{label}: the reading did not settle. Rinse the probe, check it is in the buffer, try again")
 
 
-def calibrate(probe, api, board, device_id, ask=input, say=print, state=None):
-    state = load_state() if state is None else state
-    ask("Rinse the probe with distilled water, put it in the pH 7.00 buffer, wait 1 minute, press Enter.")
-    v7, t7 = stable_volts(probe, ask, "pH 7.00", say)
-    say(f"  pH 7.00 buffer: {v7:.4f} V at {t7:.1f} C")
-    ask("Rinse the probe, put it in the pH 4.00 buffer, wait 1 minute, press Enter.")
-    v4, t4 = stable_volts(probe, ask, "pH 4.00", say)
-    say(f"  pH 4.00 buffer: {v4:.4f} V at {t4:.1f} C")
-
+def _post_calibration(api, board, device_id, v7, t7, v4, t4, state, say):
     sign = detect_sign(v7, v4)
     result = api.call("POST", f"/devices/{device_id}/calibrations", {
         "mv_ph7": volts_to_mv(v7, board, sign), "mv_ph4": volts_to_mv(v4, board, sign),
@@ -199,6 +196,43 @@ def calibrate(probe, api, board, device_id, ask=input, say=print, state=None):
     else:
         say(f"Calibration REJECTED: {'; '.join(result['reasons'])}. "
             "Check the buffers are fresh, the probe is clean, and the board gain is right.")
+    return result
+
+
+def calibrate(probe, api, board, device_id, ask=input, say=print, state=None):
+    """Both buffers in one run."""
+    state = load_state() if state is None else state
+    ask("Rinse the probe with distilled water, put it in the pH 7.00 buffer, wait 1 minute, press Enter.")
+    v7, t7 = stable_volts(probe, "pH 7.00", say)
+    say(f"  pH 7.00 buffer: {v7:.4f} V at {t7:.1f} C")
+    ask("Rinse the probe, put it in the pH 4.00 buffer, wait 1 minute, press Enter.")
+    v4, t4 = stable_volts(probe, "pH 4.00", say)
+    say(f"  pH 4.00 buffer: {v4:.4f} V at {t4:.1f} C")
+    return _post_calibration(api, board, device_id, v7, t7, v4, t4, state, say)
+
+
+def calibrate_ph7(probe, device_id, say=print, state=None):
+    """Step 1 of 2: the probe is already in pH 7.00; measure and remember it."""
+    state = load_state() if state is None else state
+    v7, t7 = stable_volts(probe, "pH 7.00", say)
+    state.setdefault("pending", {})[device_id] = {"v7": v7, "t7": t7}
+    save_state(state)
+    say(f"pH 7.00 saved: {v7:.4f} V at {t7:.1f} C.")
+    say("Now rinse the probe, put it in pH 4.00, wait 2-3 minutes, then run the cal4 command.")
+    return v7, t7
+
+
+def calibrate_ph4(probe, api, board, device_id, say=print, state=None):
+    """Step 2 of 2: the probe is already in pH 4.00; measure and finish the calibration."""
+    state = load_state() if state is None else state
+    pending = state.get("pending", {}).get(device_id)
+    if not pending:
+        raise RuntimeError("run cal7 first (with the probe in pH 7.00)")
+    v4, t4 = stable_volts(probe, "pH 4.00", say)
+    say(f"  pH 4.00 buffer: {v4:.4f} V at {t4:.1f} C")
+    result = _post_calibration(api, board, device_id, pending["v7"], pending["t7"], v4, t4, state, say)
+    state.get("pending", {}).pop(device_id, None)
+    save_state(state)
     return result
 
 
@@ -216,7 +250,6 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
     for i in range(1, REPLICATES + 1):
         if i > 1:
             ask(f"Stir again, wait 30 seconds, press Enter for reading {i} of {REPLICATES}.")
-        probe.fresh()
         reply = probe.read()
         replicates.append(volts_to_mv(reply["ph_v"], board, sign))
         temps.append(reply["temp_c"])
@@ -260,7 +293,7 @@ def moisture_points(probe, ask=input, say=print):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("action", choices=["ports", "test", "watch", "calibrate", "read", "moisture"])
+    parser.add_argument("action", choices=["ports", "test", "watch", "cal7", "cal4", "calibrate", "read", "moisture"])
     parser.add_argument("--port", help="serial port, e.g. COM3; found automatically if left out")
     parser.add_argument("--board", choices=sorted(BOARDS), default="ph4502c")
     parser.add_argument("--gain", type=float, help="override the board gain")
@@ -289,7 +322,7 @@ def main(argv=None):
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
     api = None
-    if args.action in ("calibrate", "read"):
+    if args.action in ("calibrate", "cal4", "read"):
         if args.action == "read" and args.field is None:
             parser.error("--field is required for read")
         # Log in before opening the port: the USB chip goes quiet while you type.
@@ -316,6 +349,12 @@ def main(argv=None):
             return 0
         if args.action == "watch":
             watch(probe)
+            return 0
+        if args.action == "cal7":
+            calibrate_ph7(probe, args.device)
+            return 0
+        if args.action == "cal4":
+            calibrate_ph4(probe, api, board, args.device)
             return 0
         if args.action == "moisture":
             moisture_points(probe)

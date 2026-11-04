@@ -106,11 +106,27 @@ def test_wrong_board_gain_fails_calibration(api):
     assert not cal["accepted"]
 
 
-def test_drifting_buffer_reading_is_repeated(api):
-    asked = []
-    probe = Probe(FakeArduino([7.0, 7.3, 7.0, 7, 7, 7, 4, 4, 4]))
-    calibrate(probe, api, BOARD, "probe-1", ask=asked.append, say=quiet, state={})
-    assert any("drifting" in a for a in asked)
+def test_drifting_buffer_reading_waits_until_steady(api):
+    said = []
+    probe = Probe(FakeArduino([7.0, 7.3, 7.0, 7, 7, 4, 4, 4]))
+    cal = calibrate(probe, api, BOARD, "probe-1", ask=quiet, say=said.append, state={})
+    assert cal["accepted"] and any("still settling" in s for s in said)
+
+
+def test_two_step_calibration(api):
+    from bridge.bridge import calibrate_ph4, calibrate_ph7
+    state = {}
+    calibrate_ph7(Probe(FakeArduino([7, 7, 7])), "probe-1", say=quiet, state=state)
+    assert "probe-1" in state["pending"]
+    cal = calibrate_ph4(Probe(FakeArduino([4, 4, 4])), api, BOARD, "probe-1", say=quiet, state=state)
+    assert cal["accepted"] and cal["slope_pct"] == pytest.approx(100, abs=0.5)
+    assert "probe-1" not in state["pending"] and state["probe-1"]["gain"] == BOARD["gain"]
+
+
+def test_cal4_needs_cal7_first(api):
+    from bridge.bridge import calibrate_ph4
+    with pytest.raises(RuntimeError, match="cal7"):
+        calibrate_ph4(Probe(FakeArduino([4] * 3)), api, BOARD, "probe-1", say=quiet, state={})
 
 
 def test_read_needs_calibration_first(api):
