@@ -163,3 +163,13 @@ def test_probe_gives_up_after_reconnects(monkeypatch):
     probe = Probe(SilentPort(), reopen=SilentPort)
     with pytest.raises(RuntimeError, match="no reply"):
         probe.ping()
+
+
+def test_read_uses_the_gain_saved_at_calibration(api):
+    state = {}
+    probe = Probe(FakeArduino([7, 7, 7, 4, 4, 4]))
+    calibrate(probe, api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+    assert state["probe-1"]["gain"] == BOARD["gain"]
+    other = dict(BOARD, gain=BOARD["gain"] * 1.5)        # e.g. a different preset later
+    reading = read_field(Probe(FakeArduino([5.5] * 3)), api, other, "probe-1", 1, ask=quiet, say=quiet, state=state)
+    assert reading["ph_water"] == pytest.approx(5.5, abs=0.02)

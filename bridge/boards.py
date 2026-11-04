@@ -16,7 +16,12 @@ BOARDS = {
     # still a typical value until the first calibration). BNC socket, two
     # potentiometers, pins To Do Po G G V+. Typically
     # about 0.18 V per pH around 2.5 V at pH 7, i.e. gain about 3.
-    "ph4502c": {"gain": 3.0, "mid_v": 2.5, "confirmed": False},
+    # Gain measured on the project's board on 4 Nov 2026: pH 7.00 buffer 2.1217 V,
+    # pH 4.00 buffer 2.7131 V at 26.3 C, i.e. 0.197 V per pH; theoretical electrode
+    # slope 59.4 mV/pH gives gain 3.32. This assumes the electrode slope is close to
+    # 100% (the same probe calibrated normally on a laboratory Hanna meter), so
+    # later calibrations detect electrode ageing relative to this baseline.
+    "ph4502c": {"gain": 3.32, "mid_v": 2.5, "confirmed": True},
     # DFRobot Gravity SEN0161 (v1). Seller formula pH = 3.5 * V + offset,
     # i.e. about 0.286 V per pH, gain about 4.8.
     "dfrobot_sen0161": {"gain": 4.83, "mid_v": 2.0, "confirmed": False},
