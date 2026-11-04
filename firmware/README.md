@@ -57,8 +57,8 @@ If it does not compile, copy the error message to Claude.
 
 ```
 pip install -r bridge\requirements.txt
-python -m bridge.bridge ports          # find your port, e.g. COM3
-python -m bridge.bridge test --port COM3
+python -m bridge.bridge ports          # optional: lists the ports (the bridge finds the Arduino itself)
+python -m bridge.bridge test
 ```
 
 ## 4. PH-4502C only: set the zero
@@ -70,7 +70,7 @@ Put the probe in the pH 7.00 buffer and run `test` a few times. If the pH volts 
 Start the server first (`uvicorn backend.main:app`), then:
 
 ```
-python -m bridge.bridge calibrate --port COM3 --board ph4502c --device probe-1
+python -m bridge.bridge calibrate --board ph4502c --device probe-1
 ```
 
 Follow the prompts: rinse, pH 7.00 buffer, wait, Enter; rinse, pH 4.00 buffer, wait, Enter. The server accepts the calibration only if the slope is 95 to 105 %.
@@ -80,7 +80,7 @@ Follow the prompts: rinse, pH 7.00 buffer, wait, Enter; rinse, pH 4.00 buffer, w
 ## 6. Take a reading
 
 ```
-python -m bridge.bridge read --port COM3 --board ph4502c --device probe-1 --field 1
+python -m bridge.bridge read --board ph4502c --device probe-1 --field 1
 ```
 
 The field number is shown in the dashboard address bar (`#/field/1`). Mix air-dried, sieved soil with water at 1:2.5 (for example 20 g soil, 50 ml water; in the field use the scoop and cup), stir, wait, and follow the prompts. Three readings are taken; they must agree within 0.1 pH. The result appears in the dashboard, where you then ask for advice.
@@ -88,7 +88,7 @@ The field number is shown in the dashboard address bar (`#/field/1`). Mix air-dr
 ## 7. Moisture sensor two-point check (once)
 
 ```
-python -m bridge.bridge moisture --port COM3
+python -m bridge.bridge moisture
 ```
 
 Hold the sensor in air, then in water. Send the two numbers to the developer: they set the waterlogging threshold, which is still `OPEN` in the spec.

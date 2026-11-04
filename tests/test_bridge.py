@@ -123,3 +123,13 @@ def test_watch_prints_voltage():
     lines = []
     watch(Probe(FakeArduino([7.0, 7.0])), say=lines.append, count=2)
     assert len(lines) == 3 and "2.500 V" in lines[1]
+
+
+def test_find_port_by_usb_chip():
+    from types import SimpleNamespace as P
+    from bridge.bridge import find_port
+    ports = [P(device="COM3", vid=None, pid=None, description="Standard Serial over Bluetooth link"),
+             P(device="COM11", vid=0x1A86, pid=0x7523, description="USB-SERIAL CH340 (COM11)")]
+    assert find_port(ports) == "COM11"
+    with pytest.raises(RuntimeError, match="no Arduino"):
+        find_port(ports[:1])

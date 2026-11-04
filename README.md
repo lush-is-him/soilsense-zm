@@ -44,8 +44,8 @@ Wiring, firmware upload, calibration and buffers: [`firmware/README.md`](firmwar
 
 ```
 pip install -r bridge\requirements.txt
-python -m bridge.bridge calibrate --port COM3 --board ph4502c --device probe-1
-python -m bridge.bridge read --port COM3 --board ph4502c --device probe-1 --field 1
+python -m bridge.bridge calibrate --board ph4502c --device probe-1
+python -m bridge.bridge read --board ph4502c --device probe-1 --field 1
 ```
 
 ## Waiting on others
