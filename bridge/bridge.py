@@ -186,7 +186,7 @@ def calibrate(probe, api, board, device_id, ask=input, say=print, state=None):
     result = api.call("POST", f"/devices/{device_id}/calibrations", {
         "mv_ph7": volts_to_mv(v7, board, sign), "mv_ph4": volts_to_mv(v4, board, sign),
         "temp_c": round((t7 + t4) / 2, 1)})
-    state[device_id] = {"sign": sign}
+    state[device_id] = {"sign": sign, "gain": board["gain"]}
     save_state(state)
     if result["accepted"]:
         say(f"Calibration ACCEPTED: slope {result['slope_pct']}%.")
@@ -201,6 +201,10 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
     if device_id not in state:
         raise RuntimeError(f"calibrate {device_id} first (python -m bridge.bridge calibrate ...)")
     sign = state[device_id]["sign"]
+    saved_gain = state[device_id].get("gain")
+    if saved_gain and saved_gain != board["gain"]:
+        say(f"  Using gain {saved_gain} from the last calibration (not {board['gain']}).")
+        board = dict(board, gain=saved_gain)
     ask("Mix the sieved soil with water (1:2.5), stir, wait 1 minute, put the probe in. Press Enter.")
     replicates, temps, moistures = [], [], []
     for i in range(1, REPLICATES + 1):
@@ -274,7 +278,7 @@ def main(argv=None):
     board = dict(BOARDS[args.board])
     if args.gain:
         board["gain"] = args.gain
-    if not board["confirmed"]:
+    if not board["confirmed"] and not args.gain:
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
     try:
