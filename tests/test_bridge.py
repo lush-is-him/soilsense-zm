@@ -133,3 +133,33 @@ def test_find_port_by_usb_chip():
     assert find_port(ports) == "COM11"
     with pytest.raises(RuntimeError, match="no Arduino"):
         find_port(ports[:1])
+
+
+class SilentPort:
+    def write(self, data):
+        pass
+
+    def readline(self):
+        return b""
+
+    def close(self):
+        pass
+
+
+def test_probe_reconnects_when_the_board_stops_answering(monkeypatch):
+    import bridge.bridge as bb
+    monkeypatch.setattr(bb.time, "sleep", lambda s: None)
+    opened = []
+    def reopen():
+        opened.append(1)
+        return FakeArduino([7.0])
+    probe = Probe(SilentPort(), reopen=reopen)
+    assert probe.read()["ok"] and len(opened) == 1
+
+
+def test_probe_gives_up_after_reconnects(monkeypatch):
+    import bridge.bridge as bb
+    monkeypatch.setattr(bb.time, "sleep", lambda s: None)
+    probe = Probe(SilentPort(), reopen=SilentPort)
+    with pytest.raises(RuntimeError, match="no reply"):
+        probe.ping()

@@ -35,18 +35,43 @@ REPLICATES = 3
 class Probe:
     """Talks to the Arduino. `port` is any object with write() and readline()."""
 
-    def __init__(self, port):
+    def __init__(self, port, reopen=None, reconnects=2):
         self.port = port
+        self.reopen = reopen            # callable that opens the port again (like a replug)
+        self.reconnects = reconnects
 
-    def command(self, letter, attempts=3):
-        line = ""
+    def _exchange(self, letter, attempts):
         for attempt in range(attempts):
             self.port.write(f"{letter}\n".encode())
             line = self.port.readline().decode(errors="replace").strip()
             if line.startswith("{"):
-                break
+                return line
             time.sleep(1)                     # board still starting up, or a stray partial line
-        if not line.startswith("{"):
+        return ""
+
+    def _reconnect(self):
+        try:
+            self.port.close()
+        except Exception:
+            pass
+        time.sleep(2)
+        self.port = self.reopen()
+
+    def command(self, letter, attempts=3):
+        line = ""
+        for round_ in range(1 + (self.reconnects if self.reopen else 0)):
+            try:
+                if round_:
+                    print("  (no answer from the Arduino: reconnecting...)")
+                    self._reconnect()
+                line = self._exchange(letter, attempts)
+            except OSError:                   # write timeout or device lost: try a reconnect
+                line = ""
+                if not self.reopen or round_ == self.reconnects:
+                    raise
+            if line:
+                break
+        if not line:
             raise RuntimeError("no reply from the probe: unplug the USB cable, wait 5 seconds, "
                                "plug it back in and try again (see 'Port problems' in firmware/README.md)")
         reply = json.loads(line)
@@ -249,7 +274,8 @@ def main(argv=None):
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
     try:
-        probe = Probe(open_serial(args.port))
+        port_name = args.port
+        probe = Probe(open_serial(port_name), reopen=lambda: open_serial(port_name))
     except Exception as error:     # pyserial raises SerialException or OSError
         print(f"ERROR: cannot open {args.port}: {error}")
         print("  - Close the Arduino IDE (and its Serial Monitor); only one program can use the port.")
