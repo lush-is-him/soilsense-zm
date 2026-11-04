@@ -26,7 +26,7 @@ from pathlib import Path
 from bridge.boards import BOARDS, detect_sign, volts_to_mv
 
 STATE_FILE = Path.home() / ".soilsense_bridge.json"
-STABLE_V = 0.005          # three buffer readings must agree within 5 mV of board output
+STABLE_V = 0.01           # three buffer readings must agree within 10 mV of board output
 REPLICATES = 3
 
 
@@ -35,18 +35,43 @@ REPLICATES = 3
 class Probe:
     """Talks to the Arduino. `port` is any object with write() and readline()."""
 
-    def __init__(self, port):
+    def __init__(self, port, reopen=None, reconnects=2):
         self.port = port
+        self.reopen = reopen            # callable that opens the port again (like a replug)
+        self.reconnects = reconnects
 
-    def command(self, letter, attempts=3):
-        line = ""
+    def _exchange(self, letter, attempts):
         for attempt in range(attempts):
             self.port.write(f"{letter}\n".encode())
             line = self.port.readline().decode(errors="replace").strip()
             if line.startswith("{"):
-                break
+                return line
             time.sleep(1)                     # board still starting up, or a stray partial line
-        if not line.startswith("{"):
+        return ""
+
+    def _reconnect(self):
+        try:
+            self.port.close()
+        except Exception:
+            pass
+        time.sleep(2)
+        self.port = self.reopen()
+
+    def command(self, letter, attempts=3):
+        line = ""
+        for round_ in range(1 + (self.reconnects if self.reopen else 0)):
+            try:
+                if round_:
+                    print("  (no answer from the Arduino: reconnecting...)")
+                    self._reconnect()
+                line = self._exchange(letter, attempts)
+            except OSError:                   # write timeout or device lost: try a reconnect
+                line = ""
+                if not self.reopen or round_ == self.reconnects:
+                    raise
+            if line:
+                break
+        if not line:
             raise RuntimeError("no reply from the probe: unplug the USB cable, wait 5 seconds, "
                                "plug it back in and try again (see 'Port problems' in firmware/README.md)")
         reply = json.loads(line)
@@ -86,7 +111,7 @@ def find_port(ports=None):
 def open_serial(name):
     import serial      # pyserial
 
-    port = serial.Serial(name, 9600, timeout=5)
+    port = serial.Serial(name, 9600, timeout=5, write_timeout=5)
     time.sleep(2.5)    # the Uno resets when the port opens
     port.reset_input_buffer()
     return port
@@ -133,10 +158,14 @@ def save_state(state):
 
 # ----- steps -----------------------------------------------------------
 
-def stable_volts(probe, ask, label):
+def stable_volts(probe, ask, label, say=print):
     """Read until three consecutive readings agree; return their mean volts and temperature."""
     while True:
-        readings = [probe.read() for _ in range(3)]
+        say(f"  Measuring {label} (about 5 seconds)...")
+        readings = []
+        for i in range(3):
+            readings.append(probe.read())
+            say(f"    {readings[-1]['ph_v']:.3f} V")
         volts = [r["ph_v"] for r in readings]
         if max(volts) - min(volts) <= STABLE_V:
             return statistics.mean(volts), statistics.mean(r["temp_c"] for r in readings)
@@ -147,10 +176,10 @@ def stable_volts(probe, ask, label):
 def calibrate(probe, api, board, device_id, ask=input, say=print, state=None):
     state = load_state() if state is None else state
     ask("Rinse the probe with distilled water, put it in the pH 7.00 buffer, wait 1 minute, press Enter.")
-    v7, t7 = stable_volts(probe, ask, "pH 7.00")
+    v7, t7 = stable_volts(probe, ask, "pH 7.00", say)
     say(f"  pH 7.00 buffer: {v7:.4f} V at {t7:.1f} C")
     ask("Rinse the probe, put it in the pH 4.00 buffer, wait 1 minute, press Enter.")
-    v4, t4 = stable_volts(probe, ask, "pH 4.00")
+    v4, t4 = stable_volts(probe, ask, "pH 4.00", say)
     say(f"  pH 4.00 buffer: {v4:.4f} V at {t4:.1f} C")
 
     sign = detect_sign(v7, v4)
@@ -249,7 +278,8 @@ def main(argv=None):
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
     try:
-        probe = Probe(open_serial(args.port))
+        port_name = args.port
+        probe = Probe(open_serial(port_name), reopen=lambda: open_serial(port_name))
     except Exception as error:     # pyserial raises SerialException or OSError
         print(f"ERROR: cannot open {args.port}: {error}")
         print("  - Close the Arduino IDE (and its Serial Monitor); only one program can use the port.")
