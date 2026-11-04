@@ -4,7 +4,7 @@
 "use strict";
 
 const GPS_MAX_M = 30;
-const CROPS = ["maize", "soybean", "sunflower", "millet", "sorghum", "groundnut"];
+const CROPS = ["maize", "soybean", "sunflower", "millet", "groundnut"];
 const $app = document.getElementById("app");
 
 // ----- storage (may be unavailable in private windows) -----

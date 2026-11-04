@@ -2,6 +2,7 @@
 
     python scripts/score_review.py [docs/scenarios/scenarios.csv]
     python scripts/score_review.py docs/scenarios/review_sheet.xlsx   # the short sheet
+    python scripts/score_review.py responses.csv                      # the Google Form version
 
 The reviewer fills `agronomist_agrees` with yes, no or partial (partial
 counts as half) and may add a recommendation and comment.
@@ -50,11 +51,39 @@ def rows_from_workbook(path):
     return rows
 
 
+def rows_from_form_csv(path):
+    """Responses CSV of the Google Form version (columns R1.., C1..)."""
+    import json
+    import re
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from run_scenarios import scenarios
+
+    keys = json.loads((Path(__file__).resolve().parent.parent / "docs" / "scenarios" / "review_keys.json").read_text())
+    by_id = {s["id"]: s for s in scenarios()}
+    with open(path, newline="", encoding="utf-8-sig") as handle:
+        response = list(csv.DictReader(handle))[-1]          # the latest response
+    answers, comments = {}, {}
+    for title, value in response.items():
+        match = re.match(r"^([RC])(\d+)\.", title or "")
+        if match:
+            (answers if match.group(1) == "R" else comments)[match.group(2)] = (value or "").strip()
+    rows = []
+    for number, scenario_id in keys.items():
+        source = by_id.get(scenario_id, {})
+        rows.append({"id": f"{number} ({scenario_id})", "note": source.get("note", ""), "ph": source.get("ph", ""),
+                     "crop": source.get("crop", ""), "agronomist_agrees": answers.get(number, ""),
+                     "agronomist_comment": comments.get(number, "")})
+    return rows
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     path = argv[0] if argv else "docs/scenarios/scenarios.csv"
     if str(path).endswith(".xlsx"):
         rows = rows_from_workbook(path)
+    elif Path(path).name != "scenarios.csv" and "R1." in Path(path).read_text(encoding="utf-8-sig").splitlines()[0]:
+        rows = rows_from_form_csv(path)
     else:
         with open(path, newline="") as handle:
             rows = list(csv.DictReader(handle))
