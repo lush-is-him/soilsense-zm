@@ -26,7 +26,7 @@ from pathlib import Path
 from bridge.boards import BOARDS, detect_sign, volts_to_mv
 
 STATE_FILE = Path.home() / ".soilsense_bridge.json"
-STABLE_V = 0.005          # three buffer readings must agree within 5 mV of board output
+STABLE_V = 0.01           # three buffer readings must agree within 10 mV of board output
 REPLICATES = 3
 
 
@@ -111,7 +111,7 @@ def find_port(ports=None):
 def open_serial(name):
     import serial      # pyserial
 
-    port = serial.Serial(name, 9600, timeout=5)
+    port = serial.Serial(name, 9600, timeout=5, write_timeout=5)
     time.sleep(2.5)    # the Uno resets when the port opens
     port.reset_input_buffer()
     return port
@@ -158,10 +158,14 @@ def save_state(state):
 
 # ----- steps -----------------------------------------------------------
 
-def stable_volts(probe, ask, label):
+def stable_volts(probe, ask, label, say=print):
     """Read until three consecutive readings agree; return their mean volts and temperature."""
     while True:
-        readings = [probe.read() for _ in range(3)]
+        say(f"  Measuring {label} (about 5 seconds)...")
+        readings = []
+        for i in range(3):
+            readings.append(probe.read())
+            say(f"    {readings[-1]['ph_v']:.3f} V")
         volts = [r["ph_v"] for r in readings]
         if max(volts) - min(volts) <= STABLE_V:
             return statistics.mean(volts), statistics.mean(r["temp_c"] for r in readings)
@@ -172,10 +176,10 @@ def stable_volts(probe, ask, label):
 def calibrate(probe, api, board, device_id, ask=input, say=print, state=None):
     state = load_state() if state is None else state
     ask("Rinse the probe with distilled water, put it in the pH 7.00 buffer, wait 1 minute, press Enter.")
-    v7, t7 = stable_volts(probe, ask, "pH 7.00")
+    v7, t7 = stable_volts(probe, ask, "pH 7.00", say)
     say(f"  pH 7.00 buffer: {v7:.4f} V at {t7:.1f} C")
     ask("Rinse the probe, put it in the pH 4.00 buffer, wait 1 minute, press Enter.")
-    v4, t4 = stable_volts(probe, ask, "pH 4.00")
+    v4, t4 = stable_volts(probe, ask, "pH 4.00", say)
     say(f"  pH 4.00 buffer: {v4:.4f} V at {t4:.1f} C")
 
     sign = detect_sign(v7, v4)
