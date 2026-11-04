@@ -1,11 +1,13 @@
 """Laptop serial bridge: probe over USB to the SoilSense API (spec 2, track B).
 
     python -m bridge.bridge ports
-    python -m bridge.bridge test      --port COM3
-    python -m bridge.bridge watch     --port COM3     (live pH volts; Ctrl+C to stop)
-    python -m bridge.bridge calibrate --port COM3 --board ph4502c --device probe-1
-    python -m bridge.bridge read      --port COM3 --board ph4502c --device probe-1 --field 1
-    python -m bridge.bridge moisture  --port COM3
+    python -m bridge.bridge test
+    python -m bridge.bridge watch                     (live pH volts; Ctrl+C to stop)
+    python -m bridge.bridge calibrate --board ph4502c --device probe-1
+    python -m bridge.bridge read      --board ph4502c --device probe-1 --field 1
+    python -m bridge.bridge moisture
+
+The Arduino is found automatically; add --port COM3 only if you have two.
 
 The server address defaults to http://localhost:8000 (--api to change).
 You are asked for your SoilSense username and password.
@@ -57,6 +59,28 @@ class Probe:
 
     def read(self):
         return self.command("R")
+
+
+# USB IDs of the Arduino's USB chip: CH340 clones, genuine Uno (16U2), FTDI, CP210x.
+KNOWN_USB_IDS = {(0x1A86, 0x7523), (0x1A86, 0x5523), (0x2341, 0x0043), (0x2341, 0x0001),
+                 (0x2A03, 0x0043), (0x0403, 0x6001), (0x10C4, 0xEA60)}
+
+
+def find_port(ports=None):
+    """The Arduino's serial port, found by its USB chip, so the COM number never matters."""
+    if ports is None:
+        from serial.tools import list_ports
+        ports = list_ports.comports()
+    matches = [p.device for p in ports
+               if (getattr(p, "vid", None), getattr(p, "pid", None)) in KNOWN_USB_IDS
+               or "CH340" in (getattr(p, "description", "") or "")
+               or "Arduino" in (getattr(p, "description", "") or "")]
+    if not matches:
+        raise RuntimeError("no Arduino found: check the USB cable is plugged in and the ON light is lit, "
+                           "then unplug and replug it")
+    if len(matches) > 1:
+        raise RuntimeError(f"more than one Arduino found ({', '.join(matches)}): pass --port to choose")
+    return matches[0]
 
 
 def open_serial(name):
@@ -197,7 +221,7 @@ def moisture_points(probe, ask=input, say=print):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("action", choices=["ports", "test", "watch", "calibrate", "read", "moisture"])
-    parser.add_argument("--port", help="serial port, e.g. COM3 (Windows) or /dev/ttyACM0")
+    parser.add_argument("--port", help="serial port, e.g. COM3; found automatically if left out")
     parser.add_argument("--board", choices=sorted(BOARDS), default="ph4502c")
     parser.add_argument("--gain", type=float, help="override the board gain")
     parser.add_argument("--device", default="probe-1")
@@ -211,7 +235,12 @@ def main(argv=None):
             print(f"{port.device}  {port.description}")
         return 0
     if not args.port:
-        parser.error("--port is required")
+        try:
+            args.port = find_port()
+        except RuntimeError as error:
+            print(f"ERROR: {error}")
+            return 1
+        print(f"Using the Arduino on {args.port}.")
 
     board = dict(BOARDS[args.board])
     if args.gain:
