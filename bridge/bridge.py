@@ -49,6 +49,11 @@ class Probe:
             time.sleep(1)                     # board still starting up, or a stray partial line
         return ""
 
+    def fresh(self):
+        """Reconnect before measuring after a pause: clone USB chips go quiet when idle."""
+        if self.reopen:
+            self._reconnect()
+
     def _reconnect(self):
         try:
             self.port.close()
@@ -161,7 +166,8 @@ def save_state(state):
 def stable_volts(probe, ask, label, say=print):
     """Read until three consecutive readings agree; return their mean volts and temperature."""
     while True:
-        say(f"  Measuring {label} (about 5 seconds)...")
+        say(f"  Measuring {label} (about 10 seconds)...")
+        probe.fresh()
         readings = []
         for i in range(3):
             readings.append(probe.read())
@@ -210,6 +216,7 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
     for i in range(1, REPLICATES + 1):
         if i > 1:
             ask(f"Stir again, wait 30 seconds, press Enter for reading {i} of {REPLICATES}.")
+        probe.fresh()
         reply = probe.read()
         replicates.append(volts_to_mv(reply["ph_v"], board, sign))
         temps.append(reply["temp_c"])
@@ -281,6 +288,17 @@ def main(argv=None):
     if not board["confirmed"] and not args.gain:
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
+    api = None
+    if args.action in ("calibrate", "read"):
+        if args.action == "read" and args.field is None:
+            parser.error("--field is required for read")
+        # Log in before opening the port: the USB chip goes quiet while you type.
+        api = Api(args.api)
+        try:
+            api.login(input("SoilSense username: "), getpass.getpass("Password: "))
+        except RuntimeError as error:
+            print(f"ERROR: {error}")
+            return 1
     try:
         port_name = args.port
         probe = Probe(open_serial(port_name), reopen=lambda: open_serial(port_name))
@@ -302,13 +320,9 @@ def main(argv=None):
         if args.action == "moisture":
             moisture_points(probe)
             return 0
-        api = Api(args.api)
-        api.login(input("SoilSense username: "), getpass.getpass("Password: "))
         if args.action == "calibrate":
             calibrate(probe, api, board, args.device)
         else:
-            if args.field is None:
-                parser.error("--field is required for read")
             read_field(probe, api, board, args.device, args.field)
         return 0
     except RuntimeError as error:
