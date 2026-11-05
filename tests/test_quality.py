@@ -54,10 +54,9 @@ def test_rejected_reading_has_no_ph_and_lists_all_reasons():
     assert result.ph_mean is None and len(result.reasons) == 3
 
 
-@pytest.mark.xfail(strict=True, reason="OPEN: moisture thresholds need a two-point sensor calibration (spec 2.3)")
-def test_waterlogged_reading_rejected():
-    result = check_reading(GOOD_REPS, 25.0, GOOD_CAL, moisture=1000)
-    assert not result.accepted
+def test_moisture_never_rejects_a_reading():
+    """The moisture sensor is out of scope (Nov 2026): a value, if sent, is only recorded."""
+    assert check_reading(GOOD_REPS, 25.0, GOOD_CAL, moisture=1000).accepted
 
 
 def test_ph_uses_the_sample_temperature():
