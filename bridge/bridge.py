@@ -430,7 +430,7 @@ def main(argv=None):
         else:
             read_field(probe, api, board, args.device, args.field)
         return 0
-    except RuntimeError as error:
+    except (RuntimeError, ValueError) as error:
         print(f"ERROR: {error}")
         return 1
     except OSError as error:          # pyserial's SerialException, e.g. "Write timeout"
