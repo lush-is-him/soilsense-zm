@@ -58,3 +58,13 @@ def test_rejected_reading_has_no_ph_and_lists_all_reasons():
 def test_waterlogged_reading_rejected():
     result = check_reading(GOOD_REPS, 25.0, GOOD_CAL, moisture=1000)
     assert not result.accepted
+
+
+def test_ph_uses_the_sample_temperature():
+    """Same electrode mV means a smaller pH change in a warmer sample (Nernst)."""
+    from backend.services.probe import mv_to_ph, theoretical_slope_mv
+    mv = -2 * theoretical_slope_mv(25.0)                       # 2 pH units above 7 at 25 C
+    assert mv_to_ph(mv, 0.0, 100, 25.0) == 9.0
+    assert mv_to_ph(mv, 0.0, 100, 25.0, sample_temp_c=25.0) == 9.0
+    warm = mv_to_ph(mv, 0.0, 100, 25.0, sample_temp_c=35.0)
+    assert 8.9 < warm < 9.0                                    # about 8.93

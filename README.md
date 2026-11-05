@@ -47,7 +47,12 @@ Wiring, firmware upload, calibration and buffers: [`firmware/README.md`](firmwar
 pip install -r bridge\requirements.txt
 python -m bridge.bridge calibrate --board ph4502c --device probe-1
 python -m bridge.bridge read --board ph4502c --device probe-1 --field 1
+python -m bridge.bridge live --field 1     # demo: keeps reading; the dashboard Live page shows pH and advice
 ```
+
+**Live demo.** Start the server, open a field in the dashboard and press **Live probe reading**, choose the crop, then run `python -m bridge.bridge live --field <number>`. Put the probe in a sample: the page shows the pH while it settles, saves the reading, and shows the advice. Rinse, put the probe in the next sample, and it repeats. Ctrl+C stops the bridge.
+
+The pH is corrected for the sample's own temperature (from the DS18B20). The moisture sensor is no longer used.
 
 ## Waiting on others
 

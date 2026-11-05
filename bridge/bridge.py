@@ -255,15 +255,28 @@ def calibrate_ph4(probe, api, board, device_id, say=print, state=None):
     return result
 
 
-def read_field(probe, api, board, device_id, field_id, ask=input, say=print, state=None):
-    state = load_state() if state is None else state
+def _calibrated_board(board, device_id, state, say):
     if device_id not in state:
         raise RuntimeError(f"calibrate {device_id} first (python -m bridge.bridge calibrate ...)")
-    sign = state[device_id]["sign"]
     saved_gain = state[device_id].get("gain")
     if saved_gain and saved_gain != board["gain"]:
         say(f"  Using gain {saved_gain} from the last calibration (not {board['gain']}).")
         board = dict(board, gain=saved_gain)
+    return board, state[device_id]["sign"]
+
+
+def _post_live(api, device_id, mv, temp_c, settled, field_id):
+    """Show the settling value on the dashboard's Live page. Never stops a reading."""
+    try:
+        api.call("POST", f"/devices/{device_id}/live",
+                 {"mv": mv, "temp_c": temp_c, "settled": settled, "field_id": field_id})
+    except RuntimeError:
+        pass
+
+
+def read_field(probe, api, board, device_id, field_id, ask=input, say=print, state=None, live=False):
+    state = load_state() if state is None else state
+    board, sign = _calibrated_board(board, device_id, state, say)
     # The soil-water mix is prepared and the probe is in it before this runs.
     # Read continuously until steady (no pauses: the clone USB chip drops off
     # when idle) and use the three steady readings as the replicates.
@@ -273,6 +286,8 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
         window = (window + [probe.read()])[-REPLICATES:]
         volts = [r["ph_v"] for r in window]
         settled = len(window) == REPLICATES and max(volts) - min(volts) <= STABLE_V
+        if live:
+            _post_live(api, device_id, volts_to_mv(volts[-1], board, sign), window[-1]["temp_c"], settled, field_id)
         say(f"    {volts[-1]:.3f} V" + ("" if settled or len(window) < REPLICATES else "   (still settling)"))
         if settled:
             break
@@ -280,12 +295,13 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
         raise RuntimeError("the reading did not settle: stir the sample, wait 2 minutes and try again")
     replicates = [volts_to_mv(r["ph_v"], board, sign) for r in window]
     temps = [r["temp_c"] for r in window]
-    moistures = [r["moist_raw"] for r in window]
+    # The moisture sensor is out of scope (thresholds never confirmed), so it is not sent.
     result = api.call("POST", "/readings", {
         "field_id": field_id, "device_id": device_id, "replicates_mv": replicates,
-        "temp_c": round(statistics.mean(temps), 1), "moisture": round(statistics.mean(moistures))})
+        "temp_c": round(statistics.mean(temps), 1)})
     if result["quality_status"] == "accepted":
-        say(f"Reading ACCEPTED: pH {result['ph_water']} (reading #{result['reading_id']}).")
+        say(f"Reading ACCEPTED: pH {result['ph_water']} at {result.get('temp_c', statistics.mean(temps)):.1f} C "
+            f"(reading #{result['reading_id']}).")
     else:
         say(f"Reading REJECTED: {'; '.join(result['quality_reasons'])}.")
     return result
@@ -344,6 +360,35 @@ def read_sample(probe, api, board, device_id, sample_id, say=print, state=None, 
     return result
 
 
+MOVED_V = 0.05     # the probe is in a new sample when the volts move this far
+
+
+def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=None):
+    """Demo mode: read, save, then wait for the next sample, until Ctrl+C.
+
+    Put the probe in a sample: the dashboard's Live page shows the pH while it
+    settles, then the saved reading and the advice. Rinse, put it in the next
+    sample, and it starts again by itself.
+    """
+    state = load_state() if state is None else state
+    say(f"LIVE: field {field_id}. Open the dashboard Live page. Press Ctrl+C to stop.")
+    done = 0
+    try:
+        while rounds is None or done < rounds:
+            result = read_field(probe, api, board, device_id, field_id, say=say, state=state, live=True)
+            done += 1
+            last_v = probe.read()["ph_v"]
+            say("  Done. Rinse the probe and put it in the next sample (waiting for it to move)...")
+            while rounds is None or done < rounds:
+                reply = probe.read()
+                if abs(reply["ph_v"] - last_v) > MOVED_V:
+                    say("  New sample detected.")
+                    break
+    except KeyboardInterrupt:
+        say("Stopped.")
+    return done
+
+
 def watch(probe, say=print, count=None):
     """Print the pH board voltage about once a second, e.g. while setting the zero screw."""
     say("Showing the pH board voltage. Press Ctrl+C to stop.")
@@ -372,7 +417,7 @@ def moisture_points(probe, ask=input, say=print):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("action", choices=["ports", "test", "watch", "cal7", "cal4", "calibrate", "read", "sample", "moisture"])
+    parser.add_argument("action", choices=["ports", "test", "watch", "cal7", "cal4", "calibrate", "read", "live", "sample", "moisture"])
     parser.add_argument("sample_id", nargs="?", help="for sample: the sample code, e.g. S01")
     parser.add_argument("--port", help="serial port, e.g. COM3; found automatically if left out")
     parser.add_argument("--board", choices=sorted(BOARDS), default="ph4502c")
@@ -402,9 +447,9 @@ def main(argv=None):
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
     api = None
-    if args.action in ("calibrate", "cal4", "read", "sample"):
-        if args.action == "read" and args.field is None:
-            parser.error("--field is required for read")
+    if args.action in ("calibrate", "cal4", "read", "live", "sample"):
+        if args.action in ("read", "live") and args.field is None:
+            parser.error("--field is required (the number in the dashboard address, e.g. #/field/3)")
         if args.action == "sample" and not args.sample_id:
             parser.error("give the sample code, e.g. python -m bridge.bridge sample S01")
         # Log in before opening the port: the USB chip goes quiet while you type.
@@ -441,7 +486,9 @@ def main(argv=None):
         if args.action == "moisture":
             moisture_points(probe)
             return 0
-        if args.action == "sample":
+        if args.action == "live":
+            live(probe, api, board, args.device, args.field)
+        elif args.action == "sample":
             read_sample(probe, api, board, args.device, args.sample_id.upper())
         elif args.action == "calibrate":
             calibrate(probe, api, board, args.device)

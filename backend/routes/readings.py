@@ -30,7 +30,7 @@ def create_reading(body: ReadingIn, db=Depends(get_db), user=Depends(current_use
             replicates = []
         else:
             replicates = [mv_to_ph(mv, calibration_row["offset_mv"], calibration_row["slope_pct"],
-                                   calibration_row["temp_c"]) for mv in body.replicates_mv]
+                                   calibration_row["temp_c"], body.temp_c) for mv in body.replicates_mv]
     else:
         replicates = body.replicates_ph
 

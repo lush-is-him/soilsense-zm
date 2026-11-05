@@ -230,3 +230,23 @@ def test_login_is_remembered(api):
     second = FakeApi()
     ensure_login(second, ask=lambda p: asked.append(p) or "operator", ask_secret=lambda p: "x", say=quiet)
     assert len(asked) == 1 and second.token == first.token
+
+
+def test_live_mode_saves_each_sample_and_shows_it_on_the_dashboard(api):
+    from bridge.bridge import live
+    state = {}
+    calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+    # sample 1 settles, probe stays, then moves to sample 2, which settles
+    probe = Probe(FakeArduino([5.5, 5.5, 5.5, 5.5, 5.5, 6.5, 6.5, 6.5, 6.5, 6.5]))
+    assert live(probe, api, BOARD, "probe-1", 1, say=quiet, state=state, rounds=2) == 2
+    history = api.call("GET", "/fields/1/history")["readings"]
+    assert [r["ph_water"] for r in history][:2] == pytest.approx([6.5, 5.5], abs=0.02)
+    shown = api.call("GET", "/devices/probe-1/live")
+    assert shown["settled"] and shown["ph"] == pytest.approx(6.5, abs=0.02)
+
+
+def test_readings_do_not_send_moisture(api):
+    state = {}
+    calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+    reading = read_field(Probe(FakeArduino([5.5] * 3)), api, BOARD, "probe-1", 1, ask=quiet, say=quiet, state=state)
+    assert reading.get("moisture") is None

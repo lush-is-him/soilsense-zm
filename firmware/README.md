@@ -26,9 +26,6 @@ Unplug the Uno from USB while wiring.
 | PH-4502C | **G** (either of the two) | **GND** |
 | PH-4502C | **Po** | **A0** |
 | PH-4502C | To, Do, the other G | nothing |
-| Moisture sensor | VCC (red) | **5V** |
-| Moisture sensor | GND (black) | **GND** |
-| Moisture sensor | AOUT (yellow) | **A1** |
 | KY-001 | **middle pin** | **5V** |
 | KY-001 | **-** | **GND** |
 | KY-001 | **S** | **D2** |
@@ -38,6 +35,9 @@ The Uno has one 5V pin and three GND pins. For three parts on 5V, put the 5V wir
 The KY-001 already has its 4.7 kΩ resistor on the board: do not add another.
 
 ### Temperature
+
+The temperature is used: the server converts the probe's millivolts to pH using the electrode slope at the **sample's own temperature** (Nernst equation), so a warmer or cooler sample than the buffers is still converted correctly. A reading more than the allowed range away from the calibration temperature is rejected.
+
 
 The KY-001 cannot go into the soil-water mix: it is a bare chip on a circuit board. Two options:
 
@@ -85,7 +85,9 @@ python -m bridge.bridge read --board ph4502c --device probe-1 --field 1
 
 The field number is shown in the dashboard address bar (`#/field/1`). Mix air-dried, sieved soil with water at 1:2.5 (for example 20 g soil, 50 ml water; in the field use the scoop and cup), stir, wait, and follow the prompts. Three readings are taken; they must agree within 0.1 pH. The result appears in the dashboard, where you then ask for advice.
 
-## 7. Moisture sensor two-point check (once)
+## 7. Moisture sensor (dropped, Nov 2026)
+
+The moisture sensor is out of scope: its waterlogging threshold was never confirmed, so the bridge no longer sends it and it does not need to be wired. Waterlogging comes from the operator's field check instead. The firmware still reads A1 (harmless if nothing is connected). The old two-point check is kept below for reference.
 
 ```
 python -m bridge.bridge moisture

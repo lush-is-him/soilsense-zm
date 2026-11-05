@@ -12,7 +12,7 @@ All code is in place. What remains depends on people, hardware or results outsid
 | 6 | Lab results for the 20 samples (sent 29 Oct, about 2 weeks) (pH water and CaCl2; OC, P, K, texture if affordable) | Lab (UNZA or ZARI) | `docs/evaluation/samples.csv` (with your probe readings of the retained bags) | `python scripts/evaluate.py` → `docs/evaluation/results.md` (RQ1, RQ2, measured water–CaCl2 gap). Then set `E_PROBE` (environment variable) to the largest error and `PH_WATER_MINUS_CACL2` in `engine/config.py` to the measured range |
 | 7 | pH 4.00 and 7.00 buffers, distilled water | You (buy) | — | `python -m bridge.bridge calibrate ...` (see `firmware/README.md`) |
 | 8 | Exact pH board model and its volts per pH | You (check the board) | `bridge/boards.py`: correct `gain`, set `confirmed: True` | `python -m bridge.bridge calibrate ...` should give 95–105 % |
-| 9 | Moisture sensor dry/wet values | You (`python -m bridge.bridge moisture`) | Send the two numbers; they set the waterlogging threshold (spec 2.3, OPEN) | — |
+| 9 | ~~Moisture sensor dry/wet values~~ **dropped** (Nov 2026): moisture sensor out of scope; waterlogging comes from the field check | — | — | — |
 | 10 | Household container weights (H3) | You (weigh) | `rules/measures.yaml`: kg per container per material | Advice shows buckets, bags, tins automatically |
 | 11 | Prices with place and date (H4, optional) | You | `rules/prices.yaml`: `zmw_per_kg` | Advice shows cost ranges automatically |
 | 12 | Native Nyanja and Tonga reviewers (H5) | Reviewers | `python scripts/i18n_sheet.py export`, they fill `docs/translations/review_sheet.csv` | `python scripts/i18n_sheet.py import` |

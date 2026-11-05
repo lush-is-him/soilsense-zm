@@ -118,3 +118,8 @@ details summary { cursor: pointer; font-weight: 600; }
   max-width: calc(100% - 2rem);
 }
 .toast.error { background: var(--red); color: #fff; }
+
+.live-box { text-align: center; padding: 1rem 0 0.5rem; }
+.live-ph { font-size: 3.2rem; font-weight: 700; line-height: 1.1; }
+.live-ph.settling { opacity: 0.55; }
+a.button { display: inline-block; padding: 0.55rem 1rem; border-radius: 8px; background: var(--green, #1f7a4a); color: #fff; text-decoration: none; }
