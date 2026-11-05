@@ -189,3 +189,24 @@ def test_read_uses_the_gain_saved_at_calibration(api):
     other = dict(BOARD, gain=BOARD["gain"] * 1.5)        # e.g. a different preset later
     reading = read_field(Probe(FakeArduino([5.5] * 3)), api, other, "probe-1", 1, ask=quiet, say=quiet, state=state)
     assert reading["ph_water"] == pytest.approx(5.5, abs=0.02)
+
+
+def test_sample_registers_field_and_fills_samples_csv(api, tmp_path):
+    import csv
+    from bridge.bridge import read_sample
+    samples = tmp_path / "samples.csv"
+    header = ["sample_id", "lat", "lon", "gps_accuracy_m", "probe_ph_1", "probe_ph_2", "probe_ph_3", "probe_temp_c", "notes"]
+    with samples.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(header)
+        writer.writerow(["S01", "-15.679223", "28.217512", "3", "", "", "", "", "test"])
+        writer.writerow(["S02", "-15.679295", "28.217410", "2.5", "", "", "", "", ""])
+    state = {}
+    calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+    result = read_sample(Probe(FakeArduino([5.9, 5.6, 5.52, 5.5, 5.51])), api, BOARD, "probe-1", "S01",
+                         say=quiet, state=state, samples_csv=samples)
+    assert result["quality_status"] == "accepted"
+    rows = list(csv.DictReader(samples.open()))
+    assert rows[0]["probe_ph_1"] and abs(float(rows[0]["probe_ph_2"]) - 5.5) < 0.05 and rows[1]["probe_ph_1"] == ""
+    again = read_sample(Probe(FakeArduino([5.5] * 3)), api, BOARD, "probe-1", "S01", say=quiet, state=state, samples_csv=samples)
+    assert again["field_id"] == result["field_id"]            # same field reused

@@ -7,6 +7,7 @@
     python -m bridge.bridge cal4      --board ph4502c --device probe-1   (probe in pH 4.00)
     python -m bridge.bridge calibrate --board ph4502c --device probe-1   (both in one run)
     python -m bridge.bridge read      --board ph4502c --device probe-1 --field 1
+    python -m bridge.bridge sample S01 --board ph4502c --device probe-1  (retained lab sample)
     python -m bridge.bridge moisture
 
 The Arduino is found automatically; add --port COM3 only if you have two.
@@ -245,16 +246,23 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
     if saved_gain and saved_gain != board["gain"]:
         say(f"  Using gain {saved_gain} from the last calibration (not {board['gain']}).")
         board = dict(board, gain=saved_gain)
-    ask("Mix the sieved soil with water (1:2.5), stir, wait 1 minute, put the probe in. Press Enter.")
-    replicates, temps, moistures = [], [], []
-    for i in range(1, REPLICATES + 1):
-        if i > 1:
-            ask(f"Stir again, wait 30 seconds, press Enter for reading {i} of {REPLICATES}.")
-        reply = probe.read()
-        replicates.append(volts_to_mv(reply["ph_v"], board, sign))
-        temps.append(reply["temp_c"])
-        moistures.append(reply["moist_raw"])
-        say(f"  reading {i}: {reply['ph_v']:.4f} V, {reply['temp_c']:.1f} C")
+    # The soil-water mix is prepared and the probe is in it before this runs.
+    # Read continuously until steady (no pauses: the clone USB chip drops off
+    # when idle) and use the three steady readings as the replicates.
+    say("  Reading the sample until steady...")
+    window = []
+    for _ in range(180):
+        window = (window + [probe.read()])[-REPLICATES:]
+        volts = [r["ph_v"] for r in window]
+        settled = len(window) == REPLICATES and max(volts) - min(volts) <= STABLE_V
+        say(f"    {volts[-1]:.3f} V" + ("" if settled or len(window) < REPLICATES else "   (still settling)"))
+        if settled:
+            break
+    else:
+        raise RuntimeError("the reading did not settle: stir the sample, wait 2 minutes and try again")
+    replicates = [volts_to_mv(r["ph_v"], board, sign) for r in window]
+    temps = [r["temp_c"] for r in window]
+    moistures = [r["moist_raw"] for r in window]
     result = api.call("POST", "/readings", {
         "field_id": field_id, "device_id": device_id, "replicates_mv": replicates,
         "temp_c": round(statistics.mean(temps), 1), "moisture": round(statistics.mean(moistures))})
@@ -262,6 +270,59 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
         say(f"Reading ACCEPTED: pH {result['ph_water']} (reading #{result['reading_id']}).")
     else:
         say(f"Reading REJECTED: {'; '.join(result['quality_reasons'])}.")
+    return result
+
+
+SAMPLES_CSV = Path(__file__).resolve().parent.parent / "docs" / "evaluation" / "samples.csv"
+SAMPLE_FARMER = "Retained lab samples"
+
+
+def sample_field(api, sample_id, samples_csv=SAMPLES_CSV):
+    """The field for a retained lab sample (S01...), registered from samples.csv on first use."""
+    import csv
+    with open(samples_csv, newline="", encoding="utf-8") as handle:
+        row = next((r for r in csv.DictReader(handle) if r["sample_id"] == sample_id), None)
+    if row is None:
+        raise RuntimeError(f"{sample_id} is not in {samples_csv.name}")
+    if not (row.get("lat") and row.get("lon")):
+        raise RuntimeError(f"{sample_id} has no GPS position in {samples_csv.name}")
+    farmer = next((f for f in api.call("GET", "/farmers") if f["alias"] == SAMPLE_FARMER), None)
+    if farmer is None:
+        farmer = api.call("POST", "/farmers", {"alias": SAMPLE_FARMER})
+    fields = api.call("GET", f"/farmers/{farmer['farmer_id']}")["fields"]
+    field = next((f for f in fields if f["name"] == sample_id), None)
+    if field is None:
+        accuracy = float(row["gps_accuracy_m"]) if row.get("gps_accuracy_m") else None
+        field = api.call("POST", "/fields", {
+            "farmer_id": farmer["farmer_id"], "name": sample_id, "lat": float(row["lat"]),
+            "lon": float(row["lon"]), "gps_accuracy_m": accuracy,
+            "location_source": "gps" if accuracy is not None and accuracy <= 30 else "manual"})
+    return field["field_id"]
+
+
+def record_sample(sample_id, reading, samples_csv=SAMPLES_CSV):
+    """Write the probe replicates and temperature into samples.csv for the evaluation."""
+    import csv
+    with open(samples_csv, newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    fields = list(rows[0].keys())
+    for row in rows:
+        if row["sample_id"] == sample_id:
+            for i, value in enumerate(reading["replicates"], start=1):
+                row[f"probe_ph_{i}"] = f"{value:.2f}"
+            row["probe_temp_c"] = f"{reading['temp_c']:.1f}"
+    with open(samples_csv, "w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def read_sample(probe, api, board, device_id, sample_id, say=print, state=None, samples_csv=SAMPLES_CSV):
+    field_id = sample_field(api, sample_id, samples_csv)
+    result = read_field(probe, api, board, device_id, field_id, say=say, state=state)
+    if result["quality_status"] == "accepted":
+        record_sample(sample_id, result, samples_csv)
+        say(f"Saved to {samples_csv.name}: {sample_id} pH " + ", ".join(f"{v:.2f}" for v in result["replicates"]))
     return result
 
 
@@ -293,7 +354,8 @@ def moisture_points(probe, ask=input, say=print):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("action", choices=["ports", "test", "watch", "cal7", "cal4", "calibrate", "read", "moisture"])
+    parser.add_argument("action", choices=["ports", "test", "watch", "cal7", "cal4", "calibrate", "read", "sample", "moisture"])
+    parser.add_argument("sample_id", nargs="?", help="for sample: the sample code, e.g. S01")
     parser.add_argument("--port", help="serial port, e.g. COM3; found automatically if left out")
     parser.add_argument("--board", choices=sorted(BOARDS), default="ph4502c")
     parser.add_argument("--gain", type=float, help="override the board gain")
@@ -322,9 +384,11 @@ def main(argv=None):
         print(f"Note: the '{args.board}' gain ({board['gain']}) is a typical value, not confirmed "
               f"for your board. See bridge/boards.py.")
     api = None
-    if args.action in ("calibrate", "cal4", "read"):
+    if args.action in ("calibrate", "cal4", "read", "sample"):
         if args.action == "read" and args.field is None:
             parser.error("--field is required for read")
+        if args.action == "sample" and not args.sample_id:
+            parser.error("give the sample code, e.g. python -m bridge.bridge sample S01")
         # Log in before opening the port: the USB chip goes quiet while you type.
         api = Api(args.api)
         try:
@@ -359,7 +423,9 @@ def main(argv=None):
         if args.action == "moisture":
             moisture_points(probe)
             return 0
-        if args.action == "calibrate":
+        if args.action == "sample":
+            read_sample(probe, api, board, args.device, args.sample_id.upper())
+        elif args.action == "calibrate":
             calibrate(probe, api, board, args.device)
         else:
             read_field(probe, api, board, args.device, args.field)
