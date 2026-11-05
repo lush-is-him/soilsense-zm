@@ -16,6 +16,7 @@ ref.REF-04: {text: "The pH is above what {crop} tolerates. Do not apply lime. Ge
 ref.REF-05: {text: "It is too late to lime for this season's {crop}. Follow Plan C this season and lime early for next season.", reviewed: false}
 ref.REF-06: {text: "The advice depends on how the pH was measured (water or calcium chloride). Get a lab test before buying lime.", reviewed: false}
 ref.REF-07: {text: "This much lime must be split into more than one application.", reviewed: false}
+plan.b_not_applicable: {text: "There is no cheaper way to grow {crop} in this soil. Use the crops in Plan C instead.", reviewed: false}
 plan.b_blocked: {text: "Partial plan not yet reviewed. Start with Plan C crops and get a lab test.", reviewed: false}
 plan.c_none: {text: "No crop in the system suits this soil as it is. Get a lab test.", reviewed: false}
 lime.optional: {text: "Lime is optional at this pH. A small amount may help; get a lab test first.", reviewed: false}
@@ -58,7 +59,7 @@ ui.remember: {text: "Remember", reviewed: false}
 ui.why: {text: "Why this advice", reviewed: false}
 ui.send_sms: {text: "Send SMS summary", reviewed: false}
 ui.depends_method: {text: "The advice depends on how the pH was measured", reviewed: false}
-ui.unconfirmed_rules: {text: "These rules have not been confirmed by a reviewer yet.", reviewed: false}
+ui.unconfirmed_rules: {text: "Some of these values are still awaiting final confirmation by an agronomist.", reviewed: false}
 ui.lab_test: {text: "Get a lab test before buying lime.", reviewed: false}
 crop.maize: {text: "maize", reviewed: false}
 crop.soybean: {text: "soybean", reviewed: false}
