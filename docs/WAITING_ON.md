@@ -15,8 +15,8 @@ All code is in place. What remains depends on people, hardware or results outsid
 | 9 | ~~Moisture sensor dry/wet values~~ **dropped** (Nov 2026): moisture sensor out of scope; waterlogging comes from the field check | — | — | — |
 | 10 | Household container weights (H3) | You (weigh) | `rules/measures.yaml`: kg per container per material | Advice shows buckets, bags, tins automatically |
 | 11 | Prices with place and date (H4, optional) | You | `rules/prices.yaml`: `zmw_per_kg` | Advice shows cost ranges automatically |
-| 12 | Native Nyanja and Tonga reviewers (H5) | Reviewers | `python scripts/i18n_sheet.py export`, they fill `docs/translations/review_sheet.csv` | `python scripts/i18n_sheet.py import` |
-| 13 | Usability sessions | Farmers and operators | `docs/evaluation/sus.csv` (form: `docs/evaluation/sus_form.md`) | `python scripts/sus.py` |
+| 12 | Native Tonga reviewer: **finished** (final answers to import); Nyanja: **kept as an unreviewed draft** (no reviewer in time) (H5) | Reviewers | `python scripts/i18n_sheet.py export`, they fill `docs/translations/review_sheet.csv` | `python scripts/i18n_sheet.py import` |
+| 13 | ~~Usability sessions~~ **not held** (no time, Nov 2026); a limitation in Chapter 5. Tooling kept: `docs/evaluation/sus.csv`, `python scripts/sus.py` | — | — | — |
 | 14 | Africa's Talking key (optional, SMS demo) | You | `AT_API_KEY`, `AT_USERNAME` environment variables | Send SMS from the advice screen |
 | 15 | ~~Crop scope~~ decided: groundnut in, sorghum out (Nov 2026) | — | — | — |
 
