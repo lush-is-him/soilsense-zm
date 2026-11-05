@@ -35,7 +35,7 @@ def test_engine_uses_only_defined_message_keys():
 
 
 def test_missing_translation_falls_back_to_english_unreviewed():
-    result = text("ref.REF-01", "toi")
+    result = text("ref.REF-04", "toi", crop="maize")   # no Tonga line yet ({crop} was dropped)
     assert result["lang"] == "en" and result["reviewed"] is False
 
 
