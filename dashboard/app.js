@@ -384,11 +384,11 @@ function planA(a, crop) {
     </ul>${a.measures_note && !(lime.per_lima && lime.per_lima.household) ? `<p class="muted">${t(a.measures_note)}</p>` : ""}`;
 }
 
-function planB(b) {
+function planB(b, crop) {
   if (!b) return "";
   if (b.status === "blocked") return `<p>${t("plan.b_blocked")}</p>`;
   if (b.status === "lab_test_recommended") return `<p>${t("ui.lab_test")}</p>`;
-  if (b.status !== "ok") return `<p class="muted">–</p>`;
+  if (b.status !== "ok") return `<p>${t("plan.b_not_applicable", { crop })}</p>`;
   const line = (item) => {
     if (item.item === "lime") {
       if (item.status === "not_needed") return `<li><strong>${t("ui.lime")}:</strong> ${t("lime.not_needed")}</li>`;
@@ -404,6 +404,42 @@ function planB(b) {
     ${b.left_out.length ? `<p class="muted">${t("ui.left_out")}: ${b.left_out.map((x) => t(`ui.${x}`)).join(", ")}</p>` : ""}`;
 }
 
+// Plain names for the rules shown under "Why this advice" (the rule id stays in the API).
+const RULE_NAMES = {
+  "BAND-01": "Soil pH band", "PLAN-A": "Full plan (Plan A)", "PLAN-B": "Cheaper plan (Plan B)",
+  "PLAN-C-ORDER": "Crops that suit this soil (Plan C)", "PRICE-INPUTS": "Input prices",
+  "LIME-PRODUCTS": "Lime products", "LIME-TARGET": "Target pH after liming", "LIME-TRIGGER": "When lime is needed",
+  "LIME-RATES": "Lime amount", "LIME-MAX": "Maximum lime per season", "LIME-TEXTURE-REQUIRED": "Soil texture for lime amount",
+  "LIME-LEAD-TIME": "When to apply lime", "LIME-RESIDUAL": "Lime from earlier seasons", "LIME-PARTIAL": "Lime at planting stations",
+  "MEAS-LIMA": "Lima conversion", "MEAS-HOUSEHOLD": "Household measures", "TEX-GROUPS": "Soil texture groups",
+  "REF-01": "Reading quality", "REF-02": "Too acid to fix in one season", "REF-03": "Waterlogged soil",
+  "REF-04": "pH too high for this crop", "REF-05": "Lime timing", "REF-06": "Fertiliser rate available", "REF-07": "Very sandy soil",
+};
+function ruleName(id) {
+  if (RULE_NAMES[id]) return RULE_NAMES[id];
+  if (id.startsWith("CROP-")) return `Needs of ${cropName(id.slice(5).toLowerCase())}`;
+  if (id.startsWith("MSG-")) return "Farmer reminder";
+  return id;
+}
+function ruleSource(r) {
+  if (r.source_type === "expert_opinion" || r.reviewer_alias) return "Agronomist advice";
+  if (r.source_type === "derived") return "Safety check built into the system";
+  if (r.source_type === "proposed") return "System design (to be confirmed)";
+  return "Published guidance";
+}
+
+function whyRows(rules) {
+  const rows = new Map();
+  rules.forEach((r) => {
+    const key = `${ruleName(r.id)}|${ruleSource(r)}`;
+    rows.set(key, (rows.get(key) || 0) + 1);
+  });
+  return [...rows].map(([key, n]) => {
+    const [name, source] = key.split("|");
+    return `<tr><td>${esc(name)}${n > 1 ? ` (${n})` : ""}</td><td>${esc(source)}</td></tr>`;
+  }).join("");
+}
+
 async function viewAdvice(recId) {
   const code = lang();
   const [a] = await Promise.all([api(`/advice/${recId}?lang=${code}`), loadStrings(code)]);
@@ -411,14 +447,13 @@ async function viewAdvice(recId) {
   const crop = cropName(a.crop);
   $app.innerHTML = `
     <p><a href="javascript:history.back()">← Back</a></p>
-    <h1>${esc(crop)}</h1>
+    <h1>${esc(crop.charAt(0).toUpperCase() + crop.slice(1))}</h1>
     <div class="card">
       <p>${t("ui.confidence")} <span class="badge ${esc(trust.level)}">${esc(tPlain(`ui.trust.${trust.level}`))}</span>
         <small>${esc((trust.reasons || []).join("; "))}</small></p>
       ${a.trust_text ? `<p>${say(a.trust_text)}</p>` : ""}
       <p class="muted">pH ${esc(a.ph_input)} (${esc(a.ph_method_input)}) · ${esc(a.as_of_date)}
         ${a.texture && a.texture.value ? ` · ${esc(a.texture.value)} (${esc(a.texture.source)})` : ""}</p>
-      ${a.unreviewed ? `<p class="notice">${t("ui.unconfirmed_rules")}</p>` : ""}
       ${a.borderline ? `<p class="notice info">${t("borderline")}</p>` : ""}
     </div>
     ${a.refusal_text.map((r) => `<p class="notice stop">${say(r)}</p>`).join("")}
@@ -429,14 +464,14 @@ async function viewAdvice(recId) {
         <td>${esc(x.plan_c.map(cropName).join(", "))}</td></tr>`).join("")}</table></div>` : ""}
     ${a.trust_level !== "none" ? `
       <div class="card plan"><h2>${t("ui.plan_a", { crop })}</h2>${planA(a.plan_a, crop)}</div>
-      <div class="card plan b"><h2>${t("ui.plan_b")}</h2>${planB(a.plan_b)}</div>
+      <div class="card plan b"><h2>${t("ui.plan_b")}</h2>${planB(a.plan_b, crop)}</div>
       <div class="card plan c"><h2>${t("ui.plan_c")}</h2>
         ${a.plan_c && a.plan_c.crops.length ? `<p>${a.plan_c.crops.map((c) => esc(cropName(c))).join(", ")}</p>` : `<p>${t("plan.c_none")}</p>`}</div>` : ""}
     <div class="card"><h2>${t("ui.remember")}</h2><ul>${a.messages.map((m) => `<li>${say(m)}</li>`).join("")}</ul></div>
     <details class="card"><summary>${t("ui.why")} (${a.fired_rules.length})</summary>
-      <table><tr><th>Rule</th><th>Status</th><th>Source</th></tr>
-      ${a.fired_rules.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.status)}</td>
-        <td>${esc(r.source_type)}${r.reviewer_alias ? ` (${esc(r.reviewer_alias)})` : ""}</td></tr>`).join("")}</table>
+      <table><tr><th>What was checked</th><th>Based on</th></tr>
+      ${whyRows(a.fired_rules)}</table>
+      ${a.unreviewed ? `<p class="muted">${t("ui.unconfirmed_rules")}</p>` : ""}
     </details>
     <button id="sms-btn" class="secondary">${tPlain("ui.send_sms")}</button>`;
   document.getElementById("sms-btn").addEventListener("click", async () => {

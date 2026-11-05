@@ -34,5 +34,8 @@ def text(key, lang="en", **params):
         entry, used = _strings("en").get(key), "en"
     if entry is None:
         return {"key": key, "lang": used, "text": key, "reviewed": False}
-    reviewed = bool(entry.get("reviewed")) and used == lang
+    # English is the source text the rules were written in, not a translation,
+    # so it needs no translation review. A missing translation that falls back
+    # to English is still flagged (FR12).
+    reviewed = (lang == used == "en") or (bool(entry.get("reviewed")) and used == lang)
     return {"key": key, "lang": used, "text": entry["text"].format_map(_KeepMissing(params)), "reviewed": reviewed}
