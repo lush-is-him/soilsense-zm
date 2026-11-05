@@ -229,3 +229,12 @@ def test_advice_needs_reading_or_lab(client, op):
     field = make_field(client, op).json()
     assert client.post("/advice", json={"field_id": field["field_id"], "crop": "maize"},
                        headers=op).status_code == 422
+
+
+def test_set_password(client):
+    from backend.set_password import set_password
+    conn = backend_db._override
+    set_password(conn, "operator", "short-pw-1")
+    assert client.post("/auth/login", json={"username": "operator", "password": "short-pw-1"}).status_code == 200
+    with pytest.raises(ValueError):
+        set_password(conn, "nobody", "whatever-1")

@@ -210,3 +210,23 @@ def test_sample_registers_field_and_fills_samples_csv(api, tmp_path):
     assert rows[0]["probe_ph_1"] and abs(float(rows[0]["probe_ph_2"]) - 5.5) < 0.05 and rows[1]["probe_ph_1"] == ""
     again = read_sample(Probe(FakeArduino([5.5] * 3)), api, BOARD, "probe-1", "S01", say=quiet, state=state, samples_csv=samples)
     assert again["field_id"] == result["field_id"]            # same field reused
+
+
+def test_login_is_remembered(api):
+    from bridge.bridge import ensure_login
+    real = api
+    class FakeApi:
+        base = "http://test"
+        token = None
+        def login(self, username, password):
+            self.token = real.headers["Authorization"].split()[1]
+        def call(self, method, path, body=None):
+            if self.token != real.headers["Authorization"].split()[1]:
+                raise RuntimeError("server said 401")
+            return {"username": "operator"}
+    asked = []
+    first = FakeApi()
+    ensure_login(first, ask=lambda p: asked.append(p) or "operator", ask_secret=lambda p: "operator-pass", say=quiet)
+    second = FakeApi()
+    ensure_login(second, ask=lambda p: asked.append(p) or "operator", ask_secret=lambda p: "x", say=quiet)
+    assert len(asked) == 1 and second.token == first.token
