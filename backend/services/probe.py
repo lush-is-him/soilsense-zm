@@ -21,6 +21,15 @@ def calibrate(mv_ph7, mv_ph4, temp_c):
     return mv_ph7, slope_pct, check_calibration(slope_pct)
 
 
-def mv_to_ph(mv, offset_mv, slope_pct, temp_c):
-    slope_mv = theoretical_slope_mv(temp_c) * slope_pct / 100
+def mv_to_ph(mv, offset_mv, slope_pct, temp_c, sample_temp_c=None):
+    """pH from electrode mV, with automatic temperature compensation.
+
+    The electrode's mV per pH unit rises with temperature (Nernst). The slope
+    measured at calibration (slope_pct of theoretical) is applied at the
+    temperature of the sample itself, read by the DS18B20, so a sample warmer or
+    cooler than the buffers is still converted correctly. Without a sample
+    temperature the calibration temperature is used.
+    """
+    temp = temp_c if sample_temp_c is None else sample_temp_c
+    slope_mv = theoretical_slope_mv(temp) * slope_pct / 100
     return round(7.0 - (mv - offset_mv) / slope_mv, 2)

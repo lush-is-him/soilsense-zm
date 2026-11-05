@@ -108,3 +108,15 @@ def test_review_form_csv_scoring(tmp_path):
         writer.writerow(row)
     answered, _, disagreements = score_review.score(score_review.rows_from_form_csv(path))
     assert len(answered) == 30 and sum(answered) == 28.5 and len(disagreements) == 2
+
+
+def test_move_sample_fixes_a_wrong_code(tmp_path):
+    import sys
+    sys.path.insert(0, "scripts")
+    from move_sample import move
+    path = tmp_path / "samples.csv"
+    path.write_text("sample_id,probe_ph_1,probe_ph_2,probe_ph_3,probe_temp_c,notes\n"
+                    "S06,,,,,\nS09,8.83,8.82,8.84,25.0,\n")
+    move("S09", "S06", path)
+    lines = path.read_text().splitlines()
+    assert lines[1].startswith("S06,8.83,8.82,8.84,25.0,") and lines[2] == "S09,,,,,"

@@ -222,6 +222,7 @@ async function viewField(fieldId) {
   $app.innerHTML = `
     <p><a href="#/fields">← Fields</a></p>
     <h1>${esc(field.name)}</h1>
+    <p><a class="button" href="#/live/${esc(fieldId)}">Live probe reading</a></p>
     <div class="card">
       <p>${esc(field.lat)}, ${esc(field.lon)} · ${field.location_source === "gps" ? `GPS ±${esc(field.gps_accuracy_m)} m` : "manual pin"}</p>
       <p><strong>Map (iSDAsoil):</strong> ${mapHtml}</p>
@@ -440,13 +441,13 @@ function whyRows(rules) {
   }).join("");
 }
 
-async function viewAdvice(recId) {
+async function viewAdvice(recId, target = $app) {
   const code = lang();
   const [a] = await Promise.all([api(`/advice/${recId}?lang=${code}`), loadStrings(code)]);
   const trust = a.trust || { level: a.trust_level, reasons: [] };
   const crop = cropName(a.crop);
-  $app.innerHTML = `
-    <p><a href="javascript:history.back()">← Back</a></p>
+  target.innerHTML = `
+    ${target === $app ? `<p><a href="javascript:history.back()">← Back</a></p>` : ""}
     <h1>${esc(crop.charAt(0).toUpperCase() + crop.slice(1))}</h1>
     <div class="card">
       <p>${t("ui.confidence")} <span class="badge ${esc(trust.level)}">${esc(tPlain(`ui.trust.${trust.level}`))}</span>
@@ -473,11 +474,76 @@ async function viewAdvice(recId) {
       ${whyRows(a.fired_rules)}</table>
       ${a.unreviewed ? `<p class="muted">${t("ui.unconfirmed_rules")}</p>` : ""}
     </details>
-    <button id="sms-btn" class="secondary">${tPlain("ui.send_sms")}</button>`;
-  document.getElementById("sms-btn").addEventListener("click", async () => {
+    <button class="secondary sms-btn">${tPlain("ui.send_sms")}</button>`;
+  target.querySelector(".sms-btn").addEventListener("click", async () => {
     try { const r = await post(`/advice/${recId}/sms`, {}); toast(`SMS ${r.status}: ${r.message}`); }
     catch (error) { toast(error.message, true); }
   });
+}
+
+// ----- live probe page (the bridge runs: python -m bridge.bridge live --field N) -----
+
+let liveTimer = null;
+async function viewLive(fieldId) {
+  const [field, history, devices] = await Promise.all([
+    api(`/fields/${fieldId}`), api(`/fields/${fieldId}/history`), api("/devices"), loadStrings(lang())]);
+  const device = (devices[0] || {}).device_id || "probe-1";
+  let lastSeen = history.readings.length ? history.readings[0].reading_id : 0;
+  const startedAt = new Date().toISOString();
+  let lastLiveTs = "";
+  $app.innerHTML = `
+    <p><a href="#/field/${esc(fieldId)}">← ${esc(field.name)}</a></p>
+    <h1>Live reading: ${esc(field.name)}</h1>
+    <div class="card">
+      <div class="row">
+        <div><label for="live-crop">Crop the farmer wants to grow</label>
+          <select id="live-crop">${CROPS.map((c) => `<option value="${c}">${esc(cropName(c))}</option>`).join("")}</select></div>
+      </div>
+      <div class="live-box">
+        <div class="live-ph" id="live-ph">–</div>
+        <div id="live-state" class="muted">Waiting for the probe. On the laptop run:<br>
+          <code>python -m bridge.bridge live --field ${esc(fieldId)}</code></div>
+        <div id="live-temp" class="muted"></div>
+      </div>
+    </div>
+    <div id="live-advice"></div>`;
+  const $ph = document.getElementById("live-ph"), $state = document.getElementById("live-state");
+  const $temp = document.getElementById("live-temp"), $advice = document.getElementById("live-advice");
+  let busy = false;
+  async function tick() {
+    if (!location.hash.startsWith(`#/live/${fieldId}`)) { clearInterval(liveTimer); liveTimer = null; return; }
+    if (busy) return;
+    busy = true;
+    try {
+      const live = await api(`/devices/${device}/live`);
+      if (live.ts && live.ts !== lastLiveTs && live.ts > startedAt && (live.field_id == null || String(live.field_id) === String(fieldId))) {
+        lastLiveTs = live.ts;
+        $ph.textContent = live.ph != null ? `pH ${Number(live.ph).toFixed(2)}` : "–";
+        $ph.classList.toggle("settling", !live.settled);
+        $state.textContent = live.settled ? "Steady. Saving the reading…" : "Probe in the sample: settling…";
+        $temp.textContent = live.temp_c != null ? `Sample temperature ${Number(live.temp_c).toFixed(1)} °C (pH corrected for it)` : "";
+      }
+      const h = await api(`/fields/${fieldId}/history`);
+      const newest = h.readings[0];
+      if (newest && newest.reading_id > lastSeen) {
+        lastSeen = newest.reading_id;
+        if (newest.quality_status === "accepted") {
+          $ph.textContent = `pH ${Number(newest.ph_water).toFixed(2)}`;
+          $ph.classList.remove("settling");
+          $state.textContent = "Reading saved. Advice below. Rinse the probe and put it in the next sample.";
+          const advice = await post("/advice", { field_id: Number(fieldId), reading_id: newest.reading_id,
+            crop: document.getElementById("live-crop").value, lang: lang() });
+          await viewAdvice(advice.rec_id, $advice);
+        } else {
+          $state.textContent = `Reading rejected: ${(newest.quality_reasons || []).join("; ")}`;
+        }
+      }
+    } catch (error) { $state.textContent = error.message; }
+    finally { busy = false; }
+  }
+  if (liveTimer) clearInterval(liveTimer);
+  liveTimer = setInterval(tick, 1500);
+  tick();
 }
 
 async function viewProbe() {
@@ -544,6 +610,7 @@ async function route() {
       case "field": return await viewField(id);
       case "advice": return await viewAdvice(id);
       case "probe": return await viewProbe();
+      case "live": return await viewLive(id);
       case "help": return viewHelp();
       default: return await viewFields();
     }
