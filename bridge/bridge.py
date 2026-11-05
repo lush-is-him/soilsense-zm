@@ -151,6 +151,24 @@ class Api:
         self.token = self.call("POST", "/auth/login", {"username": username, "password": password})["token"]
 
 
+def ensure_login(api, ask=input, ask_secret=getpass.getpass, say=print):
+    """Reuse the saved login (valid about 12 hours); ask for the password only when it has expired."""
+    state = load_state()
+    saved = state.get("login", {}).get(api.base)
+    if saved:
+        api.token = saved
+        try:
+            user = api.call("GET", "/auth/me")
+            say(f"Logged in as {user['username']} (saved login).")
+            return
+        except RuntimeError:
+            api.token = None
+    api.login(ask("SoilSense username: "), ask_secret("Password: "))
+    state = load_state()
+    state.setdefault("login", {})[api.base] = api.token
+    save_state(state)
+
+
 # ----- local state (sign of the board per device) ---------------------
 
 def load_state():
@@ -392,7 +410,7 @@ def main(argv=None):
         # Log in before opening the port: the USB chip goes quiet while you type.
         api = Api(args.api)
         try:
-            api.login(input("SoilSense username: "), getpass.getpass("Password: "))
+            ensure_login(api)
         except RuntimeError as error:
             print(f"ERROR: {error}")
             return 1

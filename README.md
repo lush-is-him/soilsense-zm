@@ -25,6 +25,7 @@ cd "C:\Users\USER\SoilSense ZM"
 pip install -r backend\requirements.txt -r requirements-dev.txt
 python scripts\fetch_isdasoil.py --boundary "tiff files\gadm41_ZMB.gpkg"
 python -m backend.seed
+python -m backend.set_password operator     # optional: choose an easier password
 ```
 
 `backend.seed` creates the users `operator`, `agronomist` and `admin` and prints their passwords once. To choose them yourself, set `SEED_OPERATOR_PASSWORD` (and the others) first; see `.env.example`.
