@@ -28,3 +28,6 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local secret for START_DEMO.bat
+data/secret_key.txt

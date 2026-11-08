@@ -250,3 +250,14 @@ def test_readings_do_not_send_moisture(api):
     calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
     reading = read_field(Probe(FakeArduino([5.5] * 3)), api, BOARD, "probe-1", 1, ask=quiet, say=quiet, state=state)
     assert reading.get("moisture") is None
+
+
+def test_live_mode_follows_the_field_open_on_the_dashboard(api):
+    from bridge.bridge import active_field, live
+    state = {}
+    calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+    with pytest.raises(RuntimeError):
+        active_field(api, "probe-1", say=quiet, wait=0, tries=2)          # no Live page open yet
+    api.call("POST", "/devices/probe-1/active-field", {"field_id": 1})
+    assert live(Probe(FakeArduino([6.0] * 4)), api, BOARD, "probe-1", None, say=quiet, state=state, rounds=1) == 1
+    assert api.call("GET", "/fields/1/history")["readings"][0]["ph_water"] == pytest.approx(6.0, abs=0.02)

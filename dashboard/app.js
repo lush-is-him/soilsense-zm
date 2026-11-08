@@ -488,6 +488,7 @@ async function viewLive(fieldId) {
   const [field, history, devices] = await Promise.all([
     api(`/fields/${fieldId}`), api(`/fields/${fieldId}/history`), api("/devices"), loadStrings(lang())]);
   const device = (devices[0] || {}).device_id || "probe-1";
+  try { await post(`/devices/${device}/active-field`, { field_id: Number(fieldId) }); } catch (error) { /* bridge can still use --field */ }
   let lastSeen = history.readings.length ? history.readings[0].reading_id : 0;
   const startedAt = new Date().toISOString();
   let lastLiveTs = "";
@@ -501,8 +502,8 @@ async function viewLive(fieldId) {
       </div>
       <div class="live-box">
         <div class="live-ph" id="live-ph">–</div>
-        <div id="live-state" class="muted">Waiting for the probe. On the laptop run:<br>
-          <code>python -m bridge.bridge live --field ${esc(fieldId)}</code></div>
+        <div id="live-state" class="muted">Waiting for the probe. Put it in the sample.<br>
+          (The probe program must be running: double-click START DEMO on the laptop.)</div>
         <div id="live-temp" class="muted"></div>
       </div>
     </div>

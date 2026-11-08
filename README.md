@@ -50,7 +50,7 @@ python -m bridge.bridge read --board ph4502c --device probe-1 --field 1
 python -m bridge.bridge live --field 1     # demo: keeps reading; the dashboard Live page shows pH and advice
 ```
 
-**Live demo.** Start the server, open a field in the dashboard and press **Live probe reading**, choose the crop, then run `python -m bridge.bridge live --field <number>`. Put the probe in a sample: the page shows the pH while it settles, saves the reading, and shows the advice. Rinse, put the probe in the next sample, and it repeats. Ctrl+C stops the bridge.
+**Live demo: double-click `START_DEMO.bat`** (in the project folder; right-click > Send to > Desktop to put a shortcut on the desktop). It starts the server in a second window, opens the dashboard, offers to calibrate, and runs the probe program. In the dashboard open a field and press **Live probe reading**: the probe follows that field. Put the probe in a sample; the page shows the pH while it settles, saves the reading and shows the advice. Rinse, next sample, it repeats. Close both black windows to stop.
 
 The pH is corrected for the sample's own temperature (from the DS18B20). The moisture sensor is no longer used.
 
