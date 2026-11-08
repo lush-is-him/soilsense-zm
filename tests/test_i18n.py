@@ -23,7 +23,8 @@ def test_translations_only_use_english_keys_and_placeholders():
     for code in ("ny", "toi"):
         for key, entry in keys(code).items():
             assert key in english, f"{code}: unknown key {key}"
-            assert set(re.findall(r"\{(\w+)\}", entry["text"])) == set(re.findall(r"\{(\w+)\}", english[key]["text"]))
+            # may leave out {crop}, never add a placeholder
+            assert set(re.findall(r"\{(\w+)\}", entry["text"])) <= set(re.findall(r"\{(\w+)\}", english[key]["text"]))
 
 
 def test_engine_uses_only_defined_message_keys():
@@ -34,9 +35,17 @@ def test_engine_uses_only_defined_message_keys():
         assert f"ref.REF-0{n}" in english
 
 
-def test_missing_translation_falls_back_to_english_unreviewed():
-    result = text("ref.REF-04", "toi", crop="maize")   # no Tonga line yet ({crop} was dropped)
+def test_missing_translation_falls_back_to_english_unreviewed(monkeypatch):
+    import engine.i18n as i18n_module
+    real = i18n_module._strings
+    monkeypatch.setattr(i18n_module, "_strings", lambda lang: {} if lang == "toi" else real(lang))
+    result = text("ref.REF-04", "toi", crop="maize")   # no Tonga line for this key
     assert result["lang"] == "en" and result["reviewed"] is False
+    assert "maize" in result["text"]
+
+
+def test_english_source_text_needs_no_review_label():
+    assert text("ref.REF-04", "en", crop="maize")["reviewed"] is True
 
 
 def test_reviewed_strings_name_their_reviewer():
@@ -78,7 +87,7 @@ def test_sheet_import_rejects_broken_placeholder(tmp_path, monkeypatch):
     monkeypatch.setattr(i18n_sheet, "I18N", tmp_path)
     sheet = tmp_path / "sheet.csv"
     sheet.write_text("key,english,nyanja_draft,nyanja_final,nyanja_reviewer,tonga_draft,tonga_final,tonga_reviewer\n"
-                     "ref.REF-04,x,,pH yokwera,NR-1,,,\n", encoding="utf-8")
+                     "ref.REF-04,x,,pH yokwera {farm},NR-1,,,\n", encoding="utf-8")
     assert i18n_sheet.import_sheet(sheet) == 1
 
 

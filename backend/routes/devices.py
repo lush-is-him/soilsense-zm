@@ -83,6 +83,27 @@ def post_live(device_id: str, body: LiveIn, db=Depends(get_db)):
     return _LIVE[device_id]
 
 
+class ActiveFieldIn(BaseModel):
+    field_id: int
+
+
+_ACTIVE_FIELD = {}   # device_id -> field open on the dashboard's Live page
+
+
+@router.post("/devices/{device_id}/active-field")
+def set_active_field(device_id: str, body: ActiveFieldIn, db=Depends(get_db)):
+    """The Live page says which field it shows, so the bridge needs no --field."""
+    device_or_404(db, device_id)
+    _ACTIVE_FIELD[device_id] = body.field_id
+    return {"field_id": body.field_id}
+
+
+@router.get("/devices/{device_id}/active-field")
+def get_active_field(device_id: str, db=Depends(get_db)):
+    device_or_404(db, device_id)
+    return {"field_id": _ACTIVE_FIELD.get(device_id)}
+
+
 @router.get("/devices/{device_id}/live")
 def get_live(device_id: str, db=Depends(get_db)):
     device_or_404(db, device_id)

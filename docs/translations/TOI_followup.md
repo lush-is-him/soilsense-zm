@@ -1,5 +1,7 @@
 # Tonga translation: lines to check with the translator (TOI-1)
 
+**Final, 8 Nov 2026:** the translator confirmed that her answers are final. All 65 lines she was sent are imported from her second response, with her third response's corrections on top, and marked reviewed (TOI-1). Lines without {crop} now read without the crop name. The table below is kept as a record of the words that looked like autocorrect. Two lines written after her form was made (`plan.b_in_order`, `plan.b_not_applicable`) have no Tonga yet and show in English.
+
 **Update 4 Nov 2026:** her corrections of 2 Nov fixed S34, S47, S57, S58 and S59 (and revised S33, S35, W9-W12, W18). At the developer's request the other lines were imported as she first wrote them, but marked *not reviewed* so the dashboard flags them: S1, S2, S9, S10, S11, S14, S18, S20, S21, S22, S27, S28, S30, S31, S38. S12, S13, S23, S24 and S37 stay in English because the {crop} placeholder was dropped.
 
 Imported 1 Nov 2026 from the second response (30 Oct, 22:36). 40 lines were accepted and are now marked reviewed. These 25 were set aside, mostly because the phone's autocorrect changed Tonga words into English ones. Until they are fixed the system shows the English text for them.

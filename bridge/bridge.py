@@ -363,7 +363,56 @@ def read_sample(probe, api, board, device_id, sample_id, say=print, state=None, 
 MOVED_V = 0.05     # the probe is in a new sample when the volts move this far
 
 
-def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=None):
+def active_field(api, device_id, say=print, wait=1.0, tries=None):
+    """The field open on the dashboard's Live page; waits until one is opened."""
+    told = False
+    n = 0
+    while tries is None or n < tries:
+        field_id = api.call("GET", f"/devices/{device_id}/active-field").get("field_id")
+        if field_id:
+            return field_id
+        if not told:
+            say("  Open a field in the dashboard and press 'Live probe reading'...")
+            told = True
+        n += 1
+        time.sleep(wait)
+    raise RuntimeError("no field was opened on the Live page")
+
+
+def wait_for_server(api, say=print, seconds=60):
+    """START DEMO starts the server and the bridge together: give the server time to start."""
+    for n in range(seconds):
+        try:
+            api.call("GET", "/i18n/en")
+            return
+        except RuntimeError as error:
+            if "cannot reach" not in str(error):
+                return
+            if n == 0:
+                say("Waiting for the SoilSense server to start...")
+            time.sleep(1)
+    raise RuntimeError(f"the server at {api.base} did not start")
+
+
+def wait_for_probe(probe, reattach, say=print, wait=3.0, tries=None):
+    """The USB connection dropped: wait until the Arduino is plugged back in, then carry on."""
+    say("  PROBE DISCONNECTED. Unplug the USB cable, wait 5 seconds, plug it back in.")
+    say("  Waiting for the Arduino... (the dashboard keeps its last reading)")
+    n = 0
+    while tries is None or n < tries:
+        n += 1
+        time.sleep(wait)
+        try:
+            probe.port = reattach()
+            probe.ping()
+            say("  Probe connected again. Put it back in the sample.")
+            return True
+        except (RuntimeError, OSError, ValueError):
+            continue
+    return False
+
+
+def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=None, reattach=None):
     """Demo mode: read, save, then wait for the next sample, until Ctrl+C.
 
     Put the probe in a sample: the dashboard's Live page shows the pH while it
@@ -371,19 +420,31 @@ def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=N
     sample, and it starts again by itself.
     """
     state = load_state() if state is None else state
-    say(f"LIVE: field {field_id}. Open the dashboard Live page. Press Ctrl+C to stop.")
+    follow = field_id is None          # no --field: use the field open on the Live page
+    say("LIVE: " + ("following the field open on the dashboard's Live page" if follow else f"field {field_id}")
+        + ". Press Ctrl+C to stop.")
     done = 0
     try:
         while rounds is None or done < rounds:
-            result = read_field(probe, api, board, device_id, field_id, say=say, state=state, live=True)
-            done += 1
-            last_v = probe.read()["ph_v"]
-            say("  Done. Rinse the probe and put it in the next sample (waiting for it to move)...")
-            while rounds is None or done < rounds:
-                reply = probe.read()
-                if abs(reply["ph_v"] - last_v) > MOVED_V:
-                    say("  New sample detected.")
-                    break
+            if follow:
+                field_id = active_field(api, device_id, say=say)
+                say(f"  Field {field_id}: put the probe in the sample.")
+            try:
+                read_field(probe, api, board, device_id, field_id, say=say, state=state, live=True)
+                done += 1
+                last_v = probe.read()["ph_v"]
+                say("  Done. Rinse the probe and put it in the next sample (waiting for it to move)...")
+                while rounds is None or done < rounds:
+                    reply = probe.read()
+                    if abs(reply["ph_v"] - last_v) > MOVED_V:
+                        say("  New sample detected.")
+                        break
+            except (OSError, RuntimeError) as error:
+                lost = isinstance(error, OSError) or "no reply from the probe" in str(error)
+                if not lost or reattach is None:
+                    raise
+                if not wait_for_probe(probe, reattach, say=say):
+                    raise
     except KeyboardInterrupt:
         say("Stopped.")
     return done
@@ -432,6 +493,7 @@ def main(argv=None):
         for port in list_ports.comports():
             print(f"{port.device}  {port.description}")
         return 0
+    auto_port = not args.port
     if not args.port:
         try:
             args.port = find_port()
@@ -448,13 +510,15 @@ def main(argv=None):
               f"for your board. See bridge/boards.py.")
     api = None
     if args.action in ("calibrate", "cal4", "read", "live", "sample"):
-        if args.action in ("read", "live") and args.field is None:
+        if args.action == "read" and args.field is None:
             parser.error("--field is required (the number in the dashboard address, e.g. #/field/3)")
         if args.action == "sample" and not args.sample_id:
             parser.error("give the sample code, e.g. python -m bridge.bridge sample S01")
         # Log in before opening the port: the USB chip goes quiet while you type.
         api = Api(args.api)
         try:
+            if args.action == "live":
+                wait_for_server(api)
             ensure_login(api)
         except RuntimeError as error:
             print(f"ERROR: {error}")
@@ -487,7 +551,10 @@ def main(argv=None):
             moisture_points(probe)
             return 0
         if args.action == "live":
-            live(probe, api, board, args.device, args.field)
+            def reattach():
+                # after a replug Windows may give the Arduino a new COM number
+                return open_serial(args.port if args.port and not auto_port else find_port())
+            live(probe, api, board, args.device, args.field, reattach=reattach)
         elif args.action == "sample":
             read_sample(probe, api, board, args.device, args.sample_id.upper())
         elif args.action == "calibrate":

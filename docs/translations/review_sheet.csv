@@ -1,67 +1,70 @@
 key,english,nyanja_draft,nyanja_final,nyanja_reviewer,tonga_draft,tonga_final,tonga_reviewer
-msg.MSG-01,Re-test the soil after 2 to 3 years. One lime application lasts 3 to 5 years.,Yesaninso nthaka pakatha zaka 2 kapena 3. Laimu imodzi imagwira ntchito zaka 3 mpaka 5.,,,,Kupima bulongo kwainda myaka yotatwe olo yosanwe,TOI-1
-msg.MSG-02,Lime is not a substitute for fertiliser.,Laimu si feteleza. Simungasinthanitse laimu ndi feteleza.,,,,Limu taayibwezi business bwa chaamutunzhya,TOI-1
-msg.MSG-03,Never apply more lime than a soil test supports. Too much lime reduces yield.,Musathire laimu yambiri kuposa momwe kuyesa nthaka kukunenera. Laimu yochuluka imachepetsa zokolola.,,,,Kwiina kubika liimu munji mubulongo  kwiindilizya mbuli mbwiiyandika mubulongo,TOI-1
-msg.MSG-04,Apply lime early and work it into the soil. It needs moisture and time to react.,Thirani laimu msanga ndipo muisakanize ndi nthaka. Imafunika chinyezi ndi nthawi kuti igwire ntchito.,,,,Kubika liimu kufwaambana mubulongo. Liimu iyaanda tuumeenda alimwi a chiindi kutegwa isangane a bulongo,TOI-1
-msg.MSG-05,"Soybean: inoculate the seed with the right rhizobia, especially where soybean has not been grown recently.","Soya: sakanizani mbewu ndi mankhwala a rhizobia oyenera, makamaka komwe soya sanalimidwe posachedwapa.",,,,Inseke zya soybeans zyeelele kubika inoculant chiindi chakushanga maka- maka mumasena ataaningwa shangidwe soya beans kale,TOI-1
-msg.MSG-06,Maize: use a suitable seed variety.,Chimanga: gwiritsani ntchito mbewu yoyenera.,,,,Kushanga mapopwe kweelela imbuto yeelele,TOI-1
-msg.MSG-07,"Common fertiliser mistakes: applying too early, too late, or ignoring the weather.","Zolakwa zofala ndi feteleza: kuthira msanga kwambiri, mochedwa kwambiri, kapena osaganizira nyengo.",,,,"Bulubizyi bwakubika chamutuzhya: kubika chaamutunzhya  kufwambaana, kumuka kubika chaamutunzhya  olo kutalanga or kuchilila chiinda",TOI-1
-msg.MSG-08,This is decision support only. Consult an extension officer or a soil lab before major spending.,Uku ndi kuthandiza kupanga chisankho chabe. Funsani mlangizi wa zaulimi kapena labu ya nthaka musanawononge ndalama zambiri.,,,,Eeci cheendelana aakusa. Amubuzye beendelezi ba zyabulimi muchilawo chenu.,TOI-1
-ref.REF-01,"The reading did not pass the quality check, so no advice is given. Retake the reading or enter a lab pH.","Muyeso sunadutse kuyezedwa kwa khalidwe, choncho palibe malangizo. Yesaninso kapena lowetsani pH ya ku labu.",,,,"A mupime pH yabulongo bwenu Ali,  nkabo kupima kwaakusaanguna kwiina nokwasika amweelwe.",TOI-1
-ref.REF-02,The soil is too acidic for the system to advise safely. Take a sample to a soil lab or an extension officer.,Nthaka ndi yowawasa kwambiri kuti tikulangizeni bwino. Tengani chitsanzo cha nthaka ku labu kapena kwa mlangizi wa zaulimi.,,,,Bulongo bulikwete acid yiinji. One nkaambo kaako one system yakakilwa kugwasha. Amutole bulongo kukupimya olo mubuzhye bendelezhya zhyabulimi ba kuchilawo cheng.,TOI-1
-ref.REF-03,"Lime amount needs the soil texture. Do the texture-by-feel check, then ask again.","Kuchuluka kwa laimu kumafunika mtundu wa nthaka. Yesani nthaka ndi manja, kenako funsaninso.",,,,Kubika liimu kuzandika kunva bulongo mbobuli telezhya kumaanza. Amunve bulongo ku maanza bobulinvisha mwamana muscle alimwi.,TOI-1
-ref.REF-04,The pH is above what {crop} tolerates. Do not apply lime. Get a lab test.,pH ndi yokwera kuposa yomwe {crop} imapirira. Musathire laimu. Kayeseni nthaka ku labu.,,,,,
-ref.REF-05,It is too late to lime for this season's {crop}. Follow Plan C this season and lime early for next season.,Nthawi yothira laimu ya {crop} ya nyengo ino yadutsa. Tsatirani Ndondomeko C nyengo ino ndipo thirani laimu msanga nyengo ikubwerayi.,,,,,
-ref.REF-06,The advice depends on how the pH was measured (water or calcium chloride). Get a lab test before buying lime.,Malangizo amadalira momwe pH inayezedwera (ndi madzi kapena calcium chloride). Kayeseni nthaka ku labu musanagule laimu.,,,,Kugwashigwa kulendeelana mbuli pH ya bulongo mboyibele. Mupime bulongo kamutana Kuala liimu.,TOI-1
-ref.REF-07,This much lime must be split into more than one application.,Laimu wochuluka chonchi ayenera kugawidwa ndi kuthiridwa kangapo.,,,,Liimu muyandanye muzhyi-beela-beela zyaandene,TOI-1
-plan.b_blocked,Partial plan not yet reviewed. Start with Plan C crops and get a lab test.,Ndondomeko yotsika mtengo sinawunikidwebe. Yambani ndi mbewu za Ndondomeko C ndipo kayeseni nthaka ku labu.,,,,Muzeezo musyoonto tauranga kujanwa. Mutalike amuzeezo (c)wazhyishango mwamana mupime bulongo.,TOI-1
-plan.c_none,No crop in the system suits this soil as it is. Get a lab test.,Palibe mbewu m'dongosolo lino yomwe ingakule bwino m'nthaka iyi momwe ilili. Kayeseni nthaka ku labu.,,,,Mu system (munzhyila eeyi) kwiina zishango zyeelele mubulongo oobu.,TOI-1
-lime.optional,Lime is optional at this pH. A small amount may help; get a lab test first.,Pa pH iyi laimu sikofunikira kwenikweni. Pang'ono ingathandize; kayeseni nthaka ku labu choyamba.,,,,Kubika  liimu aa pH yabulongo oobu nkusala. Liimu insyoonto Ingatestone yagwasha. Pesi a mupime bulongo.,TOI-1
-lime.not_needed,Lime is not needed at this pH.,Pa pH iyi laimu sikufunika.,,,,Liimu tayiiyandi a pH eeyi.,TOI-1
-lime.timing_uncertain,Liming now may be too late unless you plant late in the window. Ask an extension officer.,Kuthira laimu tsopano kungakhale mochedwa pokhapokha mutabzala chakumapeto. Funsani mlangizi wa zaulimi.,,,,"Liimu chino ciindi yamuka, chita and izaak kumuka kushanga. A mubuzye beendelezi bazhya bulimi kuchilawo cheenu.",TOI-1
-lime.any_time,"On irrigated land, lime can be applied at any time before planting.","Pa munda wothirira, laimu ingathiridwe nthawi iliyonse musanabzale.",,,,"Mubusena bwakwiiida or kutilila, liimu Ingatestone yabikwa kufumbwa ciindi kakutaningwa kushangwa.",TOI-1
-rate.open,Rate not yet available. Ask an extension officer or follow a soil test.,Kuchuluka sikunapezeke. Funsani mlangizi wa zaulimi kapena tsatirani kuyesa nthaka.,,,,Chakupimya chino ciindi kwiina. A mubuzhye bendelezhya zhyabulimi mucilage cheenu.,TOI-1
-crop.no_data,The system has no data for {crop} yet. Get a lab test.,Dongosolo lilibe zambiri za {crop}. Kayeseni nthaka ku labu.,,,,,
-crop.pending_scope,{crop} is not yet confirmed for this system.,{crop} sinatsimikizidwe m'dongosolo lino.,,,,,
-borderline,The pH is close to a band boundary. A lab test is recommended.,pH ili pafupi ndi malire a gulu. Ndi bwino kuyesa nthaka ku labu.,,,,PH ili afwafwi kuzhyinji. Kupima bulongo kulayandika.,TOI-1
-measure.unavailable,Household measure not yet available; amounts are in kg.,Miyeso ya pakhomo sinapezeke; kuchuluka kuli mu makilogalamu.,,,,Kipima kwamukwashi takuko pe. Kuli buyo mu ma kilograms,TOI-1
-trust.moderate,Based on map estimates that agree with your reading.,Kutengera mapu omwe akugwirizana ndi muyeso wanu.,,,,Kuli buyo mukwrzhye-zhya kwa map kwalo ikweendelena a kubala kwernu.,TOI-1
-trust.low,Low confidence: based on your reading and field checks only. Get a lab test before major spending.,Chidaliro chochepa: kutengera muyeso wanu ndi kuwunika kwa munda kokha. Kayeseni nthaka ku labu musanawononge ndalama zambiri.,,,,Kutashoma bwiini: kuli buyo mukweezhye-zhya kwa map a mu kucheking'a kwamuunda. A mupi.e bulongo kamutana kusowa Mali.,TOI-1
-plan.b_seed,Buy certified seed of a suitable variety.,Gulani mbewu yovomerezeka ya mtundu woyenera.,,,,A muule imbuto zhyi pimidwe iizhyeelela.,TOI-1
-lime.timing_ok,Apply lime well before planting so it has time to react.,Thirani laimu nthawi yayitali musanabzale kuti ikhale ndi nthawi yogwira ntchito.,,,,A mobile liimu chiindi kachichiliko kamutana kushanga kutegwa lime isunguluke.,TOI-1
-lime.too_late,Too late to lime for this season. Lime early for next season.,Nthawi yothira laimu nyengo ino yadutsa. Thirani laimu msanga nyengo ikubwerayi.,,,,Chiindi chakubika liimu chaaciindi cino Chapman. Kubika liimu kifwaamba ya chiindi chiboola.,TOI-1
-ui.confidence,Confidence,Chidaliro,,,,Ndasyooma,TOI-1
-ui.trust.high,high,chachikulu,,,,Atala,TOI-1
-ui.trust.moderate,moderate,chapakati,,,,Akati kati,TOI-1
-ui.trust.low,low,chochepa,,,,Ansi,TOI-1
-ui.trust.none,none,palibe,,,,Kwiina,TOI-1
-ui.plan_a,Plan A: fix the soil and grow {crop},Ndondomeko A: konzani nthaka ndipo limani {crop},,,,,
-ui.plan_b,Plan B: cheaper route,Ndondomeko B: njira yotsika mtengo,,,,MuzeezoB: in zila itaadduli.,TOI-1
-ui.plan_c,Plan C: crops that suit the soil now,Ndondomeko C: mbewu zoyenera nthaka momwe ilili,,,,Muzeezo C:zhyishango zhyeelela bulongo oobu ono,TOI-1
-ui.lime,Lime,Laimu,,,Laimu,Liimu,TOI-1
-ui.basal,Basal fertiliser,Feteleza wobzalira,,,,Chaamutunzhya  waansi,TOI-1
-ui.top_dress,Top dressing,Feteleza wowonjezera,,,,Chaamutunzhya  waazeulu,TOI-1
-ui.manure,Manure,Manyowa,,,,Manuwa,TOI-1
-ui.seed,Seed,Mbewu,,,,Imbuto,TOI-1
-ui.fertiliser,Fertiliser,Feteleza,,,,Chaamutunzhya,TOI-1
-ui.per_lima,per lima,pa lima,,,pa lima,A muunda amuunda,TOI-1
-ui.per_station,per planting station,pa dzenje lobzala,,,,Abusena bwaku shanga,TOI-1
-ui.optional,Optional,Mwakufuna,,,,Kusala,TOI-1
-ui.or,or,kapena,,,,Olo,TOI-1
-ui.about,about,pafupifupi,,,,Ambweni,TOI-1
-ui.needs_texture,The amount needs the soil texture. Do the texture-by-feel check.,Kuchuluka kumafunika mtundu wa nthaka. Yesani nthaka ndi manja.,,,,Mweelwe uzandikana kuzhyiba bulongo mbobuteeleka kuumaanza. A mutelele bulongo kubelesha maanza,TOI-1
-ui.left_out,"Leave for later, when money allows",Siyani mpaka mutapeza ndalama,,,,Musiye kusika mane Mali a kajanike,TOI-1
-ui.cost,Cost,Mtengo,,,,Mweelwe,TOI-1
-ui.remember,Remember,Kumbukirani,,,,Kuyeeya,TOI-1
-ui.why,Why this advice,Chifukwa cha malangizo awa,,,,Nkaambo nzi muzeezo ooyu,TOI-1
-ui.send_sms,Send SMS summary,Tumizani SMS,,,,A mutume  Sms mubufwaafwi,TOI-1
-ui.depends_method,The advice depends on how the pH was measured,Malangizo amadalira momwe pH inayezedwera,,,,Malaiyilie ala chilila mbuli PH mbuya pimwa,TOI-1
-ui.unconfirmed_rules,These rules have not been confirmed by a reviewer yet.,Malamulo awa sanatsimikizidwebe ndi wowunika.,,,,Aayi milawo tayininga kwiinina pe a bahvuntauzhya,TOI-1
-ui.lab_test,Get a lab test before buying lime.,Kayeseni nthaka ku labu musanagule laimu.,,,,Amupime bulongo kamutana kuula laymu,TOI-1
-crop.maize,maize,chimanga,,,mapopwe,Mapopwe,TOI-1
-crop.soybean,soybean,soya,,,soya,Chileemba naa bunyangu,TOI-1
-crop.sunflower,sunflower,mpendadzuwa,,,,Malanga zuba,TOI-1
-crop.millet,millet,mawere,,,,Nzembwe,TOI-1
-crop.sorghum,sorghum,mapira,,,mapila,Maila mucheme,TOI-1
-crop.groundnut,groundnut,mtedza,,,nzungu,Inyemu,TOI-1
+msg.MSG-01,Re-test the soil after 2 to 3 years. One lime application lasts 3 to 5 years.,Yesaninso nthaka pakatha zaka 2 kapena 3. Laimu imodzi imagwira ntchito zaka 3 mpaka 5.,,,Kupima bulongo kwainda myaka yotatwe olo yosanwe,Kupima bulongo kwainda myaka yotatwe olo yosanwe,TOI-1
+msg.MSG-02,Lime is not a substitute for fertiliser.,Laimu si feteleza. Simungasinthanitse laimu ndi feteleza.,,,Limu taayibwezi business bwa chaamutunzhya,Limu taayibwezi business bwa chaamutunzhya,TOI-1
+msg.MSG-03,Never apply more lime than a soil test supports. Too much lime reduces yield.,Musathire laimu yambiri kuposa momwe kuyesa nthaka kukunenera. Laimu yochuluka imachepetsa zokolola.,,,Kwiina kubika liimu munji mubulongo  kwiindilizya mbuli mbwiiyandika mubulongo,Kwiina kubika liimu munji mubulongo  kwiindilizya mbuli mbwiiyandika mubulongo,TOI-1
+msg.MSG-04,Apply lime early and work it into the soil. It needs moisture and time to react.,Thirani laimu msanga ndipo muisakanize ndi nthaka. Imafunika chinyezi ndi nthawi kuti igwire ntchito.,,,Kubika liimu kufwaambana mubulongo. Liimu iyaanda tuumeenda alimwi a chiindi kutegwa isangane a bulongo,Kubika liimu kufwaambana mubulongo. Liimu iyaanda tuumeenda alimwi a chiindi kutegwa isangane a bulongo,TOI-1
+msg.MSG-05,"Soybean: inoculate the seed with the right rhizobia, especially where soybean has not been grown recently.","Soya: sakanizani mbewu ndi mankhwala a rhizobia oyenera, makamaka komwe soya sanalimidwe posachedwapa.",,,Inseke zya soybeans zyeelele kubika inoculant chiindi chakushanga maka- maka mumasena ataaningwa shangidwe soya beans kale,Inseke zya soybeans zyeelele kubika inoculant chiindi chakushanga maka- maka mumasena ataaningwa shangidwe soya beans kale,TOI-1
+msg.MSG-06,Maize: use a suitable seed variety.,Chimanga: gwiritsani ntchito mbewu yoyenera.,,,Kushanga mapopwe kweelela imbuto yeelele,Kushanga mapopwe kweelela imbuto yeelele,TOI-1
+msg.MSG-07,"Common fertiliser mistakes: applying too early, too late, or ignoring the weather.","Zolakwa zofala ndi feteleza: kuthira msanga kwambiri, mochedwa kwambiri, kapena osaganizira nyengo.",,,"Bulubizyi bwakubika chamutuzhya: kubika chaamutunzhya  kufwambaana, kumuka kubika chaamutunzhya  olo kutalanga or kuchilila chiinda","Bulubizyi bwakubika chamutuzhya: kubika chaamutunzhya  kufwambaana, kumuka kubika chaamutunzhya  olo kutalanga or kuchilila chiinda",TOI-1
+msg.MSG-08,This is decision support only. Consult an extension officer or a soil lab before major spending.,Uku ndi kuthandiza kupanga chisankho chabe. Funsani mlangizi wa zaulimi kapena labu ya nthaka musanawononge ndalama zambiri.,,,Eeci cheendelana aakusa. Amubuzye beendelezi ba zyabulimi muchilawo chenu.,Eeci cheendelana aakusa. Amubuzye beendelezi ba zyabulimi muchilawo chenu.,TOI-1
+ref.REF-01,"The reading did not pass the quality check, so no advice is given. Retake the reading or enter a lab pH.","Muyeso sunadutse kuyezedwa kwa khalidwe, choncho palibe malangizo. Yesaninso kapena lowetsani pH ya ku labu.",,,"A mupime pH yabulongo bwenu Ali,  nkabo kupima kwaakusaanguna kwiina nokwasika amweelwe.","A mupime pH yabulongo bwenu Ali,  nkabo kupima kwaakusaanguna kwiina nokwasika amweelwe.",TOI-1
+ref.REF-02,The soil is too acidic for the system to advise safely. Take a sample to a soil lab or an extension officer.,Nthaka ndi yowawasa kwambiri kuti tikulangizeni bwino. Tengani chitsanzo cha nthaka ku labu kapena kwa mlangizi wa zaulimi.,,,Bulongo bulikwete acid yiinji. One nkaambo kaako one system yakakilwa kugwasha. Amutole bulongo kukupimya olo mubuzhye bendelezhya zhyabulimi ba kuchilawo cheng.,Bulongo bulikwete acid yiinji. One nkaambo kaako one system yakakilwa kugwasha. Amutole bulongo kukupimya olo mubuzhye bendelezhya zhyabulimi ba kuchilawo cheng.,TOI-1
+ref.REF-03,"Lime amount needs the soil texture. Do the texture-by-feel check, then ask again.","Kuchuluka kwa laimu kumafunika mtundu wa nthaka. Yesani nthaka ndi manja, kenako funsaninso.",,,Kubika liimu kuzandika kunva bulongo mbobuli telezhya kumaanza. Amunve bulongo ku maanza bobulinvisha mwamana muscle alimwi.,Kubika liimu kuzandika kunva bulongo mbobuli telezhya kumaanza. Amunve bulongo ku maanza bobulinvisha mwamana muscle alimwi.,TOI-1
+ref.REF-04,The pH is above what {crop} tolerates. Do not apply lime. Get a lab test.,pH ndi yokwera kuposa yomwe {crop} imapirira. Musathire laimu. Kayeseni nthaka ku labu.,,,,"PH ili available meningitis kwiinda mbuli chisyango mbochiyanda a
+Mupime bulongo A misunderstanding chishango mbuli mbochibele.",TOI-1
+ref.REF-05,It is too late to lime for this season's {crop}. Follow Plan C this season and lime early for next season.,Nthawi yothira laimu ya {crop} ya nyengo ino yadutsa. Tsatirani Ndondomeko C nyengo ino ndipo thirani laimu msanga nyengo ikubwerayi.,,,,Chiindi chamana chakubika liimu ya zyishango zyachiindi chino. Muchilile inzhyila iinji yaa chiindi excited akubika liimu kufwambana ya chiindi chiboola  A misunderstanding zishango zhyenu mbubona mbuli mbozhyibele,TOI-1
+ref.REF-06,The advice depends on how the pH was measured (water or calcium chloride). Get a lab test before buying lime.,Malangizo amadalira momwe pH inayezedwera (ndi madzi kapena calcium chloride). Kayeseni nthaka ku labu musanagule laimu.,,,Kugwashigwa kulendeelana mbuli pH ya bulongo mboyibele. Mupime bulongo kamutana Kuala liimu.,Kugwashigwa kulendeelana mbuli pH ya bulongo mboyibele. Mupime bulongo kamutana Kuala liimu.,TOI-1
+ref.REF-07,This much lime must be split into more than one application.,Laimu wochuluka chonchi ayenera kugawidwa ndi kuthiridwa kangapo.,,,Liimu muyandanye muzhyi-beela-beela zyaandene,Liimu muyandanye muzhyi-beela-beela zyaandene,TOI-1
+plan.b_not_applicable,There is no cheaper way to grow {crop} in this soil. Use the crops in Plan C instead.,,,,,,
+plan.b_blocked,Partial plan not yet reviewed. Start with Plan C crops and get a lab test.,Ndondomeko yotsika mtengo sinawunikidwebe. Yambani ndi mbewu za Ndondomeko C ndipo kayeseni nthaka ku labu.,,,Muzeezo musyoonto tauranga kujanwa. Mutalike amuzeezo (c)wazhyishango mwamana mupime bulongo.,Muzeezo musyoonto tauranga kujanwa. Mutalike amuzeezo (c)wazhyishango mwamana mupime bulongo.,TOI-1
+plan.c_none,No crop in the system suits this soil as it is. Get a lab test.,Palibe mbewu m'dongosolo lino yomwe ingakule bwino m'nthaka iyi momwe ilili. Kayeseni nthaka ku labu.,,,Mu system (munzhyila eeyi) kwiina zishango zyeelele mubulongo oobu.,Mu system (munzhyila eeyi) kwiina zishango zyeelele mubulongo oobu.,TOI-1
+lime.optional,Lime is optional at this pH. A small amount may help; get a lab test first.,Pa pH iyi laimu sikofunikira kwenikweni. Pang'ono ingathandize; kayeseni nthaka ku labu choyamba.,,,Kubika  liimu aa pH yabulongo oobu nkusala. Liimu insyoonto Ingatestone yagwasha. Pesi a mupime bulongo.,Kubika  liimu aa pH yabulongo oobu nkusala. Liimu insyoonto Ingatestone yagwasha. Pesi a mupime bulongo.,TOI-1
+lime.not_needed,Lime is not needed at this pH.,Pa pH iyi laimu sikufunika.,,,Liimu tayiiyandi a pH eeyi.,Liimu tayiiyandi a pH eeyi.,TOI-1
+lime.timing_uncertain,Liming now may be too late unless you plant late in the window. Ask an extension officer.,Kuthira laimu tsopano kungakhale mochedwa pokhapokha mutabzala chakumapeto. Funsani mlangizi wa zaulimi.,,,"Liimu chino ciindi yamuka, chita and izaak kumuka kushanga. A mubuzye beendelezi bazhya bulimi kuchilawo cheenu.","Liimu chino ciindi yamuka, chita and izaak kumuka kushanga. A mubuzye beendelezi bazhya bulimi kuchilawo cheenu.",TOI-1
+lime.any_time,"On irrigated land, lime can be applied at any time before planting.","Pa munda wothirira, laimu ingathiridwe nthawi iliyonse musanabzale.",,,"Mubusena bwakwiiida or kutilila, liimu Ingatestone yabikwa kufumbwa ciindi kakutaningwa kushangwa.","Mubusena bwakwiiida or kutilila, liimu Ingatestone yabikwa kufumbwa ciindi kakutaningwa kushangwa.",TOI-1
+rate.open,Rate not yet available. Ask an extension officer or follow a soil test.,Kuchuluka sikunapezeke. Funsani mlangizi wa zaulimi kapena tsatirani kuyesa nthaka.,,,Chakupimya chino ciindi kwiina. A mubuzhye bendelezhya zhyabulimi mucilage cheenu.,Chakupimya chino ciindi kwiina. A mubuzhye bendelezhya zhyabulimi mucilage cheenu.,TOI-1
+crop.no_data,The system has no data for {crop} yet. Get a lab test.,Dongosolo lilibe zambiri za {crop}. Kayeseni nthaka ku labu.,,,,System yiina masimpe aa chishongo kulicheno chiindi. A mupime bulongo. Amusunge chishango mbuli  mbociibele.,TOI-1
+crop.pending_scope,{crop} is not yet confirmed for this system.,{crop} sinatsimikizidwe m'dongosolo lino.,,,,Chishango teaching kuzhyibwa musystem eeyi. A misunderstanding chishango  mbuli mbociibele.,TOI-1
+borderline,The pH is close to a band boundary. A lab test is recommended.,pH ili pafupi ndi malire a gulu. Ndi bwino kuyesa nthaka ku labu.,,,PH ili afwafwi kuzhyinji. Kupima bulongo kulayandika.,PH ili afwafwi kuzhyinji. Kupima bulongo kulayandika.,TOI-1
+measure.unavailable,Household measure not yet available; amounts are in kg.,Miyeso ya pakhomo sinapezeke; kuchuluka kuli mu makilogalamu.,,,Kipima kwamukwashi takuko pe. Kuli buyo mu ma kilograms,Kipima kwamukwashi takuko pe. Kuli buyo mu ma kilograms,TOI-1
+trust.moderate,Based on map estimates that agree with your reading.,Kutengera mapu omwe akugwirizana ndi muyeso wanu.,,,Kuli buyo mukwrzhye-zhya kwa map kwalo ikweendelena a kubala kwernu.,Kuli buyo mukwrzhye-zhya kwa map kwalo ikweendelena a kubala kwernu.,TOI-1
+trust.low,Low confidence: based on your reading and field checks only. Get a lab test before major spending.,Chidaliro chochepa: kutengera muyeso wanu ndi kuwunika kwa munda kokha. Kayeseni nthaka ku labu musanawononge ndalama zambiri.,,,Kutashoma bwiini: kuli buyo mukweezhye-zhya kwa map a mu kucheking'a kwamuunda. A mupi.e bulongo kamutana kusowa Mali.,Kutashoma bwiini: kuli buyo mukweezhye-zhya kwa map a mu kucheking'a kwamuunda. A mupi.e bulongo kamutana kusowa Mali.,TOI-1
+plan.b_seed,Buy certified seed of a suitable variety.,Gulani mbewu yovomerezeka ya mtundu woyenera.,,,A muule imbuto zhyi pimidwe iizhyeelela.,A muule imbuto zhyi pimidwe iizhyeelela.,TOI-1
+lime.timing_ok,Apply lime well before planting so it has time to react.,Thirani laimu nthawi yayitali musanabzale kuti ikhale ndi nthawi yogwira ntchito.,,,A mobile liimu chiindi kachichiliko kamutana kushanga kutegwa lime isunguluke.,A mobile liimu chiindi kachichiliko kamutana kushanga kutegwa lime isunguluke.,TOI-1
+lime.too_late,Too late to lime for this season. Lime early for next season.,Nthawi yothira laimu nyengo ino yadutsa. Thirani laimu msanga nyengo ikubwerayi.,,,Chiindi chakubika liimu chaaciindi cino Chapman. Kubika liimu kifwaamba ya chiindi chiboola.,Chiindi chakubika liimu chaaciindi cino Chapman. Kubika liimu kifwaamba ya chiindi chiboola.,TOI-1
+ui.confidence,Confidence,Chidaliro,,,Ndasyooma,Ndasyooma,TOI-1
+ui.trust.high,high,chachikulu,,,Atala,Atala,TOI-1
+ui.trust.moderate,moderate,chapakati,,,Akati kati,Akati kati,TOI-1
+ui.trust.low,low,chochepa,,,Ansi,Ansi,TOI-1
+ui.trust.none,none,palibe,,,Kwiina,Kwiina,TOI-1
+ui.plan_a,Plan A: fix the soil and grow {crop},Ndondomeko A: konzani nthaka ndipo limani {crop},,,,"Muzeezo A: mubambe bulongo a kushanga chishango.
+A misunderstanding chishango mbuli mbochibele.",TOI-1
+ui.plan_b,Plan B: cheaper route,Ndondomeko B: njira yotsika mtengo,,,MuzeezoB: in zila itaadduli.,MuzeezoB: in zila itaadduli.,TOI-1
+ui.plan_c,Plan C: crops that suit the soil now,Ndondomeko C: mbewu zoyenera nthaka momwe ilili,,,Muzeezo C:zhyishango zhyeelela bulongo oobu ono,Muzeezo C:zhyishango zhyeelela bulongo oobu ono,TOI-1
+ui.lime,Lime,Laimu,,,Liimu,Liimu,TOI-1
+ui.basal,Basal fertiliser,Feteleza wobzalira,,,Chaamutunzhya  waansi,Chaamutunzhya  waansi,TOI-1
+ui.top_dress,Top dressing,Feteleza wowonjezera,,,Chaamutunzhya  waazeulu,Chaamutunzhya  waazeulu,TOI-1
+ui.manure,Manure,Manyowa,,,Manuwa,Manuwa,TOI-1
+ui.seed,Seed,Mbewu,,,Imbuto,Imbuto,TOI-1
+ui.fertiliser,Fertiliser,Feteleza,,,Chaamutunzhya,Chaamutunzhya,TOI-1
+ui.per_lima,per lima,pa lima,,,A muunda amuunda,A muunda amuunda,TOI-1
+ui.per_station,per planting station,pa dzenje lobzala,,,Abusena bwaku shanga,Abusena bwaku shanga,TOI-1
+ui.optional,Optional,Mwakufuna,,,Kusala,Kusala,TOI-1
+ui.or,or,kapena,,,Olo,Olo,TOI-1
+ui.about,about,pafupifupi,,,Ambweni,Ambweni,TOI-1
+ui.needs_texture,The amount needs the soil texture. Do the texture-by-feel check.,Kuchuluka kumafunika mtundu wa nthaka. Yesani nthaka ndi manja.,,,Mweelwe uzandikana kuzhyiba bulongo mbobuteeleka kuumaanza. A mutelele bulongo kubelesha maanza,Mweelwe uzandikana kuzhyiba bulongo mbobuteeleka kuumaanza. A mutelele bulongo kubelesha maanza,TOI-1
+ui.left_out,"Leave for later, when money allows",Siyani mpaka mutapeza ndalama,,,Musiye kusika mane Mali a kajanike,Musiye kusika mane Mali a kajanike,TOI-1
+ui.cost,Cost,Mtengo,,,Mweelwe,Mweelwe,TOI-1
+ui.remember,Remember,Kumbukirani,,,Kuyeeya,Kuyeeya,TOI-1
+ui.why,Why this advice,Chifukwa cha malangizo awa,,,Nkaambo nzi muzeezo ooyu,Nkaambo nzi muzeezo ooyu,TOI-1
+ui.send_sms,Send SMS summary,Tumizani SMS,,,A mutume  Sms mubufwaafwi,A mutume  Sms mubufwaafwi,TOI-1
+ui.depends_method,The advice depends on how the pH was measured,Malangizo amadalira momwe pH inayezedwera,,,Malaiyilie ala chilila mbuli PH mbuya pimwa,Malaiyilie ala chilila mbuli PH mbuya pimwa,TOI-1
+ui.unconfirmed_rules,Some of these values are still awaiting final confirmation by an agronomist.,Malamulo awa sanatsimikizidwebe ndi wowunika.,,,Aayi milawo tayininga kwiinina pe a bahvuntauzhya,Aayi milawo tayininga kwiinina pe a bahvuntauzhya,TOI-1
+ui.lab_test,Get a lab test before buying lime.,Kayeseni nthaka ku labu musanagule laimu.,,,Amupime bulongo kamutana kuula laymu,Amupime bulongo kamutana kuula laymu,TOI-1
+crop.maize,maize,chimanga,,,Mapopwe,Mapopwe,TOI-1
+crop.soybean,soybean,soya,,,Chileemba naa bunyangu,Chileemba naa bunyangu,TOI-1
+crop.sunflower,sunflower,mpendadzuwa,,,Malanga zuba,Malanga zuba,TOI-1
+crop.millet,millet,mawere,,,Nzembwe,Nzembwe,TOI-1
+crop.sorghum,sorghum,mapira,,,Maila mucheme,Maila mucheme,TOI-1
+crop.groundnut,groundnut,mtedza,,,Inyemu,Inyemu,TOI-1
 plan.b_in_order,"Buy these in this order, as far as your money goes. Stop where the money ends; the first items matter most.","Gulani zinthu izi motsatana chonchi, mpaka ndalama zanu zitatha. Zoyambirira ndizo zofunika kwambiri.",,,,,
