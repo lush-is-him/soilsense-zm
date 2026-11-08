@@ -394,7 +394,25 @@ def wait_for_server(api, say=print, seconds=60):
     raise RuntimeError(f"the server at {api.base} did not start")
 
 
-def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=None):
+def wait_for_probe(probe, reattach, say=print, wait=3.0, tries=None):
+    """The USB connection dropped: wait until the Arduino is plugged back in, then carry on."""
+    say("  PROBE DISCONNECTED. Unplug the USB cable, wait 5 seconds, plug it back in.")
+    say("  Waiting for the Arduino... (the dashboard keeps its last reading)")
+    n = 0
+    while tries is None or n < tries:
+        n += 1
+        time.sleep(wait)
+        try:
+            probe.port = reattach()
+            probe.ping()
+            say("  Probe connected again. Put it back in the sample.")
+            return True
+        except (RuntimeError, OSError, ValueError):
+            continue
+    return False
+
+
+def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=None, reattach=None):
     """Demo mode: read, save, then wait for the next sample, until Ctrl+C.
 
     Put the probe in a sample: the dashboard's Live page shows the pH while it
@@ -411,15 +429,22 @@ def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=N
             if follow:
                 field_id = active_field(api, device_id, say=say)
                 say(f"  Field {field_id}: put the probe in the sample.")
-            result = read_field(probe, api, board, device_id, field_id, say=say, state=state, live=True)
-            done += 1
-            last_v = probe.read()["ph_v"]
-            say("  Done. Rinse the probe and put it in the next sample (waiting for it to move)...")
-            while rounds is None or done < rounds:
-                reply = probe.read()
-                if abs(reply["ph_v"] - last_v) > MOVED_V:
-                    say("  New sample detected.")
-                    break
+            try:
+                read_field(probe, api, board, device_id, field_id, say=say, state=state, live=True)
+                done += 1
+                last_v = probe.read()["ph_v"]
+                say("  Done. Rinse the probe and put it in the next sample (waiting for it to move)...")
+                while rounds is None or done < rounds:
+                    reply = probe.read()
+                    if abs(reply["ph_v"] - last_v) > MOVED_V:
+                        say("  New sample detected.")
+                        break
+            except (OSError, RuntimeError) as error:
+                lost = isinstance(error, OSError) or "no reply from the probe" in str(error)
+                if not lost or reattach is None:
+                    raise
+                if not wait_for_probe(probe, reattach, say=say):
+                    raise
     except KeyboardInterrupt:
         say("Stopped.")
     return done
@@ -468,6 +493,7 @@ def main(argv=None):
         for port in list_ports.comports():
             print(f"{port.device}  {port.description}")
         return 0
+    auto_port = not args.port
     if not args.port:
         try:
             args.port = find_port()
@@ -525,7 +551,10 @@ def main(argv=None):
             moisture_points(probe)
             return 0
         if args.action == "live":
-            live(probe, api, board, args.device, args.field)
+            def reattach():
+                # after a replug Windows may give the Arduino a new COM number
+                return open_serial(args.port if args.port and not auto_port else find_port())
+            live(probe, api, board, args.device, args.field, reattach=reattach)
         elif args.action == "sample":
             read_sample(probe, api, board, args.device, args.sample_id.upper())
         elif args.action == "calibrate":

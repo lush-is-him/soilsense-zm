@@ -261,3 +261,26 @@ def test_live_mode_follows_the_field_open_on_the_dashboard(api):
     api.call("POST", "/devices/probe-1/active-field", {"field_id": 1})
     assert live(Probe(FakeArduino([6.0] * 4)), api, BOARD, "probe-1", None, say=quiet, state=state, rounds=1) == 1
     assert api.call("GET", "/fields/1/history")["readings"][0]["ph_water"] == pytest.approx(6.0, abs=0.02)
+
+
+def test_live_mode_waits_for_a_replug_and_carries_on(api, monkeypatch):
+    import bridge.bridge as b
+    monkeypatch.setattr(b.time, "sleep", lambda s: None)
+    state = {}
+    calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+
+    class Unplugged:
+        def write(self, data):
+            raise OSError("device not functioning")
+        def readline(self):
+            return b""
+        def close(self):
+            pass
+
+    replugged = FakeArduino([5.5] * 5)
+    probe = Probe(Unplugged())
+    said = []
+    assert b.live(probe, api, BOARD, "probe-1", 1, say=said.append, state=state, rounds=1,
+                  reattach=lambda: replugged) == 1
+    assert any("DISCONNECTED" in line for line in said)
+    assert api.call("GET", "/fields/1/history")["readings"][0]["ph_water"] == pytest.approx(5.5, abs=0.02)
