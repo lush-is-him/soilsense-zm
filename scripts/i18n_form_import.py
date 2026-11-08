@@ -87,8 +87,8 @@ def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET
             if code in skip:
                 set_aside.append(f"{code} ({key}): marked for the translator to check")
                 continue
-            if i18n_sheet.placeholders(final) != i18n_sheet.placeholders(english[key]["text"]):
-                set_aside.append(f"{code} ({key}): must keep {{crop}} exactly as written")
+            if not i18n_sheet.placeholders(final) <= i18n_sheet.placeholders(english[key]["text"]):
+                set_aside.append(f"{code} ({key}): has a placeholder the English does not have")
                 continue
             by_key[key][f"{column}_final"] = final
             by_key[key][f"{column}_reviewer"] = who

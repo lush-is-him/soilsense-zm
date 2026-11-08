@@ -70,8 +70,10 @@ def import_sheet(path=SHEET):
             text = final or (row.get(f"{name}_draft") or "").strip()
             if not text:
                 continue
-            if placeholders(text) != placeholders(english[key]["text"]):
-                problems.append(f"{code} {key}: placeholders must be {sorted(placeholders(english[key]['text']))}")
+            # A translation may leave out {crop} (the line then reads without the crop
+            # name), but it must never add a placeholder the English does not have.
+            if not placeholders(text) <= placeholders(english[key]["text"]):
+                problems.append(f"{code} {key}: only these placeholders are allowed: {sorted(placeholders(english[key]['text']))}")
                 continue
             entry = {"text": text, "reviewed": bool(final and reviewer)}
             if final and reviewer:

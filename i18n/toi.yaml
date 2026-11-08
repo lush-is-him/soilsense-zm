@@ -1,12 +1,12 @@
-# Tonga (toi). Imported from translator TOI-1's form (30 Oct and 2 Nov 2026).
+# Tonga (toi). Imported from docs/translations/review_sheet.csv.
 msg.MSG-01:
   text: Kupima bulongo kwainda myaka yotatwe olo yosanwe
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 msg.MSG-02:
   text: Limu taayibwezi business bwa chaamutunzhya
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 msg.MSG-03:
   text: Kwiina kubika liimu munji mubulongo  kwiindilizya mbuli mbwiiyandika mubulongo
   reviewed: true
@@ -33,20 +33,30 @@ msg.MSG-08:
   reviewer: TOI-1
 ref.REF-01:
   text: A mupime pH yabulongo bwenu Ali,  nkabo kupima kwaakusaanguna kwiina nokwasika amweelwe.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 ref.REF-02:
   text: Bulongo bulikwete acid yiinji. One nkaambo kaako one system yakakilwa kugwasha. Amutole bulongo kukupimya olo mubuzhye bendelezhya zhyabulimi ba kuchilawo cheng.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 ref.REF-03:
   text: Kubika liimu kuzandika kunva bulongo mbobuli telezhya kumaanza. Amunve bulongo ku maanza bobulinvisha mwamana muscle alimwi.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
+ref.REF-04:
+  text: 'PH ili available meningitis kwiinda mbuli chisyango mbochiyanda a
+
+    Mupime bulongo A misunderstanding chishango mbuli mbochibele.'
+  reviewed: true
+  reviewer: TOI-1
+ref.REF-05:
+  text: Chiindi chamana chakubika liimu ya zyishango zyachiindi chino. Muchilile inzhyila iinji yaa chiindi excited akubika liimu kufwambana ya chiindi chiboola  A misunderstanding zishango zhyenu mbubona mbuli mbozhyibele
+  reviewed: true
+  reviewer: TOI-1
 ref.REF-06:
   text: Kugwashigwa kulendeelana mbuli pH ya bulongo mboyibele. Mupime bulongo kamutana Kuala liimu.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 ref.REF-07:
   text: Liimu muyandanye muzhyi-beela-beela zyaandene
   reviewed: true
@@ -61,24 +71,32 @@ plan.c_none:
   reviewer: TOI-1
 lime.optional:
   text: Kubika  liimu aa pH yabulongo oobu nkusala. Liimu insyoonto Ingatestone yagwasha. Pesi a mupime bulongo.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 lime.not_needed:
   text: Liimu tayiiyandi a pH eeyi.
   reviewed: true
   reviewer: TOI-1
 lime.timing_uncertain:
   text: Liimu chino ciindi yamuka, chita and izaak kumuka kushanga. A mubuzye beendelezi bazhya bulimi kuchilawo cheenu.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 lime.any_time:
   text: Mubusena bwakwiiida or kutilila, liimu Ingatestone yabikwa kufumbwa ciindi kakutaningwa kushangwa.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 rate.open:
   text: Chakupimya chino ciindi kwiina. A mubuzhye bendelezhya zhyabulimi mucilage cheenu.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
+crop.no_data:
+  text: System yiina masimpe aa chishongo kulicheno chiindi. A mupime bulongo. Amusunge chishango mbuli  mbociibele.
+  reviewed: true
+  reviewer: TOI-1
+crop.pending_scope:
+  text: Chishango teaching kuzhyibwa musystem eeyi. A misunderstanding chishango  mbuli mbociibele.
+  reviewed: true
+  reviewer: TOI-1
 borderline:
   text: PH ili afwafwi kuzhyinji. Kupima bulongo kulayandika.
   reviewed: true
@@ -89,24 +107,24 @@ measure.unavailable:
   reviewer: TOI-1
 trust.moderate:
   text: Kuli buyo mukwrzhye-zhya kwa map kwalo ikweendelena a kubala kwernu.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 trust.low:
   text: 'Kutashoma bwiini: kuli buyo mukweezhye-zhya kwa map a mu kucheking''a kwamuunda. A mupi.e bulongo kamutana kusowa Mali.'
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 plan.b_seed:
   text: A muule imbuto zhyi pimidwe iizhyeelela.
   reviewed: true
   reviewer: TOI-1
 lime.timing_ok:
   text: A mobile liimu chiindi kachichiliko kamutana kushanga kutegwa lime isunguluke.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 lime.too_late:
   text: Chiindi chakubika liimu chaaciindi cino Chapman. Kubika liimu kifwaamba ya chiindi chiboola.
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 ui.confidence:
   text: Ndasyooma
   reviewed: true
@@ -127,10 +145,16 @@ ui.trust.none:
   text: Kwiina
   reviewed: true
   reviewer: TOI-1
+ui.plan_a:
+  text: 'Muzeezo A: mubambe bulongo a kushanga chishango.
+
+    A misunderstanding chishango mbuli mbochibele.'
+  reviewed: true
+  reviewer: TOI-1
 ui.plan_b:
   text: 'MuzeezoB: in zila itaadduli.'
-  reviewed: false
-  note: imported as given; suspected phone autocorrect or changed numbers, not confirmed
+  reviewed: true
+  reviewer: TOI-1
 ui.plan_c:
   text: Muzeezo C:zhyishango zhyeelela bulongo oobu ono
   reviewed: true
