@@ -42,7 +42,7 @@ def count(conn, sql):
 def test_demo_fills_every_role_and_labels_it(conn):
     out = seed_demo.demo(conn)
     assert out["created"] >= 20
-    assert count(conn, "SELECT COUNT(*) FROM farmers WHERE is_demo = 1") == len(seed_demo.FARMS)
+    assert count(conn, "SELECT COUNT(*) FROM farmers WHERE is_demo = 1") == len(seed_demo.FARMS) + 1   # + Demo farmer A
     assert count(conn, "SELECT COUNT(*) FROM referrals") > 0
     assert count(conn, "SELECT COUNT(*) FROM lab_results") > 0
     assert count(conn, "SELECT COUNT(DISTINCT trust_level) FROM recommendations") >= 2

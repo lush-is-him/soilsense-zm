@@ -205,13 +205,11 @@ def demo(conn, rng=None):
         with conn:
             conn.execute("INSERT OR IGNORE INTO devices (device_id, label, is_demo) VALUES (?, ?, 1)", (device, label))
 
-    with conn:   # the made-up farmer from backend.seed is demo data too
-        conn.execute("UPDATE farmers SET is_demo = 1 WHERE alias = 'Demo farmer A'")
     pw = sample_farm(conn, client, os.environ.get("SEED_SAMPLEFARM_PASSWORD") or "samplefarm-1")
     if pw:
         passwords[SAMPLE_FARM_USER] = pw
 
-    if conn.execute("SELECT 1 FROM farmers WHERE is_demo = 1").fetchone():
+    if conn.execute("SELECT 1 FROM farmers WHERE is_demo = 1 AND alias != 'Demo farmer A'").fetchone():
         _cleanup_seed_admin(conn)
         return {"passwords": passwords, "created": 0}
 
@@ -306,6 +304,8 @@ def demo(conn, rng=None):
 def _cleanup_seed_admin(conn):
     with conn:
         conn.execute("UPDATE users SET active = 0 WHERE username = 'demo_seed_admin'")
+        # the made-up farmer from backend.seed is demo data too
+        conn.execute("UPDATE farmers SET is_demo = 1 WHERE alias = 'Demo farmer A'")
 
 
 def remove(conn):
