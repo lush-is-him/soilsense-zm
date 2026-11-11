@@ -146,9 +146,7 @@ ui.trust.none:
   reviewed: true
   reviewer: TOI-1
 ui.plan_a:
-  text: 'Muzeezo A: mubambe bulongo a kushanga chishango.
-
-    A misunderstanding chishango mbuli mbochibele.'
+  text: 'Muzeezo A: mubambe bulongo a kushanga chishango {crop}.'
   reviewed: true
   reviewer: TOI-1
 ui.plan_b:

@@ -123,3 +123,10 @@ details summary { cursor: pointer; font-weight: 600; }
 .live-ph { font-size: 3.2rem; font-weight: 700; line-height: 1.1; }
 .live-ph.settling { opacity: 0.55; }
 a.button { display: inline-block; padding: 0.55rem 1rem; border-radius: 8px; background: var(--green, #1f7a4a); color: #fff; text-decoration: none; }
+
+.farmer-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1rem; border-bottom: 1px solid var(--border, #ddd); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+.farmer-head h2 { margin: 0; }
+.farmer h3 { font-size: 0.95rem; margin: 0.5rem 0; color: var(--muted, #555); }
+.field-list { list-style: none; padding: 0; margin: 0 0 0.75rem; display: grid; gap: 0.4rem; }
+.field-link { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.8rem; border: 1px solid var(--border, #ddd); border-radius: 8px; text-decoration: none; }
+a.button.secondary-btn { background: transparent; color: var(--green-dark, #0f6b3f); border: 1px solid var(--green, #198754); }
