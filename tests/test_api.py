@@ -76,7 +76,7 @@ def test_passwords_are_hashed(client):
 def test_rules_need_agronomist_or_admin(client, op):
     assert client.get("/rules", headers=op).status_code == 403
     r = client.get("/rules", headers=login(client, "agronomist"))
-    assert r.status_code == 200 and any(i["rule"] == "LIME-TRIGGER" for i in r.json()["open_items"])
+    assert r.status_code == 200 and any(i["rule"] == "LIME-MAX" for i in r.json()["open_items"])
 
 
 def test_tampered_token_rejected(client, op):

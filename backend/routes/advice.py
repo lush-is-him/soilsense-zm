@@ -111,6 +111,16 @@ def _saved(db, rec_id):
     return row
 
 
+@router.get("/advice")
+def recent_advice(limit: int = 5, db=Depends(get_db)):
+    """The latest recommendations, newest first, for the dashboard's home page."""
+    rows = db.execute(
+        "SELECT r.rec_id, r.crop, r.trust_level, r.as_of_date, f.field_id, f.name AS field, fa.alias AS farmer "
+        "FROM recommendations r JOIN fields f ON f.field_id = r.field_id "
+        "JOIN farmers fa ON fa.farmer_id = f.farmer_id ORDER BY r.rec_id DESC LIMIT ?", (max(1, min(limit, 50)),))
+    return [dict(r) for r in rows]
+
+
 @router.get("/advice/{rec_id}")
 def get_advice(rec_id: int, lang: str = "en", db=Depends(get_db)):
     row = _saved(db, rec_id)

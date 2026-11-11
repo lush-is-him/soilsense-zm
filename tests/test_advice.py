@@ -37,10 +37,10 @@ def water_rules(rules):
 
 
 def advise(ruleset, ph, crop="maize", *, method="water", trust="low", when=AUG,
-           texture="loamy", source="field_check", water="rainfed"):
+           texture="loamy", source="field_check", water="rainfed", budget="low"):
     result = Advisor(ruleset).advise(AdviceRequest(
         ph=ph, ph_method=method, trust_level=trust, crop=crop, as_of_date=when,
-        texture=texture, texture_source=source, water=water))
+        texture=texture, texture_source=source, water=water, budget_band=budget))
     FIRED.update(r["id"] for r in result["fired_rules"])
     return result
 
@@ -69,7 +69,7 @@ def test_map_texture_only_counts_when_trust_moderate(water_rules):
     low = advise(water_rules, 5.0, texture="Clay Loam", source="map", trust="low")
     moderate = advise(water_rules, 5.0, texture="Clay Loam", source="map", trust="moderate")
     assert "REF-03" in low["refusals"]
-    assert moderate["plan_a"]["lime"]["texture_group"] == "clay"
+    assert moderate["plan_a"]["lime"]["texture_group"] == "loamy"      # AGR-2: Clay Loam is loamy
 
 
 def test_ref04_ph_above_crop_maximum(water_rules):
@@ -152,9 +152,18 @@ def test_maize_fertiliser_rates_from_agr2(water_rules):
     assert fert["basal"]["per_lima"]["low"] == 50.0 and fert["basal"]["per_lima"]["high"] == 87.5
 
 
-def test_open_rate_stays_open(water_rules):
+def test_soybean_needs_no_top_dressing(water_rules):
     top = advise(water_rules, 6.0, crop="soybean")["plan_a"]["fertiliser"]["top_dress"]
-    assert top["rate_kg_ha"] is None and top["note"] == "rate.open"
+    assert top["none"] and top["note"] == "fert.none"                 # AGR-2 follow-up N6
+
+
+@pytest.mark.parametrize("crop, ph, status", [
+    ("maize", 5.4, "advised"), ("maize", 5.6, "optional"),
+    ("millet", 5.2, "optional"), ("millet", 4.9, "advised"),          # millet trigger 5.0
+    ("groundnut", 5.6, "advised"), ("groundnut", 5.9, "optional"),    # groundnut trigger 5.8
+    ("soybean", 5.6, "optional"), ("sunflower", 5.4, "advised")])
+def test_lime_trigger_per_crop(water_rules, crop, ph, status):
+    assert advise(water_rules, ph, crop=crop)["plan_a"]["lime"]["status"] == status
 
 
 def test_manure_per_lima_derived_from_tonnes_per_ha(water_rules):
@@ -206,10 +215,12 @@ def test_plan_b_blocked_without_priority_order(water_rules):
     assert advise(blocked, 5.0)["plan_b"]["status"] == "blocked"
 
 
-def test_plan_b_in_priority_order_from_agr2(water_rules):
-    plan_b = advise(water_rules, 5.0)["plan_b"]
-    assert plan_b["status"] == "ok" and plan_b["mode"] == "in_order" and plan_b["note"] == "plan.b_in_order"
-    assert [i["item"] for i in plan_b["items"]] == ["seed", "fertiliser", "lime", "manure"]
+def test_plan_b_budget_reach_from_agr2(water_rules):
+    low = advise(water_rules, 5.0)["plan_b"]
+    assert low["status"] == "ok" and low["mode"] == "budget"
+    assert [i["item"] for i in low["items"]] == ["seed", "fertiliser"] and low["left_out"] == ["lime", "manure"]
+    plan_b = advise(water_rules, 5.0, budget="medium")["plan_b"]
+    assert [i["item"] for i in plan_b["items"]] == ["seed", "fertiliser", "lime"]
     lime = plan_b["items"][2]                     # 15 g x 53,333 stations/ha = 800 kg/ha
     assert lime["g_per_station"] == [15, 15] and lime["per_lima"]["low"] == pytest.approx(200, abs=0.1)
     fertiliser = plan_b["items"][1]               # low end of the basal range
@@ -244,7 +255,7 @@ def test_plan_b_per_station_lime_and_priority(water_rules):
 
 def test_plan_b_station_lime_uses_the_experts_spacing(water_rules):
     for crop in ("maize", "soybean", "sunflower"):
-        lime = next(i for i in advise(water_rules, 5.0, crop=crop)["plan_b"]["items"] if i["item"] == "lime")
+        lime = next(i for i in advise(water_rules, 5.0, crop=crop, budget="medium")["plan_b"]["items"] if i["item"] == "lime")
         assert lime["per_lima"]["low"] == pytest.approx(200, abs=0.1), crop
 
 
@@ -320,9 +331,8 @@ def test_real_rules_are_no_longer_method_sensitive(rules):
     assert not result["method_sensitive"] and result["plan_a"]["status"] == "ok"
 
 
-@pytest.mark.xfail(strict=True, reason="OPEN: how far each budget band reaches in Plan B (not asked)")
 def test_plan_b_budget_bands(rules):
-    assert isinstance(rules["PLAN-B"].data["items_by_budget"], dict)
+    assert rules["PLAN-B"].data["items_by_budget"] == {"low": 2, "medium": 3}   # AGR-2 follow-up B1-B2
 
 
 @pytest.mark.xfail(strict=True, reason="OPEN: household measures (section H, task H3)")

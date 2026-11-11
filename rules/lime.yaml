@@ -28,10 +28,10 @@ rules:
     reviewer_alias: AGR-2
     ref: E1
     ph_method: water
-    notes: "C-3: AGR-2 says lime below pH 5.5 for maize (AGR-1 E1 said 5.5-6.2). For other crops AGR-2 wrote 5.1 to 6.1, which is unclear. The engine advises lime below 5.5 and calls 5.5-6.5 optional."
+    notes: "C-3: AGR-2 says lime below pH 5.5 for maize (AGR-1 E1 said 5.5-6.2). Per-crop triggers from AGR-2's follow-up (N2-N5, 10 Nov 2026). Below a crop's trigger lime is advised; from the trigger up to 6.5 it is optional."
     data:
       trigger_ph: 5.5
-      other_crops: OPEN   # AGR-2 wrote '5.1 to 6.1': ask what it means
+      other_crops: {soybean: 5.5, sunflower: 5.5, millet: 5.0, groundnut: 5.8}
   - id: LIME-RATES
     domain: lime
     status: verified
@@ -54,7 +54,7 @@ rules:
     source_doc: null
     reviewer_alias: AGR-1
     ref: E6
-    notes: "E6 says 4 to 5 t/ha. AGR-2 answered 100000, which cannot be t/ha (probably a slip): 5 kept, ask again. Split guidance is OPEN."
+    notes: "E6 says 4 to 5 t/ha. AGR-2 answered 100000, which cannot be t/ha (probably a slip), and left the follow-up question (N1) blank: AGR-1's 5 kept. Split guidance is OPEN."
     data:
       max_single_application_t_ha: 5
       split_guidance: OPEN

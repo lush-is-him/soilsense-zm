@@ -18,8 +18,8 @@ def test_project_rules_load_and_report_open_items():
     ruleset = load()
     assert "BAND-01" in ruleset.rules and ruleset.crop("maize") is not None
     open_paths = {(i["rule"], i["path"]) for i in ruleset.open_items}
-    assert ("PLAN-B", "items_by_budget") in open_paths
-    assert ("CROP-SOYBEAN", "top_dress.rate_kg_ha") in open_paths
+    assert ("LIME-MAX", "split_guidance") in open_paths
+    assert ("PLAN-B", "items_by_budget") not in open_paths            # answered in AGR-2's follow-up
     assert ("LIME-TRIGGER", "trigger_ph") not in open_paths          # answered by AGR-2
 
 

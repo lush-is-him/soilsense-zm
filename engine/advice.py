@@ -148,7 +148,7 @@ class Advisor:
             return self._sign(out)
 
         fired.append("PLAN-A")
-        lime = self._lime(band, req, crop, fired, refusals)
+        lime = self._lime(band, req, crop, fired, refusals, ph)
         lima_ha = self._lima_ha(fired)
         fertiliser = self._fertiliser(crop, lima_ha, fired)
         manure = self._range_per_lima(crop["manure_t_ha"], lima_ha, "t")
@@ -206,12 +206,23 @@ class Advisor:
                 return group
         return None
 
-    def _lime(self, band, req, crop, fired, refusals):
+    def _crop_trigger(self, crop_name):
+        data = self.rules["LIME-TRIGGER"].data
+        per_crop = data.get("other_crops")
+        if isinstance(per_crop, dict) and isinstance(per_crop.get(crop_name), (int, float)):
+            return per_crop[crop_name]
+        return data["trigger_ph"]
+
+    def _lime(self, band, req, crop, fired, refusals, ph=None):
         fired += ["LIME-TRIGGER", "LIME-TARGET"]
         if band == "suitable":
             return {"advised": False, "status": "not_needed", "note": "lime.not_needed"}
-        # C-3: trigger OPEN; below 5.5 lime is advised, 5.5-6.5 is optional.
-        status = "optional" if band == "slight" else "advised"
+        # Below the crop's trigger lime is advised; from the trigger up to the
+        # 'suitable' band it is optional (AGR-2: maize 5.5; per crop from the follow-up).
+        trigger = self._crop_trigger(crop.get("name", req.crop))
+        status = "advised" if ph is not None and ph < trigger else "optional"
+        if band in ("severe", "moderate") and ph is None:
+            status = "advised"
         lime = {"advised": True, "status": status,
                 "note": "lime.optional" if status == "optional" else None,
                 "products": self.rules["LIME-PRODUCTS"].data["products"],
@@ -280,6 +291,8 @@ class Advisor:
 
     def _fertiliser(self, crop, lima_ha, fired):
         def item(spec):
+            if spec.get("none"):
+                return {"product": None, "none": True, "note": "fert.none"}
             rate = spec.get("rate_kg_ha")
             if isinstance(rate, (int, float)):
                 rate = [rate, rate]

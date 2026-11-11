@@ -102,8 +102,35 @@ function viewLogin() {
     const result = await post("/auth/login", data);
     store.set("token", result.token);
     store.set("user", JSON.stringify(result.user));
-    location.hash = "#/fields";
+    location.hash = "#/home";
   });
+}
+
+async function viewHome() {
+  const [devices, recent] = await Promise.all([api("/devices"), api("/advice?limit=5").catch(() => []), loadStrings(lang())]);
+  const d = devices[0] || {};
+  const c = d.latest_calibration;
+  const connected = d.last_seen && (Date.now() - new Date(d.last_seen).getTime()) / 1000 < 20;
+  const calToday = c && c.accepted && new Date(c.date.replace(" ", "T") + "Z").toDateString() === new Date().toDateString();
+  let user = "operator";
+  try { user = JSON.parse(store.get("user")).username || user; } catch (error) { /* keep default */ }
+  $app.innerHTML = `
+    <h1>Hello, ${esc(user)}</h1>
+    <a class="probe-strip ${connected && calToday ? "ok" : "warn"}" href="#/probe">
+      <span class="dot ${connected ? "on" : "off"}"></span>
+      <span>Probe: <strong>${connected ? "connected" : "not connected"}</strong>
+        · ${calToday ? "calibrated today" : c && c.accepted ? "not calibrated today" : "not calibrated"}</span>
+      <span class="go">›</span></a>
+    <div class="tiles">
+      <a class="tile primary" href="#/fields"><span class="tile-icon" aria-hidden="true">🌱</span><strong>Measure soil</strong><span>Choose a farmer’s field, then use the probe</span></a>
+      <a class="tile" href="#/fields"><span class="tile-icon" aria-hidden="true">👥</span><strong>Farmers</strong><span>Register farmers and their fields</span></a>
+      <a class="tile" href="#/probe"><span class="tile-icon" aria-hidden="true">🔬</span><strong>Probe</strong><span>Connection and daily calibration</span></a>
+      <a class="tile" href="#/help"><span class="tile-icon" aria-hidden="true">🧺</span><strong>How to sample</strong><span>Taking a good soil sample</span></a>
+    </div>
+    ${recent.length ? `<div class="card"><h2>Latest advice</h2><ul class="field-list">${recent.map((r) => `
+      <li><a class="field-link" href="#/advice/${r.rec_id}"><span><strong>${esc(r.farmer)}</strong> · ${esc(r.field)}<br>
+        <small class="muted">${esc(capital(cropName(r.crop)))} · ${esc(r.as_of_date)}</small></span>
+        <span class="badge ${esc(r.trust_level)}">${esc(r.trust_level)}</span></a></li>`).join("")}</ul></div>` : ""}`;
 }
 
 async function viewFields() {
@@ -231,37 +258,39 @@ async function viewField(fieldId) {
     <p><a href="#/fields">← Farmers</a> / ${esc(farmer.alias)}</p>
     <h1>Field: ${esc(field.name)}</h1>
     <p class="muted">Farmer: <strong>${esc(farmer.alias)}</strong></p>
-    <p><a class="button" href="#/live/${esc(fieldId)}">Live probe reading</a></p>
+    <a class="button big-btn" href="#/live/${esc(fieldId)}">Measure with the probe (live)</a>
     <div class="card">
       <p>${esc(field.lat)}, ${esc(field.lon)} · ${field.location_source === "gps" ? `GPS ±${esc(field.gps_accuracy_m)} m` : "manual pin"}</p>
       <p><strong>Map (iSDAsoil):</strong> ${mapHtml}</p>
     </div>
 
-    <details class="card" open>
-      <summary>1. Take a reading</summary>
-      <form id="reading-form">
-        <label for="device_id">Probe</label>
-        <select id="device_id" name="device_id" required>
-          ${devices.map((d) => `<option value="${esc(d.device_id)}">${esc(d.label)}
-            ${d.latest_calibration ? (d.latest_calibration.accepted ? "" : " (last calibration failed)") : " (not calibrated)"}</option>`).join("")}
+
+
+
+    <div class="card">
+      <h2>Get advice</h2>
+      <form id="advice-form">
+        <label for="reading_id">Reading</label>
+        <select id="reading_id" name="reading_id">
+          ${readings}<option value="">Use the lab result</option>
         </select>
-        <p class="muted">Three readings of the same 1:2.5 soil-water mix. They must be within 0.1 of each other.</p>
         <div class="row">
-          <div><label for="r1">pH 1</label><input id="r1" name="r1" type="number" step="0.01" required></div>
-          <div><label for="r2">pH 2</label><input id="r2" name="r2" type="number" step="0.01" required></div>
-          <div><label for="r3">pH 3</label><input id="r3" name="r3" type="number" step="0.01" required></div>
-          <div><label for="temp_c">Temp °C</label><input id="temp_c" name="temp_c" type="number" step="0.1" required></div>
+          <div><label for="crop">Target crop</label>
+            <select id="crop" name="crop">${CROPS.map((c) => `<option>${c}</option>`).join("")}</select></div>
+          <div><label for="budget_band">Budget</label>
+            <select id="budget_band" name="budget_band"><option value="low">Low</option><option value="medium">Medium</option></select></div>
+          <div><label for="water">Water</label>
+            <select id="water" name="water"><option value="rainfed">Rainfed</option><option value="irrigated">Irrigated</option></select></div>
         </div>
-        <button type="submit">Save reading</button>
+        <button type="submit">Get advice</button>
       </form>
-      ${history.readings.length ? `<h3>Readings</h3><ul class="list">${history.readings.map((r) => `
+    </div>
+    ${history.readings.length ? `<div class="card"><h2>Readings</h2><ul class="list">${history.readings.map((r) => `
         <li><span class="badge ${esc(r.quality_status)}">${esc(r.quality_status)}</span>
           ${r.ph_water != null ? `pH ${esc(r.ph_water)}` : ""} <small>${esc(r.ts)}</small>
-          ${r.quality_reasons && r.quality_reasons.length ? `<br><small>${r.quality_reasons.map(esc).join("; ")}</small>` : ""}</li>`).join("")}</ul>` : ""}
-    </details>
-
+          ${r.quality_reasons && r.quality_reasons.length ? `<br><small>${r.quality_reasons.map(esc).join("; ")}</small>` : ""}</li>`).join("")}</ul></div>` : ""}
     <details class="card">
-      <summary>2. Field checks</summary>
+      <summary>Field checks: texture by feel, waterlogging</summary>
       <form id="check-form">
         <label for="texture_by_feel">Texture by feel</label>
         <select id="texture_by_feel" name="texture_by_feel">
@@ -275,7 +304,6 @@ async function viewField(fieldId) {
         <button type="submit">Save field check</button>
       </form>
     </details>
-
     <details class="card">
       <summary>Lab result (optional)</summary>
       <form id="lab-form">
@@ -292,25 +320,24 @@ async function viewField(fieldId) {
         <button type="submit">Save lab result</button>
       </form>
     </details>
-
-    <div class="card">
-      <h2>3. Get advice</h2>
-      <form id="advice-form">
-        <label for="reading_id">Reading</label>
-        <select id="reading_id" name="reading_id">
-          <option value="">Use the lab result</option>${readings}
+    <details class="card">
+      <summary>Enter a reading by hand (without the probe program)</summary>
+      <form id="reading-form">
+        <label for="device_id">Probe</label>
+        <select id="device_id" name="device_id" required>
+          ${devices.map((d) => `<option value="${esc(d.device_id)}">${esc(d.label)}
+            ${d.latest_calibration ? (d.latest_calibration.accepted ? "" : " (last calibration failed)") : " (not calibrated)"}</option>`).join("")}
         </select>
+        <p class="muted">Three readings of the same 1:2.5 soil-water mix. They must be within 0.1 of each other.</p>
         <div class="row">
-          <div><label for="crop">Target crop</label>
-            <select id="crop" name="crop">${CROPS.map((c) => `<option>${c}</option>`).join("")}</select></div>
-          <div><label for="budget_band">Budget</label>
-            <select id="budget_band" name="budget_band"><option value="low">Low</option><option value="medium">Medium</option></select></div>
-          <div><label for="water">Water</label>
-            <select id="water" name="water"><option value="rainfed">Rainfed</option><option value="irrigated">Irrigated</option></select></div>
+          <div><label for="r1">pH 1</label><input id="r1" name="r1" type="number" step="0.01" required></div>
+          <div><label for="r2">pH 2</label><input id="r2" name="r2" type="number" step="0.01" required></div>
+          <div><label for="r3">pH 3</label><input id="r3" name="r3" type="number" step="0.01" required></div>
+          <div><label for="temp_c">Temp °C</label><input id="temp_c" name="temp_c" type="number" step="0.1" required></div>
         </div>
-        <button type="submit">Get advice</button>
+        <button type="submit">Save reading</button>
       </form>
-    </div>
+    </details>
     ${history.recommendations.length ? `<div class="card"><h2>Earlier advice</h2><ul class="list">${history.recommendations.map((r) => `
       <li><a href="#/advice/${r.rec_id}">${esc(r.crop)} · ${esc(r.as_of_date)}</a>
         <span class="badge ${esc(r.trust_level)}">${esc(r.trust_level)}</span></li>`).join("")}</ul></div>` : ""}`;
@@ -370,6 +397,7 @@ function timingText(timing) {
 
 function fertItem(item, labelKey) {
   if (!item) return "";
+  if (item.none) return `<li><strong>${t(labelKey)}:</strong> ${t("fert.none")}</li>`;
   const amount = item.rate_kg_ha != null
     ? ` — ${esc(Array.isArray(item.rate_kg_ha) && item.rate_kg_ha[0] !== item.rate_kg_ha[1] ? item.rate_kg_ha.join("–") : [].concat(item.rate_kg_ha)[0])} kg/ha${item.per_lima ? ` (${range(item.per_lima)} ${t("ui.per_lima")})` : ""}${extras(item.per_lima)}`
     : ` — ${t("rate.open")}`;
@@ -391,7 +419,7 @@ function planA(a, crop) {
       <li><strong>${t("ui.lime")}:</strong> ${limeHtml}</li>
       ${fertItem(f.basal, "ui.basal")}${fertItem(f.top_dress, "ui.top_dress")}
       <li><strong>${t("ui.manure")}:</strong> ${range(a.manure)} ${t("ui.per_lima")}${extras(a.manure)}</li>
-    </ul>${a.measures_note && !(lime.per_lima && lime.per_lima.household) ? `<p class="muted">${t(a.measures_note)}</p>` : ""}`;
+    </ul>`;
 }
 
 function planB(b, crop) {
@@ -450,40 +478,97 @@ function whyRows(rules) {
   }).join("");
 }
 
+// Plain-language summary first (what the farmer should do), details on tap.
+function adviceSummary(a, crop) {
+  const lime = (a.plan_a && a.plan_a.lime) || {};
+  const refusals = a.refusals || [];
+  if (a.trust_level === "none") return [t("sum.unusable"), t("sum.unusable_sub")];
+  if (refusals.includes("REF-02")) return [t("sum.too_acid"), a.refusal_text.map(say).join(" ")];
+  if (refusals.includes("REF-04")) return [t("sum.too_high", { crop: capital(crop) }), t("sum.too_high_sub")];
+  if (a.method_sensitive) return [t("sum.method"), ""];
+  if (a.plan_a && a.plan_a.status !== "ok") return [a.plan_a.note ? t(a.plan_a.note, { crop }) : esc(a.plan_a.status), ""];
+  if (lime.status === "not_needed") return [t("sum.fine", { crop }), t("sum.fine_sub")];
+  if (lime.status === "optional") return [t("sum.optional", { crop }), t("sum.fine_sub")];
+  if (lime.timing === "too_late") return [t("sum.acid_late", { crop }), t("sum.acid_late_sub")];
+  return [t("sum.acid", { crop }), a.refusal_text.map(say).join(" ")];
+}
+
+function sureText(a) {
+  const trust = a.trust || { level: a.trust_level, reasons: [] };
+  if (trust.level === "high") return t("sum.sure_high");
+  if (trust.level === "moderate") return t("sum.sure_moderate");
+  const reasons = (trust.reasons || []).join(" ").toLowerCase();
+  if (reasons.includes("disagree")) return t("sum.sure_low_map");
+  if (reasons.includes("manual") || reasons.includes("gps") || reasons.includes("no map")) return t("sum.sure_low_place");
+  return t("sum.sure_low");
+}
+
+function planOneLiners(a, crop) {
+  const lime = (a.plan_a && a.plan_a.lime) || {};
+  let oneA;
+  if (!a.plan_a || a.plan_a.status !== "ok") oneA = a.plan_a && a.plan_a.note ? t(a.plan_a.note, { crop }) : "";
+  else oneA = t(lime.status === "not_needed" ? "sum.a_fine" : lime.status === "optional" ? "sum.a_optional" : "sum.a_lime");
+  const b = a.plan_b || {};
+  let oneB;
+  if (b.status === "ok" && b.mode === "budget") {
+    const names = b.items.map((i) => tPlain(`ui.${i.item}`).toLowerCase());
+    oneB = t("sum.b_budget", { items: names.length > 1 ? `${names.slice(0, -1).join(", ")} ${tPlain("sum.and")} ${names[names.length - 1]}` : names[0] });
+  } else if (b.status === "ok") oneB = t("sum.b_order");
+  else if (b.status === "blocked") oneB = t("plan.b_blocked");
+  else if (b.status === "lab_test_recommended") oneB = t("ui.lab_test");
+  else oneB = t("plan.b_not_applicable", { crop });
+  const crops = (a.plan_c && a.plan_c.crops) || [];
+  const oneC = crops.length ? t("sum.c_crops", { crops: crops.map(cropName).join(", ") }) : t("plan.c_none");
+  return [oneA, oneB, oneC];
+}
+
+const capital = (word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : "");
+
 async function viewAdvice(recId, target = $app) {
   const code = lang();
   const [a] = await Promise.all([api(`/advice/${recId}?lang=${code}`), loadStrings(code)]);
   const trust = a.trust || { level: a.trust_level, reasons: [] };
   const crop = cropName(a.crop);
+  const [headline, sub] = adviceSummary(a, crop);
+  const [oneA, oneB, oneC] = planOneLiners(a, crop);
+  const used = JSON.stringify(a);
+  const rules = a.fired_rules.filter((r) =>
+    !(r.id === "PRICE-INPUTS" && !used.includes('"cost":{')) && !(r.id === "MEAS-HOUSEHOLD" && !used.includes('"household":[')));
+  const planCard = (cls, letter, title, one, body, open) => `
+    <details class="plan-card ${cls}"${open ? " open" : ""}>
+      <summary><span class="plan-letter">${letter}</span>
+        <span class="plan-text"><strong>${title}</strong><span>${one}</span></span></summary>
+      <div class="plan-body">${body}</div>
+    </details>`;
   target.innerHTML = `
     ${target === $app ? `<p><a href="javascript:history.back()">← Back</a></p>` : ""}
-    <h1>${esc(crop.charAt(0).toUpperCase() + crop.slice(1))}</h1>
-    <div class="card">
-      <p>${t("ui.confidence")} <span class="badge ${esc(trust.level)}">${esc(tPlain(`ui.trust.${trust.level}`))}</span>
-        <small>${esc((trust.reasons || []).join("; "))}</small></p>
-      ${a.trust_text ? `<p>${say(a.trust_text)}</p>` : ""}
-      <p class="muted">pH ${esc(a.ph_input)} (${esc(a.ph_method_input)}) · ${esc(a.as_of_date)}
-        ${a.texture && a.texture.value ? ` · ${esc(a.texture.value)} (${esc(a.texture.source)})` : ""}</p>
+    <div class="card summary ${esc(trust.level)}">
+      <p class="muted">${esc(capital(crop))} · pH ${esc(a.ph_input)} (${esc(a.ph_method_input)}) · ${esc(a.as_of_date)}</p>
+      <h1 class="headline">${headline}</h1>
+      ${sub ? `<p class="subline">${sub}</p>` : ""}
+      <div class="sure"><span class="badge ${esc(trust.level)}">${esc(tPlain(`ui.trust.${trust.level}`))}</span>
+        <span>${t("sum.sure")} ${sureText(a)}</span></div>
       ${a.borderline ? `<p class="notice info">${t("borderline")}</p>` : ""}
     </div>
-    ${a.refusal_text.map((r) => `<p class="notice stop">${say(r)}</p>`).join("")}
     ${a.method_sensitive ? `<div class="card"><h2>${t("ui.depends_method")}</h2>
       <table><tr><th>pH</th><th>Band</th><th>${t("ui.lime")} t/ha</th><th>Plan C</th></tr>
       ${a.alternatives.map((x) => `<tr><td>${esc(x.ph_in_rule_scale)}</td><td>${esc(x.band)}</td>
         <td>${x.lime_rate_t_ha ? esc(x.lime_rate_t_ha.join("–")) : esc(x.refusals.join(" ") || "–")}</td>
         <td>${esc(x.plan_c.map(cropName).join(", "))}</td></tr>`).join("")}</table></div>` : ""}
     ${a.trust_level !== "none" ? `
-      <div class="card plan"><h2>${t("ui.plan_a", { crop })}</h2>${planA(a.plan_a, crop)}</div>
-      <div class="card plan b"><h2>${t("ui.plan_b")}</h2>${planB(a.plan_b, crop)}</div>
-      <div class="card plan c"><h2>${t("ui.plan_c")}</h2>
-        ${a.plan_c && a.plan_c.crops.length ? `<p>${a.plan_c.crops.map((c) => esc(cropName(c))).join(", ")}</p>` : `<p>${t("plan.c_none")}</p>`}</div>` : ""}
+      <h2 class="choose">${t("sum.choose")} <small class="muted">${t("sum.tap")}</small></h2>
+      ${planCard("a", "A", t("ui.plan_a", { crop }), oneA, planA(a.plan_a, crop), false)}
+      ${planCard("b", "B", t("ui.plan_b"), oneB, planB(a.plan_b, crop), false)}
+      ${planCard("c", "C", t("ui.plan_c"), oneC,
+        a.plan_c && a.plan_c.crops.length ? `<p>${a.plan_c.crops.map((c) => esc(capital(cropName(c)))).join(", ")}</p>` : `<p>${t("plan.c_none")}</p>`, false)}` : ""}
     <div class="card"><h2>${t("ui.remember")}</h2><ul>${a.messages.map((m) => `<li>${say(m)}</li>`).join("")}</ul></div>
-    <details class="card"><summary>${t("ui.why")} (${a.fired_rules.length})</summary>
-      <table><tr><th>What was checked</th><th>Based on</th></tr>
-      ${whyRows(a.fired_rules)}</table>
+    <button class="secondary sms-btn">${tPlain("ui.send_sms")}</button>
+    <details class="card tech"><summary>${t("sum.details")}</summary>
+      <p class="muted">${esc((trust.reasons || []).join("; "))}${a.texture && a.texture.value ? ` · texture ${esc(a.texture.value)} (${esc(a.texture.source)})` : ""}</p>
+      <h3>${t("ui.why")}</h3>
+      <table><tr><th>What was checked</th><th>Based on</th></tr>${whyRows(rules)}</table>
       ${a.unreviewed ? `<p class="muted">${t("ui.unconfirmed_rules")}</p>` : ""}
-    </details>
-    <button class="secondary sms-btn">${tPlain("ui.send_sms")}</button>`;
+    </details>`;
   target.querySelector(".sms-btn").addEventListener("click", async () => {
     try {
       const r = await post(`/advice/${recId}/sms`, {});
@@ -648,7 +733,7 @@ function viewHelp() {
 // ----- router -----
 
 async function route() {
-  const hash = location.hash || "#/fields";
+  const hash = location.hash || "#/home";
   const [, view, id] = hash.split("/");
   if (!store.get("token") && view !== "login") { location.hash = "#/login"; return; }
   document.getElementById("topbar").hidden = view === "login";
@@ -662,7 +747,8 @@ async function route() {
       case "probe": return await viewProbe();
       case "live": return await viewLive(id);
       case "help": return viewHelp();
-      default: return await viewFields();
+      case "fields": return await viewFields();
+      default: return await viewHome();
     }
   } catch (error) { toast(error.message, true); }
 }
