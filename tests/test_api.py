@@ -21,8 +21,8 @@ class FakeMap:
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("SEED_OPERATOR_PASSWORD", "operator-pass")
-    monkeypatch.setenv("SEED_AGRONOMIST_PASSWORD", "agronomist-pass")
+    monkeypatch.setenv("SEED_OFFICER_PASSWORD", "officer-pass")
+    monkeypatch.setenv("SEED_FARMER_PASSWORD", "farmer-pass")
     monkeypatch.setenv("SEED_ADMIN_PASSWORD", "admin-pass")
     conn = backend_db.connect(tmp_path / "test.db")
     seed(conn)
@@ -35,7 +35,7 @@ def client(tmp_path, monkeypatch):
     backend_db.set_db(None)
 
 
-def login(client, user="operator"):
+def login(client, user="officer"):
     r = client.post("/auth/login", json={"username": user, "password": f"{user}-pass"})
     assert r.status_code == 200
     return {"Authorization": f"Bearer {r.json()['token']}"}
@@ -65,17 +65,17 @@ def test_login_required(client):
 
 
 def test_wrong_password_rejected(client):
-    assert client.post("/auth/login", json={"username": "operator", "password": "x"}).status_code == 401
+    assert client.post("/auth/login", json={"username": "officer", "password": "x"}).status_code == 401
 
 
 def test_passwords_are_hashed(client):
-    row = backend_db._override.execute("SELECT password_hash FROM users WHERE username='operator'").fetchone()
-    assert row["password_hash"].startswith("scrypt$") and "operator-pass" not in row["password_hash"]
+    row = backend_db._override.execute("SELECT password_hash FROM users WHERE username='officer'").fetchone()
+    assert row["password_hash"].startswith("scrypt$") and "officer-pass" not in row["password_hash"]
 
 
-def test_rules_need_agronomist_or_admin(client, op):
-    assert client.get("/rules", headers=op).status_code == 403
-    r = client.get("/rules", headers=login(client, "agronomist"))
+def test_rules_need_officer_or_admin(client, op):
+    assert client.get("/rules", headers=login(client, "farmer")).status_code == 403
+    r = client.get("/rules", headers=op)
     assert r.status_code == 200 and any(i["rule"] == "LIME-MAX" for i in r.json()["open_items"])
 
 
@@ -234,7 +234,7 @@ def test_advice_needs_reading_or_lab(client, op):
 def test_set_password(client):
     from backend.set_password import set_password
     conn = backend_db._override
-    set_password(conn, "operator", "short-pw-1")
-    assert client.post("/auth/login", json={"username": "operator", "password": "short-pw-1"}).status_code == 200
+    set_password(conn, "officer", "short-pw-1")
+    assert client.post("/auth/login", json={"username": "officer", "password": "short-pw-1"}).status_code == 200
     with pytest.raises(ValueError):
         set_password(conn, "nobody", "whatever-1")

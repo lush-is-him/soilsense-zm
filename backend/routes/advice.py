@@ -1,10 +1,11 @@
 """POST /advice and friends (FR7, FR10, FR12, FR13)."""
 
 import json
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from backend.access import field_for, visible_farmers_sql
 from backend.auth import current_user
 from backend.db import get_db
 from backend.routes.farmers import farmer_or_404
@@ -14,11 +15,13 @@ from backend.services.rules_sync import sync_rules
 from backend.services.sms import format_summary, send_sms
 from engine.advice import AdviceRequest, Advisor
 from engine.i18n import text
+from engine.config import DEFAULT_CONFIG
 from engine.map_service import MapEstimate
+from engine.plausibility import assess as plausibility
 from engine.quality import QualityResult
 from engine.trust import HIGH, MODERATE, assess
 
-router = APIRouter(tags=["Advice"], dependencies=[Depends(current_user)])
+router = APIRouter(tags=["Advice"])
 
 
 def _latest(db, sql, field_id):
@@ -48,9 +51,30 @@ def render(result, lang):
     return result
 
 
+def _hours_since(sql_ts):
+    if not sql_ts:
+        return None
+    then = datetime.fromisoformat(sql_ts.replace(" ", "T")).replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - then).total_seconds() / 3600
+
+
+def _plausibility(db, reading, estimate):
+    """Probe problem or unusual soil? Only for an accepted probe reading."""
+    calibration = db.execute("SELECT date FROM calibrations WHERE calibration_id = ?",
+                             (reading["calibration_id"],)).fetchone() if reading["calibration_id"] else None
+    since = (datetime.now(timezone.utc) - timedelta(days=DEFAULT_CONFIG.REPEAT_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    previous = db.execute(
+        "SELECT ph_water FROM readings WHERE field_id = ? AND reading_id < ? AND quality_status = 'accepted' "
+        "AND ts >= ? ORDER BY reading_id DESC LIMIT 1",
+        (reading["field_id"], reading["reading_id"], since)).fetchone()
+    return plausibility(reading["ph_water"], map_ph=estimate["ph_mean"] if estimate else None,
+                        calibration_age_hours=_hours_since(calibration["date"]) if calibration else None,
+                        previous_ph=previous["ph_water"] if previous else None).as_dict()
+
+
 @router.post("/advice", status_code=201)
-def create_advice(body: AdviceIn, db=Depends(get_db)):
-    field = field_or_404(db, body.field_id)
+def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)):
+    field = field_for(db, user, body.field_id)
     reading = None
     if body.reading_id is not None:
         reading = db.execute("SELECT * FROM readings WHERE reading_id = ? AND field_id = ?",
@@ -87,15 +111,21 @@ def create_advice(body: AdviceIn, db=Depends(get_db)):
                        "threshold": trust.threshold, "difference": trust.difference}
     result["texture"] = {"value": texture, "source": texture_source}
     result["map_estimate"] = estimate if trust.use_map_chemistry else None
+    result["map_ph"] = estimate["ph_mean"] if estimate else None
+    result["checks"] = (_plausibility(db, reading, estimate)
+                        if reading is not None and trust.level != HIGH and reading["quality_status"] == "accepted"
+                        else {"status": "ok", "reasons": [], "refer_lab": False, "confirmed_by_repeat": False})
+    result["field_id"] = body.field_id
+    result["reading_id"] = body.reading_id
 
     with db:
         cur = db.execute(
             "INSERT INTO recommendations (reading_id, field_id, trust_level, crop, budget_band, water, "
-            "plan_a, plan_b, plan_c, result, language, as_of_date, method_sensitive) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "plan_a, plan_b, plan_c, result, language, as_of_date, method_sensitive, user_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (body.reading_id, body.field_id, trust.level, body.crop, body.budget_band, body.water,
              json.dumps(result["plan_a"]), json.dumps(result["plan_b"]), json.dumps(result["plan_c"]),
-             json.dumps(result), body.lang, as_of.isoformat(), int(result["method_sensitive"])))
+             json.dumps(result), body.lang, as_of.isoformat(), int(result["method_sensitive"]), user["user_id"]))
         rec_id = cur.lastrowid
         for rule in result["fired_rules"]:
             db.execute("INSERT INTO recommendation_rules (rec_id, rule_id, rule_version) "
@@ -104,26 +134,29 @@ def create_advice(body: AdviceIn, db=Depends(get_db)):
     return result
 
 
-def _saved(db, rec_id):
+def _saved(db, rec_id, user):
     row = db.execute("SELECT * FROM recommendations WHERE rec_id = ?", (rec_id,)).fetchone()
     if row is None:
         raise HTTPException(404, f"Advice {rec_id} not found")
+    field_for(db, user, row["field_id"])
     return row
 
 
 @router.get("/advice")
-def recent_advice(limit: int = 5, db=Depends(get_db)):
-    """The latest recommendations, newest first, for the dashboard's home page."""
+def recent_advice(limit: int = 5, db=Depends(get_db), user=Depends(current_user)):
+    """The latest recommendations the user may see, newest first (home page)."""
+    where, params = visible_farmers_sql(user)
     rows = db.execute(
-        "SELECT r.rec_id, r.crop, r.trust_level, r.as_of_date, f.field_id, f.name AS field, fa.alias AS farmer "
-        "FROM recommendations r JOIN fields f ON f.field_id = r.field_id "
-        "JOIN farmers fa ON fa.farmer_id = f.farmer_id ORDER BY r.rec_id DESC LIMIT ?", (max(1, min(limit, 50)),))
+        "SELECT r.rec_id, r.crop, r.trust_level, r.as_of_date, fl.field_id, fl.name AS field, f.alias AS farmer "
+        "FROM recommendations r JOIN fields fl ON fl.field_id = r.field_id "
+        f"JOIN farmers f ON f.farmer_id = fl.farmer_id WHERE {where} ORDER BY r.rec_id DESC LIMIT ?",
+        (*params, max(1, min(limit, 50))))
     return [dict(r) for r in rows]
 
 
 @router.get("/advice/{rec_id}")
-def get_advice(rec_id: int, lang: str = "en", db=Depends(get_db)):
-    row = _saved(db, rec_id)
+def get_advice(rec_id: int, lang: str = "en", db=Depends(get_db), user=Depends(current_user)):
+    row = _saved(db, rec_id, user)
     result = render(json.loads(row["result"]), lang)
     result["rec_id"] = rec_id
     result["rule_versions"] = {r["rule_id"]: r["rule_version"] for r in db.execute(
@@ -132,8 +165,8 @@ def get_advice(rec_id: int, lang: str = "en", db=Depends(get_db)):
 
 
 @router.post("/advice/{rec_id}/sms")
-def send_advice_sms(rec_id: int, db=Depends(get_db)):
-    row = _saved(db, rec_id)
+def send_advice_sms(rec_id: int, db=Depends(get_db), user=Depends(current_user)):
+    row = _saved(db, rec_id, user)
     field = field_or_404(db, row["field_id"])
     farmer = farmer_or_404(db, field["farmer_id"])
     if not (farmer["sms_consent"] and farmer["phone"]):

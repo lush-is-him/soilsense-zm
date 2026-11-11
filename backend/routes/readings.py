@@ -4,6 +4,7 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from backend.access import field_for
 from backend.auth import current_user
 from backend.db import get_db
 from backend.routes.devices import device_or_404, latest_calibration
@@ -17,7 +18,7 @@ router = APIRouter(tags=["Readings"])
 
 @router.post("/readings", status_code=201)
 def create_reading(body: ReadingIn, db=Depends(get_db), user=Depends(current_user)):
-    field_or_404(db, body.field_id)
+    field_for(db, user, body.field_id)
     calibration_row = None
     if body.device_id:
         device_or_404(db, body.device_id)
@@ -58,4 +59,5 @@ def get_reading(reading_id: int, db=Depends(get_db), user=Depends(current_user))
     row = db.execute("SELECT * FROM readings WHERE reading_id = ?", (reading_id,)).fetchone()
     if row is None:
         raise HTTPException(404, f"Reading {reading_id} not found")
+    field_for(db, user, row["field_id"])
     return reading_out(row)

@@ -66,11 +66,13 @@ def current_user(creds: HTTPAuthorizationCredentials = Depends(_bearer), db=Depe
     payload = read_token(creds.credentials) if creds else None
     if payload is None:
         raise HTTPException(401, "Not logged in or session expired")
-    row = db.execute("SELECT user_id, username, role FROM users WHERE user_id = ?",
+    row = db.execute("SELECT user_id, username, full_name, role, active FROM users WHERE user_id = ?",
                      (payload["uid"],)).fetchone()
-    if row is None:
-        raise HTTPException(401, "User no longer exists")
-    return dict(row)
+    if row is None or not row["active"]:
+        raise HTTPException(401, "This account no longer exists or has been deactivated")
+    user = dict(row)
+    user.pop("active")
+    return user
 
 
 def require_role(*roles):

@@ -8,7 +8,7 @@ from backend.auth import require_role
 from backend.db import get_db
 from backend.services.rules_sync import sync_rules
 
-router = APIRouter(tags=["Rules"], dependencies=[Depends(require_role("agronomist", "admin"))])
+router = APIRouter(tags=["Rules"], dependencies=[Depends(require_role("officer", "admin"))])
 
 
 @router.get("/rules")

@@ -97,3 +97,13 @@ sum.b_order: {text: "Spend less: buy in this order, as money allows.", reviewed:
 sum.c_crops: {text: "Grows in this soil now: {crops}.", reviewed: false}
 sum.and: {text: "and", reviewed: false}
 sum.details: {text: "Technical details (for the operator)", reviewed: false}
+check.ok: {text: "Nothing unusual about this reading.", reviewed: false}
+check.cal_old: {text: "The probe was not calibrated today. Calibrate it, then measure again.", reviewed: false}
+check.extreme_high: {text: "This pH is very high for a farm soil. It is possible, but rare.", reviewed: false}
+check.extreme_low: {text: "This pH is very low for a farm soil. It is possible, but rare.", reviewed: false}
+check.map_gap: {text: "This reading is very different from the soil map for this place.", reviewed: false}
+check.repeat_agrees: {text: "An earlier reading of this field agrees, so the probe is probably right.", reviewed: false}
+check.retest: {text: "Check the probe first: rinse it, put it in the pH 7.00 buffer (it should read between 6.8 and 7.2), recalibrate if it does not, and measure the soil again.", reviewed: false}
+check.title_probe: {text: "Check the probe before you act on this", reviewed: false}
+check.title_lab: {text: "Unusual soil: confirm with a lab test", reviewed: false}
+check.lab_why: {text: "The probe looks right, but this soil is unusual. Take a sample to a soil lab (for example ZARI Mount Makulu) before spending money on it.", reviewed: false}
