@@ -223,3 +223,4 @@ tr.inactive { opacity: 0.55; }
 .help-card h2 { font-size: 1.05rem; }
 li.inactive { opacity: 0.55; }
 .topbar-right { flex-wrap: wrap; }
+.badge.demo { background: #e7e3d6; color: #5a5040; font-weight: 600; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; vertical-align: 2px; }

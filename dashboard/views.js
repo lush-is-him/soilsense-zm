@@ -44,6 +44,7 @@ function probeStrip(state) {
     <span class="go">›</span></a>`;
 }
 
+const demoBadge = (row) => (row && row.is_demo ? ' <span class="badge demo" title="Made-up demonstration data">demo</span>' : "");
 const phClass = (ph) => (ph == null ? "none" : ph < 5.5 ? "acid" : ph <= 7.0 ? "good" : "alkaline");
 const phWord = (ph) => ({ acid: "acidic", good: "good range", alkaline: "alkaline", none: "not tested" })[phClass(ph)];
 
@@ -183,6 +184,8 @@ async function adminHome(user) {
   const n = (obj, key) => (obj && obj[key]) || 0;
   $app.innerHTML = `
     <h1>Overview</h1>
+    ${o.farmers_demo ? `<p class="muted">Includes ${o.farmers_demo} made-up demonstration farms, marked <span class="badge demo">demo</span>.
+      Remove them with <code>python -m backend.seed_demo --remove</code>.</p>` : ""}
     <div class="stats">
       <div class="stat"><strong>${o.farmers}</strong><span>farmers (${o.farmers_self_testing} test themselves)</span></div>
       <div class="stat"><strong>${o.fields}</strong><span>fields</span></div>
@@ -220,7 +223,7 @@ async function viewFarmers() {
     <input id="farmer-search" type="search" placeholder="Search by name or village" aria-label="Search farmers">
     <ul class="field-list" id="farmer-list">${farmers.map((f) => `
       <li data-q="${esc(`${f.alias} ${f.village || ""}`.toLowerCase())}"><a class="field-link" href="#/farmer/${f.farmer_id}">
-        <span><strong>${esc(f.alias)}</strong>${f.village ? ` · ${esc(f.village)}` : ""}<br>
+        <span><strong>${esc(f.alias)}</strong>${demoBadge(f)}${f.village ? ` · ${esc(f.village)}` : ""}<br>
           <small class="muted">${f.field_count} field${f.field_count === 1 ? "" : "s"}
           ${f.own_account ? " · tests themselves" : ` · registered by ${esc(f.registered_by || "—")}`}</small></span>
         <span>${f.mine && !f.own_account ? '<span class="badge moderate">yours</span>' : ""}
@@ -391,7 +394,7 @@ async function viewField(fieldId) {
 
   $app.innerHTML = `
     <p>${own ? `<a href="#/mine">← My fields</a>` : `<a href="#/farmer/${farmer.farmer_id}">← ${esc(farmer.alias)}</a>`}</p>
-    <h1>${esc(field.name)}</h1>
+    <h1>${esc(field.name)}${demoBadge(farmer)}</h1>
     <p class="muted">${own ? "" : `Farmer: <strong>${esc(farmer.alias)}</strong>${farmer.village ? `, ${esc(farmer.village)}` : ""} · `}
       ${field.location_source === "gps" ? `GPS ±${esc(field.gps_accuracy_m)} m` : "typed coordinates"} · soil map: ${mapHtml}</p>
     <a class="button big-btn" href="#/live/${esc(fieldId)}">Measure with the probe</a>
@@ -605,7 +608,7 @@ function referralList(items, user) {
   return `<ul class="list referrals">${items.map((r) => `
     <li data-ref="${r.referral_id}">
       <div><span class="badge ${r.kind === "lab" ? "moderate" : "low"}">${r.kind === "lab" ? "Lab test" : "Visit"}</span>
-        <strong>${esc(staff ? r.farmer : r.field)}</strong>${staff ? ` · ${esc(r.field)}${r.village ? `, ${esc(r.village)}` : ""}` : ""}
+        <strong>${esc(staff ? r.farmer : r.field)}</strong>${staff ? demoBadge(r) : ""}${staff ? ` · ${esc(r.field)}${r.village ? `, ${esc(r.village)}` : ""}` : ""}
         <span class="status ${esc(r.status)}">${esc(r.status.replace("_", " "))}</span></div>
       <small class="muted">${esc(when(r.created_at))}${r.reading_ph != null ? ` · probe pH ${esc(r.reading_ph)}` : ""}${r.reason ? ` · ${esc(r.reason)}` : ""}
         ${staff && r.phone ? ` · ☎ ${esc(r.phone)}` : ""}${r.handled_by_name ? ` · handled by ${esc(r.handled_by_name)}` : ""}</small>
@@ -672,7 +675,7 @@ async function viewMap() {
       <span><i class="ring"></i> request open</span></div>
     <div class="card"><h2>${tested.length} tested of ${points.length} fields</h2>
       <table><tr><th>Farmer</th><th>Field</th><th>Probe</th><th>Lab</th><th>Map</th></tr>${points.map((p) => `
-        <tr><td>${esc(p.farmer)}</td><td><a href="#/field/${p.field_id}">${esc(p.field)}</a></td>
+        <tr><td>${esc(p.farmer)}${demoBadge(p)}</td><td><a href="#/field/${p.field_id}">${esc(p.field)}</a></td>
           <td>${p.probe_ph ?? "–"}</td><td>${p.lab_ph ?? "–"}</td><td>${p.map_ph ?? "–"}</td></tr>`).join("")}</table></div>`;
   const colours = { acid: "#c0392b", good: "#198754", alkaline: "#2f5f8a", none: "#8a8f8c" };
   const map = L.map("map", { scrollWheelZoom: false });
@@ -683,7 +686,7 @@ async function viewMap() {
     const ph = p.lab_ph ?? p.probe_ph;
     L.circleMarker([p.lat, p.lon], { radius: 9, weight: p.referral_open ? 4 : 2, color: p.referral_open ? "#c98a14" : "#ffffff",
       fillColor: colours[phClass(ph)], fillOpacity: 0.9 })
-      .bindPopup(`<strong>${esc(p.farmer)}</strong><br>${esc(p.field)}${p.village ? `, ${esc(p.village)}` : ""}<br>
+      .bindPopup(`<strong>${esc(p.farmer)}</strong>${p.is_demo ? " (demo)" : ""}<br>${esc(p.field)}${p.village ? `, ${esc(p.village)}` : ""}<br>
         ${p.lab_ph != null ? `Lab pH ${esc(p.lab_ph)}<br>` : ""}${p.probe_ph != null ? `Probe pH ${esc(p.probe_ph)}<br>` : ""}
         ${p.map_ph != null ? `Map pH ${esc(p.map_ph)}<br>` : ""}${p.referral_open ? "<em>Request open</em><br>" : ""}
         <a href="#/field/${p.field_id}">Open field</a>`).addTo(layer);

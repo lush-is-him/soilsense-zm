@@ -38,6 +38,8 @@ python -m backend.set_password admin        # optional: choose an easier passwor
 | **Extension / lab officer** | The admin creates a named account | Farmers who share their results, farmers they registered, and anyone who asked for help. Works the request list, enters lab results (which gives the farmer high-confidence advice), sees the soil map, tests for farmers without a phone. Sees the rule tables. |
 | **Admin** | Seeded; can create more | Everything: overview numbers, map of all fields, accounts (create, deactivate, reset passwords), probe calibrations. |
 
+**Demo data for presentations:** `python -m backend.seed_demo` gives you a farmer account `samplefarm` that owns the real retained samples (S01-S20 at their SW Maps positions, with the probe readings in `docs/evaluation/samples.csv` or already in the database), and around it about fifteen made-up farms across Kafue District, two demo officers (`demo_officer_chilanga`, `demo_officer_zari`, password `demo-officer-1`), requests and lab results, so the officer and admin screens are not empty. Demo pH values start from the real iSDAsoil value at each spot. Everything made up carries a **demo** badge; `python -m backend.seed_demo --remove` deletes it and leaves the real data alone.
+
 An unusual reading (very high or low pH, or far from the soil map) is flagged *check the probe* until a repeat reading agrees; then *confirm with a lab test*. A database from before November 2026 is migrated automatically when the server starts: `operator` and `agronomist` become officers and keep their passwords.
 
 ## Run

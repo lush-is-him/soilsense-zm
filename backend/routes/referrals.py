@@ -16,7 +16,7 @@ from backend.schemas import ReferralIn, ReferralPatch
 router = APIRouter(tags=["Referrals and map"])
 
 _REFERRAL_SELECT = (
-    "SELECT r.*, fl.name AS field, fl.lat, fl.lon, f.farmer_id, f.alias AS farmer, f.village, f.phone, "
+    "SELECT r.*, fl.name AS field, fl.lat, fl.lon, f.farmer_id, f.alias AS farmer, f.village, f.phone, f.is_demo, "
     "rd.ph_water AS reading_ph, u.full_name AS handled_by_name "
     "FROM referrals r JOIN fields fl ON fl.field_id = r.field_id "
     "JOIN farmers f ON f.farmer_id = fl.farmer_id "
@@ -94,7 +94,7 @@ def map_points(db=Depends(get_db), user=Depends(current_user)):
     """One point per field the user may see: latest probe pH, latest lab pH, open referral."""
     where, params = visible_farmers_sql(user)
     rows = db.execute(
-        "SELECT fl.field_id, fl.name AS field, fl.lat, fl.lon, fl.location_source, f.alias AS farmer, f.village, "
+        "SELECT fl.field_id, fl.name AS field, fl.lat, fl.lon, fl.location_source, f.alias AS farmer, f.village, f.is_demo, "
         "(SELECT ph_water FROM readings r WHERE r.field_id = fl.field_id AND r.quality_status = 'accepted' "
         " ORDER BY r.reading_id DESC LIMIT 1) AS probe_ph, "
         "(SELECT ts FROM readings r WHERE r.field_id = fl.field_id AND r.quality_status = 'accepted' "
@@ -120,6 +120,7 @@ def overview(db=Depends(get_db), _=Depends(require_role("admin"))):
         "farmers": one("SELECT COUNT(*) FROM farmers"),
         "farmers_self_testing": one("SELECT COUNT(*) FROM farmers WHERE user_id IS NOT NULL"),
         "farmers_sharing": one("SELECT COUNT(*) FROM farmers WHERE share_consent = 1"),
+        "farmers_demo": one("SELECT COUNT(*) FROM farmers WHERE is_demo = 1"),
         "fields": one("SELECT COUNT(*) FROM fields"),
         "readings": {r["quality_status"]: r["n"] for r in db.execute(
             "SELECT quality_status, COUNT(*) AS n FROM readings GROUP BY quality_status")},
