@@ -42,8 +42,20 @@ def create_device(body: DeviceIn, db=Depends(get_db)):
 
 @router.get("/devices")
 def list_devices(db=Depends(get_db)):
-    return [dict(r, latest_calibration=latest_calibration(db, r["device_id"]))
+    return [dict(r, latest_calibration=latest_calibration(db, r["device_id"]),
+                 last_seen=_LAST_SEEN.get(r["device_id"]))
             for r in db.execute("SELECT * FROM devices ORDER BY device_id")]
+
+
+_LAST_SEEN = {}     # device_id -> when the bridge last reported it is talking to the Arduino
+
+
+@router.post("/devices/{device_id}/heartbeat")
+def heartbeat(device_id: str, db=Depends(get_db)):
+    """The bridge calls this while it is connected, so the dashboard can show 'probe connected'."""
+    device_or_404(db, device_id)
+    _LAST_SEEN[device_id] = datetime.now(timezone.utc).isoformat()
+    return {"last_seen": _LAST_SEEN[device_id]}
 
 
 @router.post("/devices/{device_id}/calibrations", status_code=201)
@@ -78,6 +90,7 @@ def post_live(device_id: str, body: LiveIn, db=Depends(get_db)):
     cal = latest_calibration(db, device_id)
     ph = (mv_to_ph(body.mv, cal["offset_mv"], cal["slope_pct"], cal["temp_c"], body.temp_c)
           if cal and cal["accepted"] else None)
+    _LAST_SEEN[device_id] = datetime.now(timezone.utc).isoformat()
     _LIVE[device_id] = {"ph": ph, "temp_c": body.temp_c, "settled": body.settled,
                         "field_id": body.field_id, "ts": datetime.now(timezone.utc).isoformat()}
     return _LIVE[device_id]
