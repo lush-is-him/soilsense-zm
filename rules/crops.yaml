@@ -38,7 +38,7 @@ rules:
       planting_window_rainfed: [Nov, Dec]
       spacing_cm: [45, 5]
       basal: {product: "phosphorus-based fertiliser, according to soil test", rate_kg_ha: [150, 200]}
-      top_dress: {product: "nil, or light ammonium nitrate", rate_kg_ha: OPEN}
+      top_dress: {product: "none", none: true}   # AGR-2 follow-up N6 (10 Nov 2026): no top dressing
       manure_t_ha: [5, 10]
       acid_soil_problem: "poor nodulation and phosphorus availability"
       cautions: [MSG-05]
@@ -92,11 +92,11 @@ rules:
     reviewer_alias: AGR-2
     ref: D
     ph_method: water
-    notes: "C-1 decided (Nov 2026): groundnut replaces sorghum; AGR-2 also says groundnut should be in. Best range 5.8-6.0 is unusually narrow: ask once more. AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
+    notes: "C-1 decided (Nov 2026): groundnut replaces sorghum; AGR-2 also says groundnut should be in. Best range confirmed as 6.2-6.5 in AGR-2's follow-up (N7). AGR-1 values confirmed by AGR-2 (Nov 2026 form, 'Agree'); pH in water (AGR-2). Fertiliser rates are AGR-2 input only."
     data:
       name: groundnut
       in_scope: true
-      ph: {lowest_workable: 5.0, best: [5.8, 6.0], highest_workable: 7.5}
+      ph: {lowest_workable: 5.0, best: [6.2, 6.5], highest_workable: 7.5}   # best range: AGR-2 follow-up N7
       acid_tolerance: medium
       planting_window_rainfed: [Nov, Dec]
       spacing_cm: [45, 10]
