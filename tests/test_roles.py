@@ -265,3 +265,39 @@ def test_old_roles_are_migrated(tmp_path):
     assert roles == {"operator": "officer", "agronomist": "officer", "admin": "admin"}
     farmer = conn.execute("SELECT share_consent, created_by FROM farmers").fetchone()
     assert farmer["share_consent"] == 1 and farmer["created_by"] is not None
+
+
+def test_field_with_sampling_points_gets_whole_field_advice(client):
+    farmer, _ = signup(client, "farmer_a")
+    field = own_field(client, farmer, "Shimabala plot")
+    calibrate(client, farmer)
+    for label, ph in (("S01", 6.1), ("S02", 6.3), ("S04", 7.6)):
+        r = client.post("/readings", json={"field_id": field["field_id"], "device_id": "probe-1",
+                                           "replicates_ph": [ph, ph, ph], "temp_c": 25, "point_label": label,
+                                           "point_lat": -15.679, "point_lon": 28.217}, headers=farmer)
+        assert r.json()["point_label"] == label
+    points = client.get(f"/fields/{field['field_id']}/history", headers=farmer).json()["points"]
+    assert [p["label"] for p in points] == ["S01", "S02", "S04"]
+    advice = client.post("/advice", json={"field_id": field["field_id"], "crop": "maize", "whole_field": True},
+                         headers=farmer).json()
+    whole = advice["whole_field"]
+    assert whole["n"] == 3 and whole["median"] == 6.3 and whole["zones"]          # 6.1 to 7.6 differ by 1.5
+    assert advice["ph_input"] == 6.3
+
+
+def test_remeasuring_a_point_replaces_it(client):
+    farmer, _ = signup(client, "farmer_a")
+    field = own_field(client, farmer)
+    calibrate(client, farmer)
+    for ph in (6.0, 6.4):
+        client.post("/readings", json={"field_id": field["field_id"], "device_id": "probe-1",
+                                       "replicates_ph": [ph, ph, ph], "temp_c": 25, "point_label": "S01"}, headers=farmer)
+    points = client.get(f"/fields/{field['field_id']}/history", headers=farmer).json()["points"]
+    assert len(points) == 1 and points[0]["ph"] == 6.4
+
+
+def test_whole_field_advice_needs_a_reading(client):
+    farmer, _ = signup(client, "farmer_a")
+    field = own_field(client, farmer)
+    r = client.post("/advice", json={"field_id": field["field_id"], "crop": "maize", "whole_field": True}, headers=farmer)
+    assert r.status_code == 422

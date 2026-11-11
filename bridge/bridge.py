@@ -281,7 +281,7 @@ def _post_live(api, device_id, mv, temp_c, settled, field_id):
         pass
 
 
-def read_field(probe, api, board, device_id, field_id, ask=input, say=print, state=None, live=False):
+def read_field(probe, api, board, device_id, field_id, ask=input, say=print, state=None, live=False, point=None):
     state = load_state() if state is None else state
     board, sign = _calibrated_board(board, device_id, state, say)
     # The soil-water mix is prepared and the probe is in it before this runs.
@@ -305,7 +305,7 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
     # The moisture sensor is out of scope (thresholds never confirmed), so it is not sent.
     result = api.call("POST", "/readings", {
         "field_id": field_id, "device_id": device_id, "replicates_mv": replicates,
-        "temp_c": round(statistics.mean(temps), 1)})
+        "temp_c": round(statistics.mean(temps), 1), **(point or {})})
     if result["quality_status"] == "accepted":
         say(f"Reading ACCEPTED: pH {result['ph_water']} at {result.get('temp_c', statistics.mean(temps)):.1f} C "
             f"(reading #{result['reading_id']}).")
@@ -317,6 +317,7 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
 SAMPLES_CSV = Path(__file__).resolve().parent.parent / "docs" / "evaluation" / "samples.csv"
 SAMPLE_FARMER = "Shimabala sample farm"
 SAMPLE_FARMER_ALIASES = ("Shimabala sample farm", "Retained lab samples")
+SAMPLE_PLOT = "Shimabala plot"
 
 
 def sample_field(api, sample_id, samples_csv=SAMPLES_CSV):
@@ -336,14 +337,14 @@ def sample_field(api, sample_id, samples_csv=SAMPLES_CSV):
         if farmer is None:
             farmer = api.call("POST", "/farmers", {"alias": SAMPLE_FARMER, "village": "Shimabala", "share_consent": True})
     fields = api.call("GET", f"/farmers/{farmer['farmer_id']}")["fields"]
-    field = next((f for f in fields if f["name"] == sample_id), None)
-    if field is None:
-        accuracy = float(row["gps_accuracy_m"]) if row.get("gps_accuracy_m") else None
-        field = api.call("POST", "/fields", {
-            "farmer_id": farmer["farmer_id"], "name": sample_id, "lat": float(row["lat"]),
-            "lon": float(row["lon"]), "gps_accuracy_m": accuracy,
-            "location_source": "gps" if accuracy is not None and accuracy <= 30 else "manual"})
-    return field["field_id"]
+    plot = next((f for f in fields if f["name"] == SAMPLE_PLOT), None)
+    if plot is None:
+        plot = api.call("POST", "/fields", {
+            "farmer_id": farmer["farmer_id"], "name": SAMPLE_PLOT, "lat": float(row["lat"]), "lon": float(row["lon"]),
+            "gps_accuracy_m": 3, "location_source": "gps"})
+    # each retained sample is a sampling point of the plot, at its own GPS position
+    point = {"point_label": sample_id, "point_lat": float(row["lat"]), "point_lon": float(row["lon"])}
+    return plot["field_id"], point
 
 
 def record_sample(sample_id, reading, samples_csv=SAMPLES_CSV):
@@ -364,8 +365,8 @@ def record_sample(sample_id, reading, samples_csv=SAMPLES_CSV):
 
 
 def read_sample(probe, api, board, device_id, sample_id, say=print, state=None, samples_csv=SAMPLES_CSV):
-    field_id = sample_field(api, sample_id, samples_csv)
-    result = read_field(probe, api, board, device_id, field_id, say=say, state=state)
+    field_id, point = sample_field(api, sample_id, samples_csv)
+    result = read_field(probe, api, board, device_id, field_id, say=say, state=state, point=point)
     if result["quality_status"] == "accepted":
         record_sample(sample_id, result, samples_csv)
         say(f"Saved to {samples_csv.name}: {sample_id} pH " + ", ".join(f"{v:.2f}" for v in result["replicates"]))

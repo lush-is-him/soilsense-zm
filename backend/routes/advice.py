@@ -1,6 +1,7 @@
 """POST /advice and friends (FR7, FR10, FR12, FR13)."""
 
 import json
+import statistics
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +10,7 @@ from backend.access import field_for, visible_farmers_sql
 from backend.auth import current_user
 from backend.db import get_db
 from backend.routes.farmers import farmer_or_404
-from backend.routes.fields import field_or_404, get_or_fetch_map_estimate
+from backend.routes.fields import field_or_404, get_or_fetch_map_estimate, sampling_points
 from backend.schemas import AdviceIn
 from backend.services.rules_sync import sync_rules
 from backend.services.sms import format_summary, send_sms
@@ -51,6 +52,9 @@ def render(result, lang):
     return result
 
 
+ZONE_SPREAD = 1.0   # [PROPOSED] points further apart than this suggest the field has zones
+
+
 def _hours_since(sql_ts):
     if not sql_ts:
         return None
@@ -76,7 +80,17 @@ def _plausibility(db, reading, estimate):
 def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)):
     field = field_for(db, user, body.field_id)
     reading = None
-    if body.reading_id is not None:
+    points = None
+    if body.whole_field:
+        points = sampling_points(db, body.field_id)
+        if not points:
+            raise HTTPException(422, "This field has no accepted readings yet")
+        # the field is represented by the median of its points; the newest point stands in
+        # for calibration age in the plausibility check
+        newest = max(points, key=lambda p: p["reading_id"])
+        reading = dict(db.execute("SELECT * FROM readings WHERE reading_id = ?", (newest["reading_id"],)).fetchone())
+        reading["ph_water"] = statistics.median(p["ph"] for p in points)
+    elif body.reading_id is not None:
         reading = db.execute("SELECT * FROM readings WHERE reading_id = ? AND field_id = ?",
                              (body.reading_id, body.field_id)).fetchone()
         if reading is None:
@@ -117,15 +131,23 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
                         else {"status": "ok", "reasons": [], "refer_lab": False, "confirmed_by_repeat": False})
     result["field_id"] = body.field_id
     result["reading_id"] = body.reading_id
+    if points is not None:
+        values = [p["ph"] for p in points]
+        spread = round(max(values) - min(values), 2)
+        result["whole_field"] = {"n": len(points), "median": round(statistics.median(values), 2),
+                                 "min": min(values), "max": max(values), "spread": spread,
+                                 "zones": len(points) > 1 and spread > ZONE_SPREAD,
+                                 "points": [{"label": p["label"], "ph": p["ph"]} for p in points]}
 
     with db:
         cur = db.execute(
             "INSERT INTO recommendations (reading_id, field_id, trust_level, crop, budget_band, water, "
-            "plan_a, plan_b, plan_c, result, language, as_of_date, method_sensitive, user_id) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "plan_a, plan_b, plan_c, result, language, as_of_date, method_sensitive, user_id, whole_field) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (body.reading_id, body.field_id, trust.level, body.crop, body.budget_band, body.water,
              json.dumps(result["plan_a"]), json.dumps(result["plan_b"]), json.dumps(result["plan_c"]),
-             json.dumps(result), body.lang, as_of.isoformat(), int(result["method_sensitive"]), user["user_id"]))
+             json.dumps(result), body.lang, as_of.isoformat(), int(result["method_sensitive"]), user["user_id"],
+             int(points is not None)))
         rec_id = cur.lastrowid
         for rule in result["fired_rules"]:
             db.execute("INSERT INTO recommendation_rules (rec_id, rule_id, rule_version) "

@@ -131,7 +131,29 @@ def field_history(field_id: int, db=Depends(get_db), user=Depends(current_user))
             "SELECT rec_id, reading_id, trust_level, crop, as_of_date, method_sensitive, created_at "
             "FROM recommendations WHERE field_id = ? ORDER BY rec_id DESC"),
         "referrals": rows("SELECT * FROM referrals WHERE field_id = ? ORDER BY referral_id DESC"),
+        "points": sampling_points(db, field_id),
     }
+
+
+POINT_DAYS = 365      # a sampling point's latest reading counts for the field for a year
+
+
+def sampling_points(db, field_id):
+    """The latest accepted reading of each sampling point in the field (a reading without a
+    point label is its own point). Used for whole-field advice and the field's point map."""
+    rows = db.execute(
+        "SELECT * FROM readings WHERE field_id = ? AND quality_status = 'accepted' "
+        "AND ts >= datetime('now', ?) ORDER BY reading_id DESC", (field_id, f"-{POINT_DAYS} days")).fetchall()
+    seen, points = set(), []
+    for r in rows:
+        key = r["point_label"] or f"#{r['reading_id']}"
+        if key in seen:
+            continue
+        seen.add(key)
+        points.append({"label": r["point_label"], "reading_id": r["reading_id"], "ph": r["ph_water"],
+                       "lat": r["point_lat"], "lon": r["point_lon"], "ts": r["ts"],
+                       "calibration_id": r["calibration_id"]})
+    return sorted(points, key=lambda p: (p["label"] is None, p["label"] or "", p["reading_id"]))
 
 
 def get_or_fetch_map_estimate(db, field):

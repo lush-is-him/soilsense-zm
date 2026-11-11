@@ -208,8 +208,9 @@ def test_sample_registers_field_and_fills_samples_csv(api, tmp_path):
     assert result["quality_status"] == "accepted"
     rows = list(csv.DictReader(samples.open()))
     assert rows[0]["probe_ph_1"] and abs(float(rows[0]["probe_ph_2"]) - 5.5) < 0.05 and rows[1]["probe_ph_1"] == ""
-    again = read_sample(Probe(FakeArduino([5.5] * 3)), api, BOARD, "probe-1", "S01", say=quiet, state=state, samples_csv=samples)
-    assert again["field_id"] == result["field_id"]            # same field reused
+    assert result["point_label"] == "S01" and result["point_lat"] == -15.679223
+    again = read_sample(Probe(FakeArduino([5.5] * 3)), api, BOARD, "probe-1", "S02", say=quiet, state=state, samples_csv=samples)
+    assert again["field_id"] == result["field_id"] and again["point_label"] == "S02"   # same plot, next point
 
 
 def test_login_is_remembered(api):

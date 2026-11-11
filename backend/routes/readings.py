@@ -43,14 +43,15 @@ def create_reading(body: ReadingIn, db=Depends(get_db), user=Depends(current_use
     with db:
         cur = db.execute(
             "INSERT INTO readings (field_id, device_id, operator_id, calibration_id, ph_water, "
-            "replicates, replicates_mv, moisture, temp_c, quality_status, quality_reasons) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "replicates, replicates_mv, moisture, temp_c, quality_status, quality_reasons, "
+            "point_label, point_lat, point_lon) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (body.field_id, body.device_id, user["user_id"],
              calibration_row["calibration_id"] if calibration_row else None,
              result.ph_mean, json.dumps(replicates),
              json.dumps(body.replicates_mv) if body.replicates_mv is not None else None,
              body.moisture, body.temp_c, "accepted" if result.accepted else "rejected",
-             json.dumps(result.reasons + result.warnings)))
+             json.dumps(result.reasons + result.warnings), body.point_label, body.point_lat, body.point_lon))
     return get_reading(cur.lastrowid, db, user)
 
 
