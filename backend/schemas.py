@@ -13,10 +13,42 @@ class LoginIn(BaseModel):
     password: str
 
 
+Role = Literal["farmer", "officer", "admin"]
+Phone = Optional[str]
+PHONE_PATTERN = r"^\+?[0-9]{9,15}$"
+
+
 class UserIn(BaseModel):
-    username: str = Field(min_length=3)
+    """Admin creates an account (an officer, another admin, or a farmer)."""
+    username: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9_.-]+$")
     password: str = Field(min_length=8)
-    role: Literal["operator", "agronomist", "admin"]
+    role: Role
+    full_name: str = Field(min_length=2, max_length=80)
+
+
+class UserPatch(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=2, max_length=80)
+    role: Optional[Role] = None
+    active: Optional[bool] = None
+    password: Optional[str] = Field(None, min_length=8)
+
+
+class SignupIn(BaseModel):
+    """A farmer creates their own account; the farmer profile is created with it."""
+    full_name: str = Field(min_length=2, max_length=80)
+    username: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9_.-]+$")
+    password: str = Field(min_length=8)
+    village: Optional[str] = Field(None, max_length=80)
+    preferred_language: Literal["en", "ny", "toi"] = "en"
+    phone: Phone = Field(None, pattern=PHONE_PATTERN)
+    sms_consent: bool = False
+    share_consent: bool = False
+
+    @model_validator(mode="after")
+    def phone_needs_consent(self):
+        if self.phone and not self.sms_consent:
+            raise ValueError("a phone number may only be stored with SMS consent (NFR5)")
+        return self
 
 
 class FarmerIn(BaseModel):
@@ -24,6 +56,8 @@ class FarmerIn(BaseModel):
     preferred_language: Language = "en"
     phone: Optional[str] = Field(None, pattern=r"^\+?[0-9]{9,15}$")
     sms_consent: bool = False
+    village: Optional[str] = Field(None, max_length=80)
+    share_consent: bool = False
 
     @model_validator(mode="after")
     def phone_needs_consent(self):
@@ -33,7 +67,7 @@ class FarmerIn(BaseModel):
 
 
 class FieldIn(BaseModel):
-    farmer_id: int
+    farmer_id: Optional[int] = None      # a farmer adding their own field may leave it out
     name: str = Field(min_length=1, max_length=60)
     lat: float = Field(ge=-90, le=90)
     lon: float = Field(ge=-180, le=180)
@@ -90,6 +124,7 @@ class LabResultIn(BaseModel):
     texture: Optional[str] = None
     lab_name: Optional[str] = None
     date: Optional[str] = None
+    referral_id: Optional[int] = None
 
 
 class AdviceIn(BaseModel):
@@ -102,3 +137,33 @@ class AdviceIn(BaseModel):
     manure_available: Optional[bool] = None
     as_of_date: Optional[date] = None      # defaults to today; set in tests
     lang: Language = "en"
+
+
+class FarmerPatch(BaseModel):
+    alias: Optional[str] = Field(None, min_length=1, max_length=60)
+    preferred_language: Optional[Language] = None
+    phone: Optional[str] = Field(None, pattern=PHONE_PATTERN)
+    sms_consent: Optional[bool] = None
+    village: Optional[str] = Field(None, max_length=80)
+    share_consent: Optional[bool] = None
+
+
+class FieldPatch(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=60)
+    lat: Optional[float] = Field(None, ge=-90, le=90)
+    lon: Optional[float] = Field(None, ge=-180, le=180)
+    gps_accuracy_m: Optional[float] = Field(None, ge=0)
+    location_source: Optional[Literal["gps", "manual"]] = None
+    area_lima: Optional[float] = Field(None, gt=0)
+
+
+class ReferralIn(BaseModel):
+    field_id: int
+    kind: Literal["lab", "visit"]
+    reading_id: Optional[int] = None
+    reason: Optional[str] = Field(None, max_length=300)
+
+
+class ReferralPatch(BaseModel):
+    status: Optional[Literal["open", "in_progress", "done", "cancelled"]] = None
+    note: Optional[str] = Field(None, max_length=500)

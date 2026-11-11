@@ -24,7 +24,7 @@ rules:
     data:
       budget_bands: [low, medium]   # I1
       priority_order: [seed, fertiliser, lime, manure]   # I2, from AGR-2
-      items_by_budget: OPEN         # not asked; while OPEN, Plan B lists every item in priority order
+      items_by_budget: {low: 2, medium: 3}   # AGR-2 follow-up B1-B2 (10 Nov 2026): low = first 2, medium = first 3
   - id: PLAN-C-ORDER
     domain: plan
     status: draft

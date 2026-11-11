@@ -118,3 +118,26 @@ def test_form_import_ok_accepts_draft_and_corrections(tmp_path, monkeypatch):
     assert ny["ref.REF-04"]["text"] == "pH ili pamwamba kwa {crop}." and ny["ref.REF-04"]["reviewed"]
     assert ny["crop.maize"]["reviewed"]
     assert "laimu" in (tmp_path / "glossary_ny.csv").read_text()
+
+
+def test_followup_form_import(tmp_path, monkeypatch):
+    import csv as _csv
+    import json
+
+    import i18n_form_import
+    for code in ("en", "ny", "toi"):
+        (tmp_path / f"{code}.yaml").write_text((I18N / f"{code}.yaml").read_text())
+    monkeypatch.setattr(i18n_sheet, "I18N", tmp_path)
+    keys = tmp_path / "keys.json"
+    keys.write_text(json.dumps({"N": ["sum.sure", "sum.fine"], "F": ["ref.REF-04"]}))
+    responses = tmp_path / "responses.csv"
+    with responses.open("w", newline="", encoding="utf-8") as handle:
+        writer = _csv.writer(handle)
+        writer.writerow(["Timestamp", "Your name or initials", "N1. How sure are we?", "N2. Good news: {crop}",
+                         "F1. The pH is above what {crop} tolerates."])
+        writer.writerow(["now", "M", "Tulishomede buti?", "Makani mabotu: pH ili kabotu kuli {crop}.",
+                         "pH ili ijulu kapati kuli {crop}. Mutabiki liimu."])
+    i18n_form_import.apply(responses, "toi", alias="TOI-1", sheet=tmp_path / "sheet.csv", keys_path=keys)
+    toi = yaml.safe_load((tmp_path / "toi.yaml").read_text())
+    assert toi["sum.sure"] == {"text": "Tulishomede buti?", "reviewed": True, "reviewer": "TOI-1"}
+    assert toi["ref.REF-04"]["text"].startswith("pH ili ijulu") and "{crop}" in toi["ref.REF-04"]["text"]

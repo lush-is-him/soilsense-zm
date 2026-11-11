@@ -32,3 +32,16 @@ Form returned 1 Nov 2026. Anonymised at the reviewer's request ("role only"): di
 4. **Soybean top dressing rate:** not given.
 5. **How far each budget band reaches in Plan B:** not asked. Until answered, Plan B lists all items in his order and says to stop where the money ends.
 6. **Groundnut best pH 5.8-6.0:** he agreed with it, but the range is unusually narrow; worth one more check.
+
+## Follow-up answers (form, 10 Nov 2026)
+
+| Code | Question | Answer | Applied in |
+|---|---|---|---|
+| T1–T12 | Texture class → group | Sand: not sure (kept sandy); Loamy sand: sandy; Sandy loam, Loam, Sandy clay loam, Clay loam, Sandy clay: loamy; Silt loam, Silt, Silty clay loam, Silty clay, Clay: clay | `rules/texture.yaml` TEX-GROUPS |
+| N1 | Maximum lime in one application | blank | LIME-MAX stays at AGR-1's 5 t/ha |
+| N2–N5 | Lime below pH: soybean, sunflower, millet, groundnut | 5.5, 5.5, 5.0, 5.8 | `rules/lime.yaml` LIME-TRIGGER `other_crops` |
+| N6 | Soybean top dressing | None | `rules/crops.yaml` CROP-SOYBEAN |
+| N7 | Groundnut best pH range | 6.2 to 6.5 | `rules/crops.yaml` CROP-GROUNDNUT |
+| B1–B2 | Plan B reach: low / medium budget | the first 2 / the first 3 | `rules/plans.yaml` PLAN-B `items_by_budget` |
+
+The raw response sheet is kept out of the repository.

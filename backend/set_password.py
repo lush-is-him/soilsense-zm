@@ -1,6 +1,6 @@
 """Change a user's password.
 
-    python -m backend.set_password operator
+    python -m backend.set_password admin
 
 Asks for the new password twice. Run it on the laptop that holds the database.
 """

@@ -315,7 +315,8 @@ def read_field(probe, api, board, device_id, field_id, ask=input, say=print, sta
 
 
 SAMPLES_CSV = Path(__file__).resolve().parent.parent / "docs" / "evaluation" / "samples.csv"
-SAMPLE_FARMER = "Retained lab samples"
+SAMPLE_FARMER = "Shimabala sample farm"
+SAMPLE_FARMER_ALIASES = ("Shimabala sample farm", "Retained lab samples")
 
 
 def sample_field(api, sample_id, samples_csv=SAMPLES_CSV):
@@ -327,9 +328,13 @@ def sample_field(api, sample_id, samples_csv=SAMPLES_CSV):
         raise RuntimeError(f"{sample_id} is not in {samples_csv.name}")
     if not (row.get("lat") and row.get("lon")):
         raise RuntimeError(f"{sample_id} has no GPS position in {samples_csv.name}")
-    farmer = next((f for f in api.call("GET", "/farmers") if f["alias"] == SAMPLE_FARMER), None)
-    if farmer is None:
-        farmer = api.call("POST", "/farmers", {"alias": SAMPLE_FARMER})
+    me = api.call("GET", "/auth/me")
+    if me.get("role") == "farmer":                       # logged in as the samples farm itself
+        farmer = api.call("GET", "/farmers/me")
+    else:
+        farmer = next((f for f in api.call("GET", "/farmers") if f["alias"] in SAMPLE_FARMER_ALIASES), None)
+        if farmer is None:
+            farmer = api.call("POST", "/farmers", {"alias": SAMPLE_FARMER, "village": "Shimabala", "share_consent": True})
     fields = api.call("GET", f"/farmers/{farmer['farmer_id']}")["fields"]
     field = next((f for f in fields if f["name"] == sample_id), None)
     if field is None:

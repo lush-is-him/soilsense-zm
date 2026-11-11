@@ -68,3 +68,42 @@ crop.millet: {text: "millet", reviewed: false}
 crop.sorghum: {text: "sorghum", reviewed: false}
 crop.groundnut: {text: "groundnut", reviewed: false}
 plan.b_in_order: {text: "Buy these in this order, as far as your money goes. Stop where the money ends; the first items matter most.", reviewed: false}
+fert.none: {text: "Not needed for this crop.", reviewed: false}
+sum.unusable: {text: "This reading could not be used.", reviewed: false}
+sum.unusable_sub: {text: "Retake the reading, or enter a lab pH.", reviewed: false}
+sum.too_acid: {text: "This soil is too acidic to fix safely in one season.", reviewed: false}
+sum.too_high: {text: "{crop} will struggle here: the pH is too high for it.", reviewed: false}
+sum.too_high_sub: {text: "Do not add lime. Grow a crop that suits this soil (Plan C).", reviewed: false}
+sum.fine: {text: "Good news: the pH is right for {crop}. You do not need lime.", reviewed: false}
+sum.fine_sub: {text: "For a good harvest, feed the soil with manure and fertiliser (Plan A).", reviewed: false}
+sum.optional: {text: "The pH is fine for {crop}. A little lime may help, but it is not essential.", reviewed: false}
+sum.acid: {text: "The soil is too acidic for {crop}. Lime it, then add fertiliser and manure.", reviewed: false}
+sum.acid_late: {text: "The soil is too acidic for {crop}, and it is too late to lime this season.", reviewed: false}
+sum.acid_late_sub: {text: "Lime early for next season. This season, grow a crop that suits the soil (Plan C).", reviewed: false}
+sum.method: {text: "The advice depends on how the pH was measured. Get a lab test before buying lime.", reviewed: false}
+sum.sure: {text: "How sure are we?", reviewed: false}
+sum.sure_high: {text: "High: based on a laboratory test.", reviewed: false}
+sum.sure_moderate: {text: "Moderate: the probe and the soil map agree.", reviewed: false}
+sum.sure_low_map: {text: "Low: the probe and the soil map disagree. Get a lab test before spending a lot.", reviewed: false}
+sum.sure_low_place: {text: "Low: the field’s location is not certain, so the soil map cannot be checked. Get a lab test before spending a lot.", reviewed: false}
+sum.sure_low: {text: "Low: based on the probe reading only. Get a lab test before spending a lot.", reviewed: false}
+sum.choose: {text: "Choose a plan", reviewed: false}
+sum.tap: {text: "Tap a plan to see the amounts.", reviewed: false}
+sum.a_fine: {text: "No lime needed. Add manure and fertiliser.", reviewed: false}
+sum.a_optional: {text: "Lime is optional. Add manure and fertiliser.", reviewed: false}
+sum.a_lime: {text: "Lime first, then fertiliser and manure.", reviewed: false}
+sum.b_budget: {text: "Spend less: buy {items} first.", reviewed: false}
+sum.b_order: {text: "Spend less: buy in this order, as money allows.", reviewed: false}
+sum.c_crops: {text: "Grows in this soil now: {crops}.", reviewed: false}
+sum.and: {text: "and", reviewed: false}
+sum.details: {text: "Technical details (for the operator)", reviewed: false}
+check.ok: {text: "Nothing unusual about this reading.", reviewed: false}
+check.cal_old: {text: "The probe was not calibrated today. Calibrate it, then measure again.", reviewed: false}
+check.extreme_high: {text: "This pH is very high for a farm soil. It is possible, but rare.", reviewed: false}
+check.extreme_low: {text: "This pH is very low for a farm soil. It is possible, but rare.", reviewed: false}
+check.map_gap: {text: "This reading is very different from the soil map for this place.", reviewed: false}
+check.repeat_agrees: {text: "An earlier reading of this field agrees, so the probe is probably right.", reviewed: false}
+check.retest: {text: "Check the probe first: rinse it, put it in the pH 7.00 buffer (it should read between 6.8 and 7.2), recalibrate if it does not, and measure the soil again.", reviewed: false}
+check.title_probe: {text: "Check the probe before you act on this", reviewed: false}
+check.title_lab: {text: "Unusual soil: confirm with a lab test", reviewed: false}
+check.lab_why: {text: "The probe looks right, but this soil is unusual. Take a sample to a soil lab (for example ZARI Mount Makulu) before spending money on it.", reviewed: false}

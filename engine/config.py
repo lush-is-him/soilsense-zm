@@ -28,6 +28,19 @@ class EngineConfig:
     # [PROPOSED] pH outside this range is a probe fault, not soil.
     PH_PLAUSIBLE_MIN: float = 3.5
     PH_PLAUSIBLE_MAX: float = 9.5
+    # [PROPOSED] Plausibility check (Nov 2026): an accepted pH beyond these is
+    # possible soil but rare; it is confirmed by a repeat reading or a lab test.
+    # Above 8.5 soils are usually sodic; below 4.5 strongly acid.
+    PH_EXTREME_LOW: float = 4.5
+    PH_EXTREME_HIGH: float = 8.5
+    # [PROPOSED] probe and map further apart than this: check the probe first.
+    MAP_GAP_CHECK: float = field(default_factory=lambda: _env_float("MAP_GAP_CHECK", 1.5))
+    # [PROPOSED] a calibration older than this does not count as "today's".
+    CAL_MAX_AGE_HOURS: float = 24.0
+    # [PROPOSED] two readings of the same field within this many days that agree
+    # within REPEAT_AGREE confirm that the probe, not chance, gave the value.
+    REPEAT_AGREE: float = 0.3
+    REPEAT_DAYS: int = 30
     # GPS fixes worse than this are rejected (spec 2.2).
     GPS_MAX_ACCURACY_M: float = 30.0
     # [AGR C2, unsourced] water pH minus CaCl2 pH, as a range.

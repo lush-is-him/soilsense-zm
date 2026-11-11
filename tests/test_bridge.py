@@ -43,7 +43,7 @@ class FakeArduino:
 class ClientApi:
     def __init__(self, client):
         self.client = client
-        token = client.post("/auth/login", json={"username": "operator", "password": "operator-pass"}).json()["token"]
+        token = client.post("/auth/login", json={"username": "officer", "password": "officer-pass"}).json()["token"]
         self.headers = {"Authorization": f"Bearer {token}"}
 
     def call(self, method, path, body=None):
@@ -54,7 +54,7 @@ class ClientApi:
 
 @pytest.fixture
 def api(tmp_path, monkeypatch):
-    monkeypatch.setenv("SEED_OPERATOR_PASSWORD", "operator-pass")
+    monkeypatch.setenv("SEED_OFFICER_PASSWORD", "officer-pass")
     conn = backend_db.connect(tmp_path / "bridge.db")
     seed(conn)
     backend_db.set_db(conn)
@@ -226,9 +226,9 @@ def test_login_is_remembered(api):
             return {"username": "operator"}
     asked = []
     first = FakeApi()
-    ensure_login(first, ask=lambda p: asked.append(p) or "operator", ask_secret=lambda p: "operator-pass", say=quiet)
+    ensure_login(first, ask=lambda p: asked.append(p) or "officer", ask_secret=lambda p: "officer-pass", say=quiet)
     second = FakeApi()
-    ensure_login(second, ask=lambda p: asked.append(p) or "operator", ask_secret=lambda p: "x", say=quiet)
+    ensure_login(second, ask=lambda p: asked.append(p) or "officer", ask_secret=lambda p: "x", say=quiet)
     assert len(asked) == 1 and second.token == first.token
 
 

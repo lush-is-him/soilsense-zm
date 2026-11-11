@@ -4,13 +4,14 @@
 rules:
   - id: TEX-GROUPS
     domain: texture
-    status: draft
-    source_type: proposed
+    status: agronomist_input
+    source_type: expert_opinion
     source_doc: null
-    reviewer_alias: null
-    ref: "spec 6.3 (E4 uses sandy/loamy/clay)"
+    reviewer_alias: AGR-2
+    ref: "spec 6.3 (E4 uses sandy/loamy/clay); AGR-2 follow-up T1-T12 (10 Nov 2026)"
+    notes: "Grouping from AGR-2's follow-up answers. AGR-2 was 'not sure' about Sand; it stays in sandy as proposed. AGR-2 groups Silt Loam and Silt with clay, Sandy Clay and Clay Loam with loamy."
     data:
       groups:
-        sandy: ["Sand", "Loamy Sand", "Sandy Loam"]
-        loamy: ["Loam", "Silt Loam", "Silt", "Sandy Clay Loam"]
-        clay:  ["Clay", "Silty Clay", "Sandy Clay", "Clay Loam", "Silty Clay Loam"]
+        sandy: ["Sand", "Loamy Sand"]
+        loamy: ["Sandy Loam", "Loam", "Sandy Clay Loam", "Clay Loam", "Sandy Clay"]
+        clay:  ["Silt Loam", "Silt", "Silty Clay Loam", "Silty Clay", "Clay"]
