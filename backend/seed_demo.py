@@ -166,6 +166,9 @@ def sample_farm(conn, client, password):
         if not (row.get("lat") and row.get("lon")):
             continue
         name = row["sample_id"]
+        reps = [row.get(f"probe_ph_{i}") for i in (1, 2, 3)]
+        if name not in fields and not all(reps):
+            continue                       # not measured with the probe: no field for it on the farm
         if name not in fields:
             accuracy = float(row["gps_accuracy_m"]) if row.get("gps_accuracy_m") else None
             fields[name] = client.post("/fields", json={
@@ -173,7 +176,6 @@ def sample_farm(conn, client, password):
                 "location_source": "gps" if accuracy is not None and accuracy <= 30 else "manual"}, headers=headers).json()
         field = fields[name]
         has_reading = conn.execute("SELECT 1 FROM readings WHERE field_id = ?", (field["field_id"],)).fetchone()
-        reps = [row.get(f"probe_ph_{i}") for i in (1, 2, 3)]
         if not has_reading and all(reps):
             # The real readings from samples.csv (taken with probe-1 on 5 Nov 2026).
             temp = float(row.get("probe_temp_c") or 25.0)
@@ -183,7 +185,25 @@ def sample_farm(conn, client, password):
             if reading.get("quality_status") == "accepted":
                 client.post("/advice", json={"field_id": field["field_id"], "reading_id": reading["reading_id"],
                                              "crop": "maize"}, headers=headers)
+    _drop_untested_samples(conn, farmer_id)
     return created
+
+
+def _drop_untested_samples(conn, farmer_id):
+    """Sample points with nothing recorded (never measured, no lab result yet) are not shown on the farm.
+    They come back by themselves when they are measured (bridge sample S03) or a lab result is entered."""
+    empty = [r[0] for r in conn.execute(
+        "SELECT field_id FROM fields fl WHERE farmer_id = ? "
+        "AND NOT EXISTS (SELECT 1 FROM readings r WHERE r.field_id = fl.field_id) "
+        "AND NOT EXISTS (SELECT 1 FROM lab_results l WHERE l.field_id = fl.field_id) "
+        "AND NOT EXISTS (SELECT 1 FROM referrals rf WHERE rf.field_id = fl.field_id) "
+        "AND NOT EXISTS (SELECT 1 FROM recommendations rc WHERE rc.field_id = fl.field_id)", (farmer_id,))]
+    with conn:
+        for field_id in empty:
+            conn.execute("DELETE FROM map_estimates WHERE field_id = ?", (field_id,))
+            conn.execute("DELETE FROM field_checks WHERE field_id = ?", (field_id,))
+            conn.execute("DELETE FROM fields WHERE field_id = ?", (field_id,))
+    return len(empty)
 
 
 # ----- demo farms ---------------------------------------------------------------------

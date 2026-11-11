@@ -46,6 +46,17 @@ def health():
     return {"status": "online", "app": "SoilSense ZM", "version": app.version}
 
 
+@app.middleware("http")
+async def no_stale_dashboard(request, call_next):
+    """Browsers must always fetch the current dashboard files, so an update shows at once
+    (no hard refresh needed). The files are small; the map library is the exception."""
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or (path.startswith("/static/") and "/vendor/" not in path):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 app.mount("/static", StaticFiles(directory=DASHBOARD_DIR), name="static")
 
 
