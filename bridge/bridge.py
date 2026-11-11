@@ -265,6 +265,13 @@ def _calibrated_board(board, device_id, state, say):
     return board, state[device_id]["sign"]
 
 
+def _heartbeat(api, device_id):
+    try:
+        api.call("POST", f"/devices/{device_id}/heartbeat")
+    except RuntimeError:
+        pass
+
+
 def _post_live(api, device_id, mv, temp_c, settled, field_id):
     """Show the settling value on the dashboard's Live page. Never stops a reading."""
     try:
@@ -368,6 +375,7 @@ def active_field(api, device_id, say=print, wait=1.0, tries=None):
     told = False
     n = 0
     while tries is None or n < tries:
+        _heartbeat(api, device_id)
         field_id = api.call("GET", f"/devices/{device_id}/active-field").get("field_id")
         if field_id:
             return field_id
@@ -434,8 +442,12 @@ def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=N
                 done += 1
                 last_v = probe.read()["ph_v"]
                 say("  Done. Rinse the probe and put it in the next sample (waiting for it to move)...")
+                beat = 0
                 while rounds is None or done < rounds:
                     reply = probe.read()
+                    beat += 1
+                    if beat % 3 == 0:
+                        _heartbeat(api, device_id)
                     if abs(reply["ph_v"] - last_v) > MOVED_V:
                         say("  New sample detected.")
                         break

@@ -563,11 +563,49 @@ async function viewLive(fieldId) {
 
 async function viewProbe() {
   const devices = await api("/devices");
+  const ago = (iso) => (iso ? (Date.now() - new Date(iso).getTime()) / 1000 : Infinity);
+  const when = (sqlDate) => {
+    if (!sqlDate) return "";
+    const d = new Date(sqlDate.replace(" ", "T") + "Z");
+    return d.toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+  const today = (sqlDate) => sqlDate && new Date(sqlDate.replace(" ", "T") + "Z").toDateString() === new Date().toDateString();
   $app.innerHTML = `
-    <h1>Probe calibration</h1>
+    <h1>Probe</h1>
+    ${devices.map((d) => {
+      const c = d.latest_calibration;
+      const connected = ago(d.last_seen) < 20;
+      const calState = !c ? ["rejected", "Not calibrated", "Calibrate before measuring."]
+        : !c.accepted ? ["rejected", "Last calibration failed", "Calibrate again with fresh buffers."]
+        : today(c.date) ? ["accepted", "Calibrated today", "Ready to measure."]
+        : ["low", "Calibrated, but not today", "Calibrate again before measuring today."];
+      return `
+      <div class="card">
+        <h2>${esc(d.label)}</h2>
+        <div class="status-row">
+          <span class="dot ${connected ? "on" : "off"}"></span>
+          <div><strong>${connected ? "Connected" : "Not connected"}</strong><br>
+            <small class="muted">${connected ? "The probe program is running and talking to the Arduino."
+              : "Plug in the Arduino and double-click START DEMO on the laptop."}</small></div>
+        </div>
+        <div class="status-row">
+          <span class="badge ${calState[0]}">${calState[1]}</span>
+          <div><small class="muted">${calState[2]}${c ? ` Last: ${esc(when(c.date))}, slope ${esc(c.slope_pct)}% (must be 95–105%), ${esc(c.temp_c)} °C.` : ""}</small></div>
+        </div>
+      </div>`;
+    }).join("")}
     <div class="card">
-      <p>Calibrate at the start of every session: pH 7.00 buffer first, rinse, then pH 4.00.
-        Enter the electrode millivolts the bridge shows. The slope must be 95–105%.</p>
+      <h2>How to calibrate (once a day)</h2>
+      <ol>
+        <li>Have the pH 7.00 and pH 4.00 buffers and clean water ready, in the room where you will measure.</li>
+        <li>Double-click <strong>START DEMO</strong> and answer <strong>Y</strong> when it asks to calibrate.</li>
+        <li>Follow the black window: pH 7.00 first, rinse, then pH 4.00.</li>
+        <li>When it says <strong>Calibration ACCEPTED</strong>, this page shows “Calibrated today”.</li>
+      </ol>
+    </div>
+    <details class="card">
+      <summary>Enter a calibration by hand (advanced)</summary>
+      <p class="muted">Only if the probe program cannot be used: type the electrode millivolts it showed.</p>
       <form id="cal-form">
         <label for="cal-device">Probe</label>
         <select id="cal-device" name="device_id">${devices.map((d) => `<option value="${esc(d.device_id)}">${esc(d.label)}</option>`).join("")}</select>
@@ -578,19 +616,16 @@ async function viewProbe() {
         </div>
         <button type="submit">Save calibration</button>
       </form>
-    </div>
-    <div class="card"><h2>Probes</h2><ul class="list">${devices.map((d) => {
-      const c = d.latest_calibration;
-      return `<li><strong>${esc(d.label)}</strong> <small>${esc(d.device_id)}</small><br>
-        ${c ? `<span class="badge ${c.accepted ? "accepted" : "rejected"}">${c.accepted ? "calibrated" : "failed"}</span>
-          slope ${esc(c.slope_pct)}% · ${esc(c.date)}` : '<span class="muted">Not calibrated</span>'}</li>`;
-    }).join("")}</ul></div>`;
+    </details>`;
   onSubmit("cal-form", async (d) => {
     const r = await post(`/devices/${encodeURIComponent(d.device_id)}/calibrations`,
       { mv_ph7: d.mv_ph7, mv_ph4: d.mv_ph4, temp_c: d.temp_c });
     toast(r.accepted ? `Calibration accepted (slope ${r.slope_pct}%)` : `Rejected: ${r.reasons.join("; ")}`, !r.accepted);
     await viewProbe();
   });
+  // refresh the status every 5 s while this page is open
+  clearTimeout(window.probeTimer);
+  window.probeTimer = setTimeout(() => { if (location.hash.startsWith("#/probe")) viewProbe().catch(() => {}); }, 5000);
 }
 
 function viewHelp() {
