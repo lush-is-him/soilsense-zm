@@ -25,10 +25,20 @@ cd "C:\Users\USER\SoilSense ZM"
 pip install -r backend\requirements.txt -r requirements-dev.txt
 python scripts\fetch_isdasoil.py --boundary "tiff files\gadm41_ZMB.gpkg"
 python -m backend.seed
-python -m backend.set_password operator     # optional: choose an easier password
+python -m backend.set_password admin        # optional: choose an easier password
 ```
 
-`backend.seed` creates the users `operator`, `agronomist` and `admin` and prints their passwords once. To choose them yourself, set `SEED_OPERATOR_PASSWORD` (and the others) first; see `.env.example`.
+`backend.seed` creates three starting accounts and prints their passwords once: `admin`, `officer` (a demo extension officer) and `farmer` (a demo self-testing farmer). To choose the passwords yourself, set `SEED_ADMIN_PASSWORD`, `SEED_OFFICER_PASSWORD` and `SEED_FARMER_PASSWORD` first; see `.env.example`.
+
+## Who uses it (accounts and roles)
+
+| Role | How they get an account | What they see and do |
+|---|---|---|
+| **Farmer** | Signs up on the login page ("Create an account") | Only their own fields. Guided soil test with animated steps, live probe reading, plain advice. Asks for a lab test or an officer visit when unsure. Edits their own profile (village, language, SMS, sharing). |
+| **Extension / lab officer** | The admin creates a named account | Farmers who share their results, farmers they registered, and anyone who asked for help. Works the request list, enters lab results (which gives the farmer high-confidence advice), sees the soil map, tests for farmers without a phone. Sees the rule tables. |
+| **Admin** | Seeded; can create more | Everything: overview numbers, map of all fields, accounts (create, deactivate, reset passwords), probe calibrations. |
+
+An unusual reading (very high or low pH, or far from the soil map) is flagged *check the probe* until a repeat reading agrees; then *confirm with a lab test*. A database from before November 2026 is migrated automatically when the server starts: `operator` and `agronomist` become officers and keep their passwords.
 
 ## Run
 
@@ -37,7 +47,7 @@ $env:SOILSENSE_SECRET_KEY = "any-long-random-text"
 uvicorn backend.main:app --reload
 ```
 
-Open http://localhost:8000 for the dashboard and http://localhost:8000/docs for the API. To use it from a phone on the same Wi-Fi, run with `--host 0.0.0.0` and open `http://<laptop IP>:8000`. Phone GPS only works over HTTPS or on localhost, so for field tests use a tunnel or a certificate.
+Open http://localhost:8000 for the dashboard (the map page needs internet for its background map) and http://localhost:8000/docs for the API. To use it from a phone on the same Wi-Fi, run with `--host 0.0.0.0` and open `http://<laptop IP>:8000`. Phone GPS only works over HTTPS or on localhost, so for field tests use a tunnel or a certificate.
 
 ## Probe
 

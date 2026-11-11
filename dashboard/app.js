@@ -84,280 +84,10 @@ function say(item) { return item ? `${esc(item.text)}${unreviewedMark(item)}` : 
 
 // ----- views -----
 
-function viewLogin() {
-  document.getElementById("topbar").hidden = true;
-  $app.innerHTML = `
-    <div class="card">
-      <h1>SoilSense ZM</h1>
-      <p class="muted">Soil and crop advice for Kafue District. Log in to continue.</p>
-      <form id="login-form">
-        <label for="username">Username</label>
-        <input id="username" name="username" autocomplete="username" required>
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
-        <button type="submit">Log in</button>
-      </form>
-    </div>`;
-  onSubmit("login-form", async (data) => {
-    const result = await post("/auth/login", data);
-    store.set("token", result.token);
-    store.set("user", JSON.stringify(result.user));
-    location.hash = "#/home";
-  });
-}
-
-async function viewHome() {
-  const [devices, recent] = await Promise.all([api("/devices"), api("/advice?limit=5").catch(() => []), loadStrings(lang())]);
-  const d = devices[0] || {};
-  const c = d.latest_calibration;
-  const connected = d.last_seen && (Date.now() - new Date(d.last_seen).getTime()) / 1000 < 20;
-  const calToday = c && c.accepted && new Date(c.date.replace(" ", "T") + "Z").toDateString() === new Date().toDateString();
-  let user = "operator";
-  try { user = JSON.parse(store.get("user")).username || user; } catch (error) { /* keep default */ }
-  $app.innerHTML = `
-    <h1>Hello, ${esc(user)}</h1>
-    <a class="probe-strip ${connected && calToday ? "ok" : "warn"}" href="#/probe">
-      <span class="dot ${connected ? "on" : "off"}"></span>
-      <span>Probe: <strong>${connected ? "connected" : "not connected"}</strong>
-        · ${calToday ? "calibrated today" : c && c.accepted ? "not calibrated today" : "not calibrated"}</span>
-      <span class="go">›</span></a>
-    <div class="tiles">
-      <a class="tile primary" href="#/fields"><span class="tile-icon" aria-hidden="true">🌱</span><strong>Measure soil</strong><span>Choose a farmer’s field, then use the probe</span></a>
-      <a class="tile" href="#/fields"><span class="tile-icon" aria-hidden="true">👥</span><strong>Farmers</strong><span>Register farmers and their fields</span></a>
-      <a class="tile" href="#/probe"><span class="tile-icon" aria-hidden="true">🔬</span><strong>Probe</strong><span>Connection and daily calibration</span></a>
-      <a class="tile" href="#/help"><span class="tile-icon" aria-hidden="true">🧺</span><strong>How to sample</strong><span>Taking a good soil sample</span></a>
-    </div>
-    ${recent.length ? `<div class="card"><h2>Latest advice</h2><ul class="field-list">${recent.map((r) => `
-      <li><a class="field-link" href="#/advice/${r.rec_id}"><span><strong>${esc(r.farmer)}</strong> · ${esc(r.field)}<br>
-        <small class="muted">${esc(capital(cropName(r.crop)))} · ${esc(r.as_of_date)}</small></span>
-        <span class="badge ${esc(r.trust_level)}">${esc(r.trust_level)}</span></a></li>`).join("")}</ul></div>` : ""}`;
-}
-
-async function viewFields() {
-  const farmers = await api("/farmers");
-  const detailed = await Promise.all(farmers.map((f) => api(`/farmers/${f.farmer_id}`)));
-  const LANG_NAMES = { en: "English", ny: "Nyanja", toi: "Tonga" };
-  $app.innerHTML = `
-    <h1>Farmers</h1>
-    <p class="muted">You are the operator (extension worker). Each farmer below owns one or more fields;
-      open a field to measure its soil and give advice.</p>
-    ${detailed.length ? detailed.map((f) => `
-      <div class="card farmer">
-        <div class="farmer-head">
-          <h2>${esc(f.alias)}</h2>
-          <small>Advice in ${esc(LANG_NAMES[f.preferred_language] || f.preferred_language)}
-            · ${f.sms_consent ? "SMS allowed" : "no SMS"}</small>
-        </div>
-        <h3>Fields (${f.fields.length})</h3>
-        ${f.fields.length ? `<ul class="field-list">${f.fields.map((fl) => `
-          <li><a class="field-link" href="#/field/${fl.field_id}"><strong>${esc(fl.name)}</strong>
-            <small>${esc(fl.location_source === "gps" ? `GPS ±${fl.gps_accuracy_m} m` : "manual pin")}</small></a></li>`).join("")}</ul>`
-          : '<p class="muted">No fields yet.</p>'}
-        <a class="button secondary-btn" href="#/new-field/${f.farmer_id}">+ Add a field for ${esc(f.alias)}</a>
-      </div>`).join("") : '<div class="card"><p class="muted">No farmers yet. Register one below.</p></div>'}
-    <details class="card">
-      <summary>Register a farmer</summary>
-      <form id="farmer-form">
-        <label for="alias">Alias (no real names needed)</label>
-        <input id="alias" name="alias" required maxlength="60">
-        <label for="preferred_language">Preferred language</label>
-        <select id="preferred_language" name="preferred_language">
-          <option value="en">English</option><option value="ny">Nyanja</option><option value="toi">Tonga</option>
-        </select>
-        <label class="check"><input type="checkbox" name="sms_consent" id="sms_consent">
-          Farmer agrees to receive an SMS (number deleted after the demonstration)</label>
-        <label for="phone">Phone (only with consent)</label>
-        <input id="phone" name="phone" type="tel" placeholder="+260...">
-        <button type="submit">Register farmer</button>
-      </form>
-    </details>`;
-  onSubmit("farmer-form", async (data) => {
-    if (!data.sms_consent) delete data.phone;
-    await post("/farmers", data);
-    toast("Farmer registered");
-    await viewFields();
-  });
-}
-
-function viewNewField(farmerId) {
-  $app.innerHTML = `
-    <h1>Register a field</h1>
-    <div class="card">
-      <form id="field-form">
-        <label for="name">Field name</label>
-        <input id="name" name="name" required maxlength="60">
-        <p class="muted">Stand in the middle of the field and get a GPS fix. It must be ${GPS_MAX_M} m or better.</p>
-        <div class="actions">
-          <button type="button" id="gps-btn">Get GPS fix</button>
-          <button type="button" class="secondary" id="manual-btn">Drop a manual pin instead</button>
-        </div>
-        <p id="gps-status" class="muted"></p>
-        <div class="row">
-          <div><label for="lat">Latitude</label><input id="lat" name="lat" type="number" step="any" required readonly></div>
-          <div><label for="lon">Longitude</label><input id="lon" name="lon" type="number" step="any" required readonly></div>
-        </div>
-        <input type="hidden" name="gps_accuracy_m" id="gps_accuracy_m">
-        <input type="hidden" name="location_source" id="location_source" value="gps">
-        <label for="area_lima">Area in lima (optional)</label>
-        <input id="area_lima" name="area_lima" type="number" step="any" min="0">
-        <button type="submit" id="save-field" disabled>Save field</button>
-      </form>
-    </div>`;
-  const status = document.getElementById("gps-status");
-  const save = document.getElementById("save-field");
-  const lat = document.getElementById("lat");
-  const lon = document.getElementById("lon");
-
-  document.getElementById("gps-btn").addEventListener("click", () => {
-    if (!navigator.geolocation) { status.textContent = "This phone cannot give a GPS fix. Use a manual pin."; return; }
-    status.textContent = "Getting a fix…";
-    navigator.geolocation.getCurrentPosition((pos) => {
-      const acc = Math.round(pos.coords.accuracy);
-      lat.value = pos.coords.latitude.toFixed(6);
-      lon.value = pos.coords.longitude.toFixed(6);
-      document.getElementById("gps_accuracy_m").value = acc;
-      document.getElementById("location_source").value = "gps";
-      const ok = acc <= GPS_MAX_M;
-      status.textContent = ok ? `Fix accepted: ±${acc} m.` : `Fix is ±${acc} m, worse than ${GPS_MAX_M} m. Wait and try again, or drop a manual pin.`;
-      save.disabled = !ok;
-    }, (err) => { status.textContent = `GPS failed: ${err.message}. Try again or use a manual pin.`; },
-    { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
-  });
-
-  document.getElementById("manual-btn").addEventListener("click", () => {
-    lat.readOnly = false; lon.readOnly = false;
-    document.getElementById("location_source").value = "manual";
-    document.getElementById("gps_accuracy_m").value = "";
-    status.textContent = "Type the coordinates. Manual pins get low confidence advice.";
-    save.disabled = false;
-  });
-
-  onSubmit("field-form", async (data) => {
-    data.farmer_id = Number(farmerId);
-    const field = await post("/fields", data);
-    toast("Field saved");
-    location.hash = `#/field/${field.field_id}`;
-  });
-}
-
-async function viewField(fieldId) {
-  const [field, history, devices] = await Promise.all([
-    api(`/fields/${fieldId}`), api(`/fields/${fieldId}/history`), api("/devices")]);
-  const farmer = await api(`/farmers/${field.farmer_id}`).catch(() => ({ alias: "" }));
-  let mapHtml;
-  try {
-    const m = await api(`/fields/${fieldId}/map-estimate`);
-    mapHtml = `pH ${esc(m.ph_mean)} ± ${esc(m.ph_sd)} (water), texture ${esc(m.texture || "unknown")}`;
-  } catch (error) { mapHtml = esc(error.message); }
-
-  const readings = history.readings.map((r) => `
-    <option value="${r.reading_id}" ${r.quality_status === "accepted" ? "" : "data-bad"}>
-      #${r.reading_id} ${r.quality_status === "accepted" ? `pH ${r.ph_water}` : "rejected"} (${esc(r.ts)})</option>`).join("");
-
-  $app.innerHTML = `
-    <p><a href="#/fields">← Farmers</a> / ${esc(farmer.alias)}</p>
-    <h1>Field: ${esc(field.name)}</h1>
-    <p class="muted">Farmer: <strong>${esc(farmer.alias)}</strong></p>
-    <a class="button big-btn" href="#/live/${esc(fieldId)}">Measure with the probe (live)</a>
-    <div class="card">
-      <p>${esc(field.lat)}, ${esc(field.lon)} · ${field.location_source === "gps" ? `GPS ±${esc(field.gps_accuracy_m)} m` : "manual pin"}</p>
-      <p><strong>Map (iSDAsoil):</strong> ${mapHtml}</p>
-    </div>
 
 
 
 
-    <div class="card">
-      <h2>Get advice</h2>
-      <form id="advice-form">
-        <label for="reading_id">Reading</label>
-        <select id="reading_id" name="reading_id">
-          ${readings}<option value="">Use the lab result</option>
-        </select>
-        <div class="row">
-          <div><label for="crop">Target crop</label>
-            <select id="crop" name="crop">${CROPS.map((c) => `<option>${c}</option>`).join("")}</select></div>
-          <div><label for="budget_band">Budget</label>
-            <select id="budget_band" name="budget_band"><option value="low">Low</option><option value="medium">Medium</option></select></div>
-          <div><label for="water">Water</label>
-            <select id="water" name="water"><option value="rainfed">Rainfed</option><option value="irrigated">Irrigated</option></select></div>
-        </div>
-        <button type="submit">Get advice</button>
-      </form>
-    </div>
-    ${history.readings.length ? `<div class="card"><h2>Readings</h2><ul class="list">${history.readings.map((r) => `
-        <li><span class="badge ${esc(r.quality_status)}">${esc(r.quality_status)}</span>
-          ${r.ph_water != null ? `pH ${esc(r.ph_water)}` : ""} <small>${esc(r.ts)}</small>
-          ${r.quality_reasons && r.quality_reasons.length ? `<br><small>${r.quality_reasons.map(esc).join("; ")}</small>` : ""}</li>`).join("")}</ul></div>` : ""}
-    <details class="card">
-      <summary>Field checks: texture by feel, waterlogging</summary>
-      <form id="check-form">
-        <label for="texture_by_feel">Texture by feel</label>
-        <select id="texture_by_feel" name="texture_by_feel">
-          <option value="">Not checked</option><option value="sandy">Sandy (gritty, falls apart)</option>
-          <option value="loamy">Loamy (soft, holds shape loosely)</option><option value="clay">Clay (sticky, makes a ribbon)</option>
-        </select>
-        <label for="colour">Colour</label><input id="colour" name="colour">
-        <label for="previous_crop">Previous crop</label><input id="previous_crop" name="previous_crop">
-        <label class="check"><input type="checkbox" name="waterlogging"> Waterlogged in the rains</label>
-        <label class="check"><input type="checkbox" name="manure_available"> Manure available</label>
-        <button type="submit">Save field check</button>
-      </form>
-    </details>
-    <details class="card">
-      <summary>Lab result (optional)</summary>
-      <form id="lab-form">
-        <div class="row">
-          <div><label for="ph">pH</label><input id="ph" name="ph" type="number" step="0.01" required></div>
-          <div><label for="ph_method">Method</label>
-            <select id="ph_method" name="ph_method" required>
-              <option value="">Choose…</option><option value="water">Water</option><option value="cacl2">CaCl₂</option>
-            </select></div>
-        </div>
-        <label for="texture">Texture (as on the report)</label><input id="texture" name="texture" placeholder="e.g. Sandy Clay Loam">
-        <label for="lab_name">Lab</label><input id="lab_name" name="lab_name">
-        <label for="date">Date</label><input id="date" name="date" type="date">
-        <button type="submit">Save lab result</button>
-      </form>
-    </details>
-    <details class="card">
-      <summary>Enter a reading by hand (without the probe program)</summary>
-      <form id="reading-form">
-        <label for="device_id">Probe</label>
-        <select id="device_id" name="device_id" required>
-          ${devices.map((d) => `<option value="${esc(d.device_id)}">${esc(d.label)}
-            ${d.latest_calibration ? (d.latest_calibration.accepted ? "" : " (last calibration failed)") : " (not calibrated)"}</option>`).join("")}
-        </select>
-        <p class="muted">Three readings of the same 1:2.5 soil-water mix. They must be within 0.1 of each other.</p>
-        <div class="row">
-          <div><label for="r1">pH 1</label><input id="r1" name="r1" type="number" step="0.01" required></div>
-          <div><label for="r2">pH 2</label><input id="r2" name="r2" type="number" step="0.01" required></div>
-          <div><label for="r3">pH 3</label><input id="r3" name="r3" type="number" step="0.01" required></div>
-          <div><label for="temp_c">Temp °C</label><input id="temp_c" name="temp_c" type="number" step="0.1" required></div>
-        </div>
-        <button type="submit">Save reading</button>
-      </form>
-    </details>
-    ${history.recommendations.length ? `<div class="card"><h2>Earlier advice</h2><ul class="list">${history.recommendations.map((r) => `
-      <li><a href="#/advice/${r.rec_id}">${esc(r.crop)} · ${esc(r.as_of_date)}</a>
-        <span class="badge ${esc(r.trust_level)}">${esc(r.trust_level)}</span></li>`).join("")}</ul></div>` : ""}`;
-
-  onSubmit("reading-form", async (d) => {
-    const reading = await post("/readings", { field_id: Number(fieldId), device_id: d.device_id,
-      replicates_ph: [d.r1, d.r2, d.r3], temp_c: d.temp_c });
-    toast(reading.quality_status === "accepted" ? `Reading accepted: pH ${reading.ph_water}` :
-      `Reading rejected: ${reading.quality_reasons.join("; ")}`, reading.quality_status !== "accepted");
-    await viewField(fieldId);
-  });
-  onSubmit("check-form", async (d) => { await post(`/fields/${fieldId}/checks`, d); toast("Field check saved"); await viewField(fieldId); });
-  onSubmit("lab-form", async (d) => { await post(`/fields/${fieldId}/lab-results`, d); toast("Lab result saved"); await viewField(fieldId); });
-  onSubmit("advice-form", async (d) => {
-    const body = { field_id: Number(fieldId), crop: d.crop, budget_band: d.budget_band, water: d.water, lang: lang() };
-    if (d.reading_id) body.reading_id = Number(d.reading_id);
-    const advice = await post("/advice", body);
-    location.hash = `#/advice/${advice.rec_id}`;
-  });
-}
 
 // ----- advice text (from /i18n, so it follows the language switch) -----
 
@@ -522,6 +252,17 @@ function planOneLiners(a, crop) {
   return [oneA, oneB, oneC];
 }
 
+function checksBanner(a) {
+  const c = a.checks;
+  if (!c || c.status === "ok") return c && c.confirmed_by_repeat ? `<p class="notice info">${t("check.repeat_agrees")}</p>` : "";
+  const lab = c.status === "confirm_lab";
+  return `<div class="card notice ${lab ? "info" : "stop"} checks">
+    <h2>${t(lab ? "check.title_lab" : "check.title_probe")}</h2>
+    <ul>${c.reasons.map((r) => `<li>${t(r)}</li>`).join("")}</ul>
+    ${lab ? `<p>${t("check.lab_why")}</p>` : ""}
+  </div>`;
+}
+
 const capital = (word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : "");
 
 async function viewAdvice(recId, target = $app) {
@@ -542,6 +283,7 @@ async function viewAdvice(recId, target = $app) {
     </details>`;
   target.innerHTML = `
     ${target === $app ? `<p><a href="javascript:history.back()">← Back</a></p>` : ""}
+    ${a.checks && a.checks.status === "check_probe" ? checksBanner(a) : ""}
     <div class="card summary ${esc(trust.level)}">
       <p class="muted">${esc(capital(crop))} · pH ${esc(a.ph_input)} (${esc(a.ph_method_input)}) · ${esc(a.as_of_date)}</p>
       <h1 class="headline">${headline}</h1>
@@ -550,6 +292,7 @@ async function viewAdvice(recId, target = $app) {
         <span>${t("sum.sure")} ${sureText(a)}</span></div>
       ${a.borderline ? `<p class="notice info">${t("borderline")}</p>` : ""}
     </div>
+    ${a.checks && a.checks.status === "check_probe" ? "" : checksBanner(a)}
     ${a.method_sensitive ? `<div class="card"><h2>${t("ui.depends_method")}</h2>
       <table><tr><th>pH</th><th>Band</th><th>${t("ui.lime")} t/ha</th><th>Plan C</th></tr>
       ${a.alternatives.map((x) => `<tr><td>${esc(x.ph_in_rule_scale)}</td><td>${esc(x.band)}</td>
@@ -562,14 +305,26 @@ async function viewAdvice(recId, target = $app) {
       ${planCard("c", "C", t("ui.plan_c"), oneC,
         a.plan_c && a.plan_c.crops.length ? `<p>${a.plan_c.crops.map((c) => esc(capital(cropName(c)))).join(", ")}</p>` : `<p>${t("plan.c_none")}</p>`, false)}` : ""}
     <div class="card"><h2>${t("ui.remember")}</h2><ul>${a.messages.map((m) => `<li>${say(m)}</li>`).join("")}</ul></div>
-    <button class="secondary sms-btn">${tPlain("ui.send_sms")}</button>
+    <div class="card help-card"><h2>Not sure about this result?</h2>
+      <div class="actions"><button class="secondary help-btn" data-kind="lab">Request a lab test</button>
+        <button class="secondary help-btn" data-kind="visit">Ask an officer to visit</button></div></div>
+    ${(typeof me === "function" && me().role === "farmer") ? "" : `<button class="secondary sms-btn">${tPlain("ui.send_sms")}</button>`}
     <details class="card tech"><summary>${t("sum.details")}</summary>
       <p class="muted">${esc((trust.reasons || []).join("; "))}${a.texture && a.texture.value ? ` · texture ${esc(a.texture.value)} (${esc(a.texture.source)})` : ""}</p>
       <h3>${t("ui.why")}</h3>
       <table><tr><th>What was checked</th><th>Based on</th></tr>${whyRows(rules)}</table>
       ${a.unreviewed ? `<p class="muted">${t("ui.unconfirmed_rules")}</p>` : ""}
     </details>`;
-  target.querySelector(".sms-btn").addEventListener("click", async () => {
+  target.querySelectorAll(".help-btn").forEach((button) => button.addEventListener("click", async () => {
+    const kind = button.dataset.kind;
+    try {
+      await post("/referrals", { field_id: a.field_id, kind, reading_id: a.reading_id || null,
+        reason: kind === "lab" ? "Confirm this reading with a lab test" : "Please come and test this field" });
+      toast(kind === "lab" ? "Lab test requested. An officer will contact you about the sample." : "Visit requested.");
+    } catch (error) { toast(error.message, true); }
+  }));
+  const sms = target.querySelector(".sms-btn");
+  if (sms) sms.addEventListener("click", async () => {
     try {
       const r = await post(`/advice/${recId}/sms`, {});
       toast(r.status === "sent" ? `SMS sent: ${r.message}`
@@ -713,53 +468,4 @@ async function viewProbe() {
   window.probeTimer = setTimeout(() => { if (location.hash.startsWith("#/probe")) viewProbe().catch(() => {}); }, 5000);
 }
 
-function viewHelp() {
-  $app.innerHTML = `
-    <h1>How to take a soil sample</h1>
-    <div class="card">
-      <ol>
-        <li>Divide the field into areas that look alike: soil colour, texture, slope, drainage, crop growth and management.</li>
-        <li>In each area, take 15 to 20 small samples from different points and mix them in a clean plastic bucket. That makes one composite sample.</li>
-        <li>Sample before planting. Do not sample just after putting on fertiliser or manure.</li>
-        <li>Do not sample very dry, dusty soil, or soil that is saturated or under standing water. Wait for moderate moisture, not straight after heavy rain.</li>
-        <li>Record the GPS position where you sample.</li>
-      </ol>
-      <p>Sample the top 0–20 cm of soil, the same depth as the soil map.</p>
-      <p class="muted">Soil labs: ZARI Mount Makulu; University of Zambia, Soil Science.
-        Source: agronomist questionnaire (K1–K4).</p>
-    </div>`;
-}
 
-// ----- router -----
-
-async function route() {
-  const hash = location.hash || "#/home";
-  const [, view, id] = hash.split("/");
-  if (!store.get("token") && view !== "login") { location.hash = "#/login"; return; }
-  document.getElementById("topbar").hidden = view === "login";
-  document.querySelectorAll(".topbar nav a").forEach((a) => a.classList.toggle("active", a.getAttribute("href") === `#/${view}`));
-  try {
-    switch (view) {
-      case "login": return viewLogin();
-      case "new-field": return viewNewField(id);
-      case "field": return await viewField(id);
-      case "advice": return await viewAdvice(id);
-      case "probe": return await viewProbe();
-      case "live": return await viewLive(id);
-      case "help": return viewHelp();
-      case "fields": return await viewFields();
-      default: return await viewHome();
-    }
-  } catch (error) { toast(error.message, true); }
-}
-
-document.getElementById("logout").addEventListener("click", () => {
-  store.remove("token"); store.remove("user"); location.hash = "#/login";
-});
-document.getElementById("lang").addEventListener("change", () => {
-  store.set("lang", lang());
-  if (location.hash.startsWith("#/advice/")) route();
-});
-document.getElementById("lang").value = store.get("lang") || "en";
-window.addEventListener("hashchange", route);
-route();
