@@ -24,7 +24,7 @@ import i18n_sheet  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 KEYS = ROOT / "docs" / "translations" / "form_keys.json"
-CODE = re.compile(r"^([WCS])(\d+)\.")
+CODE = re.compile(r"^([WCSNF])(\d+)\.")
 COLUMN = {"ny": "nyanja", "toi": "tonga"}
 
 
@@ -48,8 +48,8 @@ def translator_alias(row, lang, given):
     return f"{lang.upper()}-translator"
 
 
-def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET, skip=()):
-    keys = json.loads(KEYS.read_text(encoding="utf-8"))
+def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET, skip=(), keys_path=None):
+    keys = json.loads(Path(keys_path or KEYS).read_text(encoding="utf-8"))
     with open(responses_path, newline="", encoding="utf-8-sig") as handle:
         rows = list(csv.DictReader(handle))
     if not 1 <= row_number <= len(rows):
@@ -71,7 +71,7 @@ def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET
 
     english = i18n_sheet.load("en")
     updated, set_aside = 0, []
-    for kind in ("C", "S"):
+    for kind in [k for k in keys if k != "W"]:
         for number, key in enumerate(keys[kind], 1):
             answer = answers.get((kind, number))
             if not answer or key not in by_key:
@@ -98,14 +98,16 @@ def apply(responses_path, lang, row_number=1, alias=None, sheet=i18n_sheet.SHEET
         writer.writeheader()
         writer.writerows(sheet_rows)
 
-    glossary_path = sheet.parent / f"glossary_{lang}.csv"
-    with glossary_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(["code", "english", lang, "translator"])
-        for number, word in enumerate(keys["W"], 1):
-            writer.writerow([f"W{number}", word, answers.get(("W", number), ""), who])
-
-    print(f"{lang}: {updated} strings from {who}; key words in {glossary_path.name}")
+    if "W" in keys:
+        glossary_path = sheet.parent / f"glossary_{lang}.csv"
+        with glossary_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["code", "english", lang, "translator"])
+            for number, word in enumerate(keys["W"], 1):
+                writer.writerow([f"W{number}", word, answers.get(("W", number), ""), who])
+        print(f"{lang}: {updated} strings from {who}; key words in {glossary_path.name}")
+    else:
+        print(f"{lang}: {updated} strings from {who}")
     if set_aside:
         print(f"Set aside {len(set_aside)} (English stays until fixed):")
         for line in set_aside:
@@ -121,8 +123,9 @@ def main():
     parser.add_argument("--alias", help="name or alias to record as the reviewer")
     parser.add_argument("--skip", nargs="*", default=[], metavar="CODE",
                         help="question codes to set aside, e.g. S12 S13 (autocorrect damage, typos)")
+    parser.add_argument("--keys", help="question key file of a follow-up form, e.g. docs/translations/followup_keys.json")
     args = parser.parse_args()
-    return apply(args.responses, args.lang, args.row, args.alias, skip=set(args.skip))
+    return apply(args.responses, args.lang, args.row, args.alias, skip=set(args.skip), keys_path=args.keys)
 
 
 if __name__ == "__main__":
