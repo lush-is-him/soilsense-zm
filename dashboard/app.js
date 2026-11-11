@@ -109,18 +109,25 @@ function viewLogin() {
 async function viewFields() {
   const farmers = await api("/farmers");
   const detailed = await Promise.all(farmers.map((f) => api(`/farmers/${f.farmer_id}`)));
+  const LANG_NAMES = { en: "English", ny: "Nyanja", toi: "Tonga" };
   $app.innerHTML = `
-    <h1>Farmers and fields</h1>
-    <div class="card">
-      ${detailed.length ? `<ul class="list">${detailed.map((f) => `
-        <li><strong>${esc(f.alias)}</strong> <small>(${esc(f.preferred_language)})</small>
-          ${f.fields.length ? `<ul>${f.fields.map((fl) =>
-            `<li><a href="#/field/${fl.field_id}">${esc(fl.name)}</a>
-               <small>${esc(fl.location_source === "gps" ? `GPS ±${fl.gps_accuracy_m} m` : "manual pin")}</small></li>`).join("")}</ul>`
-            : '<p class="muted">No fields yet.</p>'}
-          <a href="#/new-field/${f.farmer_id}">+ Add field</a>
-        </li>`).join("")}</ul>` : '<p class="muted">No farmers yet.</p>'}
-    </div>
+    <h1>Farmers</h1>
+    <p class="muted">You are the operator (extension worker). Each farmer below owns one or more fields;
+      open a field to measure its soil and give advice.</p>
+    ${detailed.length ? detailed.map((f) => `
+      <div class="card farmer">
+        <div class="farmer-head">
+          <h2>${esc(f.alias)}</h2>
+          <small>Advice in ${esc(LANG_NAMES[f.preferred_language] || f.preferred_language)}
+            · ${f.sms_consent ? "SMS allowed" : "no SMS"}</small>
+        </div>
+        <h3>Fields (${f.fields.length})</h3>
+        ${f.fields.length ? `<ul class="field-list">${f.fields.map((fl) => `
+          <li><a class="field-link" href="#/field/${fl.field_id}"><strong>${esc(fl.name)}</strong>
+            <small>${esc(fl.location_source === "gps" ? `GPS ±${fl.gps_accuracy_m} m` : "manual pin")}</small></a></li>`).join("")}</ul>`
+          : '<p class="muted">No fields yet.</p>'}
+        <a class="button secondary-btn" href="#/new-field/${f.farmer_id}">+ Add a field for ${esc(f.alias)}</a>
+      </div>`).join("") : '<div class="card"><p class="muted">No farmers yet. Register one below.</p></div>'}
     <details class="card">
       <summary>Register a farmer</summary>
       <form id="farmer-form">
@@ -209,6 +216,7 @@ function viewNewField(farmerId) {
 async function viewField(fieldId) {
   const [field, history, devices] = await Promise.all([
     api(`/fields/${fieldId}`), api(`/fields/${fieldId}/history`), api("/devices")]);
+  const farmer = await api(`/farmers/${field.farmer_id}`).catch(() => ({ alias: "" }));
   let mapHtml;
   try {
     const m = await api(`/fields/${fieldId}/map-estimate`);
@@ -220,8 +228,9 @@ async function viewField(fieldId) {
       #${r.reading_id} ${r.quality_status === "accepted" ? `pH ${r.ph_water}` : "rejected"} (${esc(r.ts)})</option>`).join("");
 
   $app.innerHTML = `
-    <p><a href="#/fields">← Fields</a></p>
-    <h1>${esc(field.name)}</h1>
+    <p><a href="#/fields">← Farmers</a> / ${esc(farmer.alias)}</p>
+    <h1>Field: ${esc(field.name)}</h1>
+    <p class="muted">Farmer: <strong>${esc(farmer.alias)}</strong></p>
     <p><a class="button" href="#/live/${esc(fieldId)}">Live probe reading</a></p>
     <div class="card">
       <p>${esc(field.lat)}, ${esc(field.lon)} · ${field.location_source === "gps" ? `GPS ±${esc(field.gps_accuracy_m)} m` : "manual pin"}</p>
@@ -476,7 +485,12 @@ async function viewAdvice(recId, target = $app) {
     </details>
     <button class="secondary sms-btn">${tPlain("ui.send_sms")}</button>`;
   target.querySelector(".sms-btn").addEventListener("click", async () => {
-    try { const r = await post(`/advice/${recId}/sms`, {}); toast(`SMS ${r.status}: ${r.message}`); }
+    try {
+      const r = await post(`/advice/${recId}/sms`, {});
+      toast(r.status === "sent" ? `SMS sent: ${r.message}`
+        : r.status === "stubbed" ? `SMS not sent (no SMS account set up on this server). The message would be: ${r.message}`
+        : `SMS failed (${r.status}). Message: ${r.message}`, r.status !== "sent" && r.status !== "stubbed");
+    }
     catch (error) { toast(error.message, true); }
   });
 }
@@ -590,9 +604,9 @@ function viewHelp() {
         <li>Do not sample very dry, dusty soil, or soil that is saturated or under standing water. Wait for moderate moisture, not straight after heavy rain.</li>
         <li>Record the GPS position where you sample.</li>
       </ol>
-      <p class="muted">Sampling depth is not yet confirmed; the system assumes 0–20 cm to match the map.
-        Reference labs: ZARI Mount Makulu; University of Zambia, Soil Science.</p>
-      <p><span class="unreviewed">not reviewed</span> From the agronomist questionnaire (K1–K4).</p>
+      <p>Sample the top 0–20 cm of soil, the same depth as the soil map.</p>
+      <p class="muted">Soil labs: ZARI Mount Makulu; University of Zambia, Soil Science.
+        Source: agronomist questionnaire (K1–K4).</p>
     </div>`;
 }
 
