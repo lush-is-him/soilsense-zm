@@ -10,9 +10,15 @@ if not exist data\secret_key.txt python -c "import secrets; print(secrets.token_
 set /p SOILSENSE_SECRET_KEY=<data\secret_key.txt
 
 echo Starting the SoilSense server in a second window...
-start "SoilSense ZM - server (keep open)" cmd /k python -m uvicorn backend.main:app --port 8000
+rem --host 0.0.0.0 lets a phone on the same Wi-Fi open it too (Windows may ask: allow on Private networks)
+start "SoilSense ZM - server (keep open)" cmd /k python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 timeout /t 5 /nobreak >nul
-start "" "http://localhost:8000/#/fields"
+start "" "http://localhost:8000/#/home"
+
+echo.
+echo ON A PHONE (same Wi-Fi or hotspot as this laptop), open one of these in the browser:
+powershell -NoProfile -Command "Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | ForEach-Object { '   http://' + $_.IPAddress + ':8000' }"
+echo (Phone GPS needs a secure link: double-click PHONE_LINK for that.)
 
 echo.
 choice /c YN /m "Calibrate the probe first? (needed once a day, have pH 7 and pH 4 buffers ready)"
