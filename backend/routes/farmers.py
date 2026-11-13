@@ -65,6 +65,13 @@ def get_farmer(farmer_id: int, db=Depends(get_db), user=Depends(current_user)):
         "AND r.quality_status = 'accepted' ORDER BY r.reading_id DESC LIMIT 1) AS latest_ph, "
         "(SELECT ph FROM lab_results l WHERE l.field_id = fl.field_id ORDER BY l.lab_id DESC LIMIT 1) AS lab_ph "
         "FROM fields fl WHERE fl.farmer_id = ? ORDER BY fl.name", (farmer_id,))]
+    from backend.routes.fields import sampling_points       # (fields imports nothing from here)
+    for field in farmer["fields"]:
+        points = sampling_points(db, field["field_id"])
+        field["point_count"] = len(points)
+        values = sorted(p["ph"] for p in points)
+        field["median_ph"] = (values[len(values) // 2] if len(values) % 2
+                              else round((values[len(values) // 2 - 1] + values[len(values) // 2]) / 2, 2)) if values else None
     try:
         farmer_for(db, user, farmer_id, edit_profile=True)
         farmer["can_edit"] = True

@@ -282,7 +282,7 @@ async function viewAdvice(recId, target = $app) {
       <div class="plan-body">${body}</div>
     </details>`;
   target.innerHTML = `
-    ${target === $app ? `<p><a href="javascript:history.back()">← Back</a></p>` : ""}
+    ${target === $app ? `<div class="crumb"><a href="javascript:history.back()">‹ Back</a></div>` : ""}
     ${a.checks && a.checks.status === "check_probe" ? checksBanner(a) : ""}
     <div class="card summary ${esc(trust.level)}">
       <p class="muted">${esc(capital(crop))} · pH ${esc(a.ph_input)} (${esc(a.ph_method_input)}) · ${esc(a.as_of_date)}</p>
@@ -292,6 +292,8 @@ async function viewAdvice(recId, target = $app) {
         <span>${t("sum.sure")} ${sureText(a)}</span></div>
       ${a.borderline ? `<p class="notice info">${t("borderline")}</p>` : ""}
     </div>
+    ${a.whole_field ? `<p class="notice info">${t("sum.whole_field", { n: a.whole_field.n, median: a.whole_field.median })}</p>
+      ${a.whole_field.zones ? `<p class="notice">${t("sum.zones", { min: a.whole_field.min, max: a.whole_field.max })}</p>` : ""}` : ""}
     ${a.checks && a.checks.status === "check_probe" ? "" : checksBanner(a)}
     ${a.method_sensitive ? `<div class="card"><h2>${t("ui.depends_method")}</h2>
       <table><tr><th>pH</th><th>Band</th><th>${t("ui.lime")} t/ha</th><th>Plan C</th></tr>

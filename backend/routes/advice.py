@@ -89,7 +89,7 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
         # for calibration age in the plausibility check
         newest = max(points, key=lambda p: p["reading_id"])
         reading = dict(db.execute("SELECT * FROM readings WHERE reading_id = ?", (newest["reading_id"],)).fetchone())
-        reading["ph_water"] = statistics.median(p["ph"] for p in points)
+        reading["ph_water"] = round(statistics.median(p["ph"] for p in points), 2)
     elif body.reading_id is not None:
         reading = db.execute("SELECT * FROM readings WHERE reading_id = ? AND field_id = ?",
                              (body.reading_id, body.field_id)).fetchone()
