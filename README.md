@@ -62,6 +62,8 @@ python -m bridge.bridge read --board ph4502c --device probe-1 --field 1
 python -m bridge.bridge live --field 1     # demo: keeps reading; the dashboard Live page shows pH and advice
 ```
 
+**On a phone:** START DEMO now also opens the app to your Wi-Fi and prints the phone address (`http://<laptop IP>:8000`); the phone must be on the same Wi-Fi or hotspot. Phone GPS only works on a secure link: double-click `PHONE_LINK.bat` (needs `winget install --id Cloudflare.cloudflared` once) and open the `https://…trycloudflare.com` link it prints.
+
 **Desktop icon:** double-click `CREATE_SHORTCUT.bat` once; it puts a **SoilSense ZM** shortcut with the SoilSense icon on your desktop, which starts the demo.
 
 **Live demo: double-click `START_DEMO.bat`** (in the project folder; right-click > Send to > Desktop to put a shortcut on the desktop). It starts the server in a second window, opens the dashboard, offers to calibrate, and runs the probe program. In the dashboard open a field and press **Live probe reading**: the probe follows that field. Put the probe in a sample; the page shows the pH while it settles, saves the reading and shows the advice. Rinse, next sample, it repeats. Close both black windows to stop.
