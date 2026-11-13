@@ -107,3 +107,5 @@ check.retest: {text: "Check the probe first: rinse it, put it in the pH 7.00 buf
 check.title_probe: {text: "Check the probe before you act on this", reviewed: false}
 check.title_lab: {text: "Unusual soil: confirm with a lab test", reviewed: false}
 check.lab_why: {text: "The probe looks right, but this soil is unusual. Take a sample to a soil lab (for example ZARI Mount Makulu) before spending money on it.", reviewed: false}
+sum.whole_field: {text: "Advice for the whole field, from {n} sampling points (middle value pH {median}).", reviewed: false}
+sum.zones: {text: "The samples in this field differ a lot (pH {min} to {max}). Parts of the field may need different treatment: test them as separate fields.", reviewed: false}

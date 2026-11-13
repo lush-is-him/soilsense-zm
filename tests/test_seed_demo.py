@@ -63,7 +63,10 @@ def test_samples_farm_is_real_and_owned_by_its_login(conn):
                           "WHERE u.username = 'samplefarm'").fetchone()
     assert farmer["is_demo"] == 0 and farmer["share_consent"] == 1
     names = {r[0] for r in conn.execute("SELECT name FROM fields WHERE farmer_id = ?", (farmer["farmer_id"],))}
-    assert names == {"S01", "S02"}
+    assert names == {"Shimabala plot"}            # one field; the samples are its sampling points
+    labels = {r[0] for r in conn.execute("SELECT point_label FROM readings r JOIN fields fl ON fl.field_id = r.field_id "
+                                         "WHERE fl.farmer_id = ?", (farmer["farmer_id"],))}
+    assert labels == {"S01"}                      # S02 was not measured with the probe
     assert "samplefarm" in out["passwords"]
 
 
@@ -81,7 +84,7 @@ def test_remove_deletes_demo_only(conn):
     assert count(conn, "SELECT COUNT(*) FROM farmers WHERE is_demo = 1") == 0
     assert count(conn, "SELECT COUNT(*) FROM users WHERE is_demo = 1") == 0
     assert count(conn, "SELECT COUNT(*) FROM devices WHERE is_demo = 1") == 0
-    assert count(conn, "SELECT COUNT(*) FROM fields WHERE name IN ('S01', 'S02')") == 2
+    assert count(conn, "SELECT COUNT(*) FROM readings WHERE point_label = 'S01'") == 1
     assert count(conn, "SELECT COUNT(*) FROM users WHERE username = 'samplefarm'") == 1
 
 
@@ -99,6 +102,27 @@ def test_existing_bridge_samples_are_handed_to_the_samples_login(conn):
     owner = conn.execute("SELECT u.username FROM farmers f JOIN users u ON u.user_id = f.user_id "
                          "WHERE f.farmer_id = ?", (fid,)).fetchone()[0]
     assert owner == "samplefarm"
-    s01 = conn.execute("SELECT field_id FROM fields WHERE farmer_id = ? AND name = 'S01'", (fid,)).fetchone()[0]
-    assert count(conn, f"SELECT COUNT(*) FROM readings WHERE field_id = {s01}") == 1
-    assert count(conn, f"SELECT COUNT(*) FROM readings WHERE field_id = {s09}") == 0
+    # merged into one field: S01's reading is now the S01 sampling point, nothing is left under S09
+    assert count(conn, "SELECT COUNT(*) FROM readings WHERE point_label = 'S01'") == 1
+    assert count(conn, "SELECT COUNT(*) FROM readings WHERE point_label = 'S09'") == 0
+    assert count(conn, f"SELECT COUNT(*) FROM fields WHERE farmer_id = {fid}") == 1
+
+
+def test_untested_sample_points_already_created_are_removed(conn):
+    seed_demo.demo(conn)
+    farm = conn.execute("SELECT f.farmer_id FROM farmers f JOIN users u ON u.user_id = f.user_id "
+                        "WHERE u.username = 'samplefarm'").fetchone()[0]
+    with conn:   # an earlier version created every sample, measured or not
+        conn.execute("INSERT INTO fields (farmer_id, name, lat, lon, location_source) VALUES (?, 'S03', -15.67, 28.21, 'manual')", (farm,))
+    seed_demo.demo(conn)
+    assert count(conn, f"SELECT COUNT(*) FROM fields WHERE farmer_id = {farm} AND name = 'S03'") == 0
+    assert count(conn, f"SELECT COUNT(*) FROM fields WHERE farmer_id = {farm}") == 1
+
+
+def test_dashboard_files_are_not_cached(conn):
+    from fastapi.testclient import TestClient
+    from backend.main import app
+    backend_db.set_db(conn)
+    client = TestClient(app)
+    assert client.get("/static/views.js").headers["cache-control"] == "no-cache"
+    assert client.get("/").headers["cache-control"] == "no-cache"

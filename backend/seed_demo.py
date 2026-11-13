@@ -24,6 +24,7 @@ and advice are produced by the engine exactly as for a real farmer.
 import csv
 import os
 import random
+import re
 import secrets
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -161,29 +162,73 @@ def sample_farm(conn, client, password):
     headers = _as(conn, SAMPLE_FARM_USER)
     rows = list(csv.DictReader(open(SAMPLES_CSV, newline="", encoding="utf-8"))) if SAMPLES_CSV.exists() else []
     _move_misfiled_readings(conn, farmer_id, rows)
-    fields = {f["name"]: f for f in client.get(f"/farmers/{farmer_id}", headers=headers).json()["fields"]}
+    plot_id = _sample_plot(conn, client, headers, farmer_id, rows)
+    have = {r[0] for r in conn.execute("SELECT point_label FROM readings WHERE field_id = ? AND point_label IS NOT NULL",
+                                       (plot_id,))}
+    added = False
     for row in rows:
-        if not (row.get("lat") and row.get("lon")):
-            continue
-        name = row["sample_id"]
-        if name not in fields:
-            accuracy = float(row["gps_accuracy_m"]) if row.get("gps_accuracy_m") else None
-            fields[name] = client.post("/fields", json={
-                "name": name, "lat": float(row["lat"]), "lon": float(row["lon"]), "gps_accuracy_m": accuracy,
-                "location_source": "gps" if accuracy is not None and accuracy <= 30 else "manual"}, headers=headers).json()
-        field = fields[name]
-        has_reading = conn.execute("SELECT 1 FROM readings WHERE field_id = ?", (field["field_id"],)).fetchone()
         reps = [row.get(f"probe_ph_{i}") for i in (1, 2, 3)]
-        if not has_reading and all(reps):
-            # The real readings from samples.csv (taken with probe-1 on 5 Nov 2026).
-            temp = float(row.get("probe_temp_c") or 25.0)
-            reading = client.post("/readings", json={"field_id": field["field_id"], "device_id": "probe-1",
-                                                     "replicates_ph": [float(v) for v in reps], "temp_c": temp},
-                                  headers=headers).json()
-            if reading.get("quality_status") == "accepted":
-                client.post("/advice", json={"field_id": field["field_id"], "reading_id": reading["reading_id"],
-                                             "crop": "maize"}, headers=headers)
+        if row["sample_id"] in have or not all(reps) or not (row.get("lat") and row.get("lon")):
+            continue
+        # The real readings from samples.csv (taken with probe-1 on 5 Nov 2026), at the sample's own GPS point.
+        client.post("/readings", json={"field_id": plot_id, "device_id": "probe-1",
+                                       "replicates_ph": [float(v) for v in reps],
+                                       "temp_c": float(row.get("probe_temp_c") or 25.0),
+                                       "point_label": row["sample_id"], "point_lat": float(row["lat"]),
+                                       "point_lon": float(row["lon"])}, headers=headers)
+        added = True
+    if added or not conn.execute("SELECT 1 FROM recommendations WHERE field_id = ? AND whole_field = 1", (plot_id,)).fetchone():
+        client.post("/advice", json={"field_id": plot_id, "crop": "maize", "whole_field": True}, headers=headers)
+    _drop_untested_samples(conn, farmer_id)
     return created
+
+
+PLOT_NAME = "Shimabala plot"
+
+
+def _sample_plot(conn, client, headers, farmer_id, rows):
+    """One field for the whole sampled area; the samples are its sampling points. Sample
+    fields made by earlier versions (one field per sample) are merged into it."""
+    plot = conn.execute("SELECT field_id FROM fields WHERE farmer_id = ? AND name = ?", (farmer_id, PLOT_NAME)).fetchone()
+    if plot is None:
+        located = [r for r in rows if r.get("lat") and r.get("lon")]
+        old = conn.execute("SELECT lat, lon FROM fields WHERE farmer_id = ?", (farmer_id,)).fetchall()
+        coords = [(float(r["lat"]), float(r["lon"])) for r in located] or [(o["lat"], o["lon"]) for o in old] \
+            or [(-15.6795, 28.2175)]
+        lat = round(sum(c[0] for c in coords) / len(coords), 6)
+        lon = round(sum(c[1] for c in coords) / len(coords), 6)
+        plot_id = client.post("/fields", json={"name": PLOT_NAME, "lat": lat, "lon": lon, "gps_accuracy_m": 3,
+                                               "location_source": "gps"}, headers=headers).json()["field_id"]
+    else:
+        plot_id = plot[0]
+    sample_fields = [r for r in conn.execute("SELECT * FROM fields WHERE farmer_id = ? AND field_id != ?",
+                                             (farmer_id, plot_id)).fetchall() if re.fullmatch(r"S\d{2}", r["name"])]
+    with conn:
+        for f in sample_fields:
+            conn.execute("UPDATE readings SET field_id = ?, point_label = ?, point_lat = ?, point_lon = ? WHERE field_id = ?",
+                         (plot_id, f["name"], f["lat"], f["lon"], f["field_id"]))
+            for table in ("recommendations", "lab_results", "referrals", "field_checks"):
+                conn.execute(f"UPDATE {table} SET field_id = ? WHERE field_id = ?", (plot_id, f["field_id"]))
+            conn.execute("DELETE FROM map_estimates WHERE field_id = ?", (f["field_id"],))
+            conn.execute("DELETE FROM fields WHERE field_id = ?", (f["field_id"],))
+    return plot_id
+
+
+def _drop_untested_samples(conn, farmer_id):
+    """Sample points with nothing recorded (never measured, no lab result yet) are not shown on the farm.
+    They come back by themselves when they are measured (bridge sample S03) or a lab result is entered."""
+    empty = [r[0] for r in conn.execute(
+        "SELECT field_id FROM fields fl WHERE farmer_id = ? "
+        "AND NOT EXISTS (SELECT 1 FROM readings r WHERE r.field_id = fl.field_id) "
+        "AND NOT EXISTS (SELECT 1 FROM lab_results l WHERE l.field_id = fl.field_id) "
+        "AND NOT EXISTS (SELECT 1 FROM referrals rf WHERE rf.field_id = fl.field_id) "
+        "AND NOT EXISTS (SELECT 1 FROM recommendations rc WHERE rc.field_id = fl.field_id)", (farmer_id,))]
+    with conn:
+        for field_id in empty:
+            conn.execute("DELETE FROM map_estimates WHERE field_id = ?", (field_id,))
+            conn.execute("DELETE FROM field_checks WHERE field_id = ?", (field_id,))
+            conn.execute("DELETE FROM fields WHERE field_id = ?", (field_id,))
+    return len(empty)
 
 
 # ----- demo farms ---------------------------------------------------------------------

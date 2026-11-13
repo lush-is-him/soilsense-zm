@@ -96,6 +96,9 @@ class ReadingIn(BaseModel):
     replicates_ph: Optional[List[float]] = None
     moisture: Optional[float] = None
     temp_c: Optional[float] = None
+    point_label: Optional[str] = Field(None, max_length=20)    # a sampling point in the field, e.g. S04
+    point_lat: Optional[float] = Field(None, ge=-90, le=90)
+    point_lon: Optional[float] = Field(None, ge=-180, le=180)
 
     @model_validator(mode="after")
     def one_kind_of_replicates(self):
@@ -137,6 +140,7 @@ class AdviceIn(BaseModel):
     manure_available: Optional[bool] = None
     as_of_date: Optional[date] = None      # defaults to today; set in tests
     lang: Language = "en"
+    whole_field: bool = False              # advice from the median of the field's sampling points
 
 
 class FarmerPatch(BaseModel):
