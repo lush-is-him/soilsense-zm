@@ -8,6 +8,8 @@ cd /d "%~dp0"
 if not exist data mkdir data
 if not exist data\secret_key.txt python -c "import secrets; print(secrets.token_hex(32))" > data\secret_key.txt
 set /p SOILSENSE_SECRET_KEY=<data\secret_key.txt
+rem Nyanja is an unreviewed draft and is hidden. To show it, create an empty file data\show_nyanja
+if exist data\show_nyanja set SOILSENSE_SHOW_NYANJA=1
 
 echo Starting the SoilSense server in a second window...
 rem --host 0.0.0.0 lets a phone on the same Wi-Fi open it too (Windows may ask: allow on Private networks)

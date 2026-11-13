@@ -141,3 +141,11 @@ def test_followup_form_import(tmp_path, monkeypatch):
     toi = yaml.safe_load((tmp_path / "toi.yaml").read_text())
     assert toi["sum.sure"] == {"text": "Tulishomede buti?", "reviewed": True, "reviewer": "TOI-1"}
     assert toi["ref.REF-04"]["text"].startswith("pH ili ijulu") and "{crop}" in toi["ref.REF-04"]["text"]
+
+
+def test_nyanja_hidden_unless_switched_on(monkeypatch):
+    from backend.routes.i18n import languages
+    monkeypatch.delenv("SOILSENSE_SHOW_NYANJA", raising=False)
+    assert [l["code"] for l in languages()] == ["en", "toi"]
+    monkeypatch.setenv("SOILSENSE_SHOW_NYANJA", "1")
+    assert [l["code"] for l in languages()] == ["en", "toi", "ny"]
