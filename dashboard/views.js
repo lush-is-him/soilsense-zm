@@ -6,6 +6,16 @@
 "use strict";
 
 const LANG_NAMES = { en: "English", ny: "Nyanja", toi: "Tonga" };
+let OFFERED = [["en", "English"], ["toi", "Tonga"]];          // replaced by /languages at start-up
+
+async function loadLanguages() {
+  try { OFFERED = (await api("/languages")).map((l) => [l.code, l.name]); } catch (error) { /* keep default */ }
+  const select = document.getElementById("lang");
+  const current = store.get("lang") || "en";
+  select.innerHTML = OFFERED.map(([code, name]) => `<option value="${code}">${name}</option>`).join("");
+  select.value = OFFERED.some(([code]) => code === current) ? current : "en";
+  store.set("lang", select.value);
+}
 const ROLE_NAMES = { farmer: "Farmer", officer: "Extension / lab officer", admin: "Administrator" };
 
 // Stroke icons (24 x 24), drawn inline so they need no files.
@@ -182,7 +192,7 @@ function viewSignup() {
           <label for="village">Village or area</label><input id="village" name="village" maxlength="80" placeholder="e.g. Shimabala">
           <label for="preferred_language">Language for advice</label>
           <select id="preferred_language" name="preferred_language">
-            <option value="en">English</option><option value="toi">Tonga</option><option value="ny">Nyanja</option></select>
+            ${OFFERED.map(([code, name]) => `<option value="${code}">${name}</option>`).join("")}</select>
           <label class="check"><input type="checkbox" name="share_consent" checked>
             <span>Share my results and field location with extension and lab officers, so they can help me and add my soil to their map. You can change this later.</span></label>
           <label class="check"><input type="checkbox" name="sms_consent" id="sms_consent"> <span>Send me advice by SMS</span></label>
@@ -359,7 +369,8 @@ function farmerForm(f, id, label) {
     <label for="${id}-village">Village or area</label>
     <input id="${id}-village" name="village" maxlength="80" value="${esc(f.village || "")}">
     <label for="${id}-lang">Language for advice</label>
-    <select id="${id}-lang" name="preferred_language">${Object.entries(LANG_NAMES).map(([code, name]) =>
+    <select id="${id}-lang" name="preferred_language">${OFFERED.concat(f.preferred_language && !OFFERED.some(([c]) => c === f.preferred_language)
+      ? [[f.preferred_language, LANG_NAMES[f.preferred_language]]] : []).map(([code, name]) =>
       `<option value="${code}" ${f.preferred_language === code ? "selected" : ""}>${name}</option>`).join("")}</select>
     <label class="check"><input type="checkbox" name="share_consent" ${f.share_consent ? "checked" : ""}>
       Share test results and field locations with extension and lab officers</label>
@@ -964,6 +975,5 @@ document.getElementById("lang").addEventListener("change", () => {
   store.set("lang", lang());
   if (location.hash.startsWith("#/advice/")) route();
 });
-document.getElementById("lang").value = store.get("lang") || "en";
 window.addEventListener("hashchange", route);
-route();
+loadLanguages().finally(route);
