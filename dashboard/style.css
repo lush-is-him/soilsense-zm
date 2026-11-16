@@ -151,6 +151,11 @@ button:disabled { opacity: 0.5; cursor: default; }
 .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .actions > button, .actions > a.button { margin-top: 0; }
 .actions.small { gap: 0.9rem; font-size: 0.9rem; margin-top: 0.4rem; }
+/* accounts: on a phone the buttons go under the name instead of squeezing it */
+.account-row { flex-wrap: wrap; }
+.account-row .grow { min-width: 0; flex: 1 1 10rem; }
+.account-actions { margin: 0; }
+@media (max-width: 559px) { .account-actions { flex-basis: 100%; padding-left: 3.1rem; } }
 a.button.big-btn { display: flex; width: 100%; font-size: 1.08rem; padding: 0.95rem 1rem; margin: 0 0 1rem; border-radius: 16px; box-shadow: var(--shadow); }
 
 /* ----- chips, badges, notices ----- */
