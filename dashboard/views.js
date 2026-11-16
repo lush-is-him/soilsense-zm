@@ -855,11 +855,11 @@ async function viewUsers() {
   $app.innerHTML = `
     ${pageHead("Accounts", `${users.filter((u) => u.active).length} active`)}
     <div class="card"><ul class="field-list">${users.map((u) => `
-      <li class="${u.active ? "" : "inactive"}" data-user="${u.user_id}"><div class="field-link" style="cursor:default">
+      <li class="${u.active ? "" : "inactive"}" data-user="${u.user_id}"><div class="field-link account-row" style="cursor:default">
         <span class="avatar">${initials(u.full_name || u.username)}</span>
         <span class="grow"><strong>${esc(u.full_name || u.username)}</strong>
           <small class="muted">@${esc(u.username)} · ${esc(ROLE_NAMES[u.role])}${u.active ? "" : " · deactivated"}</small></span>
-        <span class="actions small" style="margin:0"><button class="link" data-act="${u.active ? "off" : "on"}">${u.active ? "Deactivate" : "Activate"}</button>
+        <span class="actions small account-actions"><button class="link" data-act="${u.active ? "off" : "on"}">${u.active ? "Deactivate" : "Activate"}</button>
           <button class="link" data-act="pw">Reset password</button></span></div></li>`).join("")}</ul>
     </div>
     <details class="card">
