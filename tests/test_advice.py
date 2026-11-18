@@ -37,10 +37,10 @@ def water_rules(rules):
 
 
 def advise(ruleset, ph, crop="maize", *, method="water", trust="low", when=AUG,
-           texture="loamy", source="field_check", water="rainfed", budget="low"):
+           texture="loamy", source="field_check", water="rainfed", budget="low", lab_p=None):
     result = Advisor(ruleset).advise(AdviceRequest(
         ph=ph, ph_method=method, trust_level=trust, crop=crop, as_of_date=when,
-        texture=texture, texture_source=source, water=water, budget_band=budget))
+        texture=texture, texture_source=source, water=water, budget_band=budget, lab_p=lab_p))
     FIRED.update(r["id"] for r in result["fired_rules"])
     return result
 
@@ -347,6 +347,52 @@ def test_prices_supplied(rules):
 
 
 # ----- NFR8: every rule fires somewhere -----
+
+# ----- AGR-3 review and ZARI results (Nov 2026) -----
+
+def test_before_the_season_says_wait_for_the_rains(rules):
+    result = advise(rules, 6.0, when=AUG)
+    assert result["planting"]["status"] == "before_season"
+    assert any(m["key"] == "msg.MSG-09" for m in result["messages"])
+
+
+def test_in_season_adds_no_waiting_message(rules):
+    result = advise(rules, 6.0, when=date(2026, 11, 10))
+    assert result["planting"]["status"] == "in_season"
+    assert not any(m["key"] == "msg.MSG-09" for m in result["messages"])
+
+
+def test_late_october_counts_as_the_start_of_the_season(rules):
+    # AGR-3: "late October or early November"
+    assert advise(rules, 6.0, when=OCT)["planting"]["status"] == "in_season"
+    assert advise(rules, 6.0, when=date(2026, 10, 10))["planting"]["status"] == "before_season"
+
+
+def test_irrigated_has_no_season_message(rules):
+    result = advise(rules, 6.0, water="irrigated", when=AUG)
+    assert "planting" not in result
+
+
+def test_lab_cacl2_gives_advice_not_another_lab_test(rules):
+    # ZARI S01: 6.94 in CaCl2 is 7.44-7.74 in water, either side of maize's 7.5 limit
+    result = advise(rules, 6.94, method="cacl2", trust="high", source="lab", when=date(2026, 11, 10))
+    assert result["plan_a"]["status"] != "lab_test_recommended"
+    assert result["method_sensitive"] and "REF-06" not in result["refusals"]
+    assert result["messages"][0]["key"] == "msg.MSG-11"
+    assert result["alternatives"]                                  # both ends are still shown
+
+
+def test_unconfirmed_method_still_withholds_quantities(unconfirmed_rules):
+    result = advise(unconfirmed_rules, 5.6)
+    assert result["plan_a"]["status"] == "lab_test_recommended"
+
+
+def test_low_lab_phosphorus_keeps_the_basal_fertiliser(rules):
+    result = advise(rules, 6.0, lab_p=2, when=date(2026, 11, 10))
+    assert any(m["key"] == "msg.MSG-12" for m in result["messages"])
+    assert not any(m["key"] == "msg.MSG-12" for m in advise(rules, 6.0, lab_p=25)["messages"])
+    assert not any(m["key"] == "msg.MSG-12" for m in advise(rules, 6.0)["messages"])   # map P never used
+
 
 def test_zz_every_rule_id_fired_in_some_test(rules):
     advise(load(), 5.0, crop="millet")

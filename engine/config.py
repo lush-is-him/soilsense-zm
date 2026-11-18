@@ -15,8 +15,11 @@ def _env_float(name, default):
 
 @dataclass(frozen=True)
 class EngineConfig:
-    # Largest probe error against the lab (RQ1). Provisional until validation.
-    E_PROBE: float = field(default_factory=lambda: _env_float("E_PROBE", 0.5))
+    # Largest probe error against the lab (RQ1, ZARI results Nov 2026, lab converted to water
+    # with the 0.65 midpoint): 0.96 as measured; 0.54 once the probe has a lab anchor
+    # (leave-one-out). Was a provisional 0.5 before the laboratory results.
+    E_PROBE: float = field(default_factory=lambda: _env_float("E_PROBE", 0.96))
+    E_PROBE_ANCHORED: float = field(default_factory=lambda: _env_float("E_PROBE_ANCHORED", 0.54))
     # Calibration slope must be within this % of theoretical (GLOSOLAN).
     SLOPE_MIN_PCT: float = 95.0
     SLOPE_MAX_PCT: float = 105.0
@@ -45,6 +48,11 @@ class EngineConfig:
     GPS_MAX_ACCURACY_M: float = 30.0
     # [AGR C2, unsourced] water pH minus CaCl2 pH, as a range.
     PH_WATER_MINUS_CACL2: tuple = (0.5, 0.8)
+    # Lab anchor (ZARI results, Nov 2026): the probe's error against the lab was nearly
+    # constant (SD 0.28 over 8 samples), so one offset learned from samples that also went
+    # to the lab removes most of it (leave-one-out MAE 1.31 -> 0.25). [PROPOSED] counts:
+    LAB_ANCHOR_MIN_PAIRS: int = 2      # held-out error 0.29 with 2 pairs, 0.33 with 1
+    LAB_ANCHOR_MAX_PAIRS: int = 10     # the most recent pairs, so a changed probe re-learns
     # [PROPOSED] flag advice as borderline when pH is this close to a band edge.
     BORDERLINE_MARGIN: float = field(default_factory=lambda: _env_float("BORDERLINE_MARGIN", 0.5))
 

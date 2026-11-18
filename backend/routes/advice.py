@@ -1,5 +1,6 @@
 """POST /advice and friends (FR7, FR10, FR12, FR13)."""
 
+import dataclasses
 import json
 import statistics
 from datetime import date, datetime, timedelta, timezone
@@ -39,6 +40,43 @@ def _texture(lab, check, estimate, trust_level):
     if estimate and estimate.get("texture") and trust_level == MODERATE:
         return estimate["texture"], "map"
     return None, None
+
+
+def _median(values):
+    values = [v for v in values if v is not None]
+    return round(statistics.median(values), 2) if values else None
+
+
+def _field_lab(db, field_id, *, whole_field=False, point=None):
+    """The lab result that speaks for this request.
+
+    Lab results may name the sampling point they came from (ZARI analysed each of the
+    twenty Shimabala samples). For one point, that point's result; for the whole field,
+    the median of each point's latest result; otherwise the field's latest result."""
+    rows = [dict(r) for r in db.execute("SELECT * FROM lab_results WHERE field_id = ? ORDER BY lab_id DESC",
+                                        (field_id,)).fetchall()]
+    if not rows:
+        return None
+    if point:
+        mine = [r for r in rows if (r.get("point_label") or "").upper() == point.upper()]
+        if mine:
+            return mine[0]
+    latest_per_point = {}
+    for r in rows:
+        if r.get("point_label"):
+            latest_per_point.setdefault(r["point_label"].upper(), r)
+    unlabelled = [r for r in rows if not r.get("point_label")]
+    if latest_per_point and (whole_field or not unlabelled):
+        points = list(latest_per_point.values())
+        methods = {r["ph_method"] for r in points}
+        if len(methods) == 1:
+            lab = dict(points[0])
+            lab.update(ph=_median(r["ph"] for r in points), p=_median(r["p"] for r in points),
+                       k=_median(r["k"] for r in points), oc=_median(r["oc"] for r in points),
+                       point_label=None, n_points=len(points),
+                       point_values=sorted((r["point_label"], r["ph"]) for r in points))
+            return lab
+    return unlabelled[0] if unlabelled else rows[0]
 
 
 def render(result, lang):
@@ -95,8 +133,8 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
                              (body.reading_id, body.field_id)).fetchone()
         if reading is None:
             raise HTTPException(404, f"Reading {body.reading_id} not found for this field")
-    lab = _latest(db, "SELECT * FROM lab_results WHERE field_id = ? ORDER BY lab_id DESC LIMIT 1",
-                  body.field_id)
+    lab = _field_lab(db, body.field_id, whole_field=body.whole_field,
+                     point=reading["point_label"] if reading is not None and not body.whole_field else None)
     if reading is None and lab is None:
         raise HTTPException(422, "Need a reading_id or a lab result for this field")
 
@@ -105,7 +143,10 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
     estimate = get_or_fetch_map_estimate(db, field)
     map_estimate = MapEstimate(estimate["ph_mean"], estimate["ph_sd"], estimate["oc"], estimate["p"],
                                estimate["k"], estimate["texture"]) if estimate else None
-    trust = assess(quality, field["location_source"], field["gps_accuracy_m"], map_estimate, lab)
+    # a probe corrected by its lab anchor has the smaller measured error (RQ1)
+    config = (dataclasses.replace(DEFAULT_CONFIG, E_PROBE=DEFAULT_CONFIG.E_PROBE_ANCHORED)
+              if reading is not None and reading["lab_offset"] is not None else DEFAULT_CONFIG)
+    trust = assess(quality, field["location_source"], field["gps_accuracy_m"], map_estimate, lab, config)
 
     if trust.level == HIGH:
         ph, method = lab["ph"], lab["ph_method"]
@@ -120,10 +161,13 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
     result = Advisor(ruleset).advise(AdviceRequest(
         ph=ph if ph is not None else 0.0, ph_method=method, trust_level=trust.level,
         crop=body.crop, as_of_date=as_of, water=body.water, budget_band=body.budget_band,
-        texture=texture, texture_source=texture_source, lang=body.lang))
+        texture=texture, texture_source=texture_source, lang=body.lang,
+        lab_p=lab["p"] if lab else None))
     result["trust"] = {"level": trust.level, "reasons": trust.reasons,
                        "threshold": trust.threshold, "difference": trust.difference}
     result["texture"] = {"value": texture, "source": texture_source}
+    if lab:
+        result["lab"] = {k: lab.get(k) for k in ("ph", "ph_method", "p", "k", "oc", "lab_name", "date", "point_label", "n_points")}
     result["map_estimate"] = estimate if trust.use_map_chemistry else None
     result["map_ph"] = estimate["ph_mean"] if estimate else None
     result["checks"] = (_plausibility(db, reading, estimate)
@@ -131,6 +175,9 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
                         else {"status": "ok", "reasons": [], "refer_lab": False, "confirmed_by_repeat": False})
     result["field_id"] = body.field_id
     result["reading_id"] = body.reading_id
+    if points is not None and trust.level == HIGH and lab and lab.get("point_values"):
+        # the advice rests on the lab, so the field's spread is the lab's
+        points = [{"label": label, "ph": ph} for label, ph in lab["point_values"]]
     if points is not None:
         values = [p["ph"] for p in points]
         spread = round(max(values) - min(values), 2)

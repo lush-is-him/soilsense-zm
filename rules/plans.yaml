@@ -36,3 +36,33 @@ rules:
     notes: "In-scope crops whose workable pH range includes the farmer's pH; first preference first, then by lowest workable pH."
     data:
       first_preference: [millet]   # AGR D1
+  - id: PLANT-SEASON
+    domain: plan
+    status: agronomist_input
+    source_type: expert_opinion
+    source_doc: null
+    reviewer_alias: AGR-3
+    ref: "Review Nov 2026"
+    notes: >
+      AGR-3 disagreed with 19 of 30 situations, every time because the advice
+      ignored the planting season: the situations were dated 1 August and the
+      advice did not say to wait for the rains. Her own advice: lime and buy
+      inputs first, then plant when the rains start, late October or early
+      November. The crop's rain-fed window (crops.yaml) is used, opened
+      early_start_days earlier to cover "late October".
+    data:
+      early_start_days: 12
+  - id: NUT-P-LOW
+    domain: plan
+    status: draft
+    source_type: derived
+    source_doc: null
+    reviewer_alias: AGR-3
+    ref: "ZARI report 18 Nov 2026; review Nov 2026"
+    notes: >
+      All twenty Shimabala samples had 1-14 mg/L P (fifteen at 3 or less), whatever their
+      pH, and AGR-3 advised a basal fertiliser (Compound D) in every situation she was
+      shown. The threshold is [PROPOSED] pending an agronomist; it is applied only to a
+      laboratory value, because the map's P did not match the lab (r = 0.11).
+    data:
+      p_below: 10      # mg per kg (the ZARI report gives mg/L) [PROPOSED]

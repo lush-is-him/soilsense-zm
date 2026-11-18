@@ -20,6 +20,7 @@ const ROLE_NAMES = { farmer: "Farmer", officer: "Extension / lab officer", admin
 
 // Stroke icons (24 x 24), drawn inline so they need no files.
 const ICON_PATHS = {
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>',
   sprout: '<path d="M12 21v-9"/><path d="M12 12c0-4 3-7 8-7 0 5-3 7-8 7z"/><path d="M12 14c0-3-2.5-5.5-7-5.5 0 4 2.5 5.5 7 5.5z"/>',
   fields: '<path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/>',
@@ -521,7 +522,14 @@ async function viewField(fieldId) {
   const median = values.length ? (values.length % 2 ? values[(values.length - 1) / 2]
     : Math.round(((values[values.length / 2 - 1] + values[values.length / 2]) / 2) * 100) / 100) : null;
   const spread = values.length ? Math.round((values[values.length - 1] - values[0]) * 100) / 100 : 0;
-  const lab = history.lab_results[0];
+  // lab results may each name a sampling point: the field's lab pH is then the middle of the points' latest results
+  const labByPoint = {};
+  history.lab_results.forEach((l) => { if (l.point_label && !labByPoint[l.point_label.toUpperCase()]) labByPoint[l.point_label.toUpperCase()] = l; });
+  const labPoints = Object.values(labByPoint);
+  const middle = (xs) => { const v = [...xs].sort((a, b) => a - b); const n = v.length;
+    return n ? (n % 2 ? v[(n - 1) / 2] : Math.round(((v[n / 2 - 1] + v[n / 2]) / 2) * 100) / 100) : null; };
+  const lab = labPoints.length ? { ...labPoints[0], ph: middle(labPoints.map((l) => l.ph)), n: labPoints.length }
+    : history.lab_results[0];
   const shownPh = lab ? lab.ph : median;
   const openRefs = history.referrals.filter((r) => r.status === "open" || r.status === "in_progress");
   const openLab = openRefs.filter((r) => r.kind === "lab");
@@ -538,7 +546,7 @@ async function viewField(fieldId) {
       <div>
         <div class="card">
           <div class="facts">
-            <div class="fact"><span>${lab ? "Lab pH" : multi ? "pH (middle value)" : "Latest pH"}</span>
+            <div class="fact"><span>${lab ? `Lab pH${lab.ph_method === "cacl2" ? " (CaCl₂)" : ""}${lab.n ? `, middle of ${lab.n} points` : ""}` : multi ? "pH (middle value)" : "Latest pH"}</span>
               <strong>${shownPh != null ? `<span class="ph-chip ${phClass(shownPh)}">${esc(shownPh)}</span>` : "not tested"}</strong></div>
             <div class="fact"><span>Soil map says</span><strong>${estimate ? `pH ${esc(estimate.ph_mean)} ± ${esc(estimate.ph_sd)}` : "—"}</strong></div>
             <div class="fact"><span>${multi ? "Sampling points" : "Readings"}</span><strong>${multi ? points.length : history.readings.length}</strong></div>
@@ -590,9 +598,9 @@ async function viewField(fieldId) {
         ${r.point_label ? `<strong>${esc(r.point_label)}</strong> · ` : ""}${r.ph_water != null ? `pH ${esc(r.ph_water)}` : ""}
         <small class="muted">${esc(when(r.ts))}${r.temp_c != null ? ` · ${esc(r.temp_c)} °C` : ""}</small>
         ${readingExplanation(r) ? `<br><small>${esc(readingExplanation(r))}</small>` : ""}</li>`).join("")}</ul></details>` : ""}
-    ${history.lab_results.length ? `<div class="card"><h2>Lab results</h2><ul class="list">${history.lab_results.map((l) => `
-      <li>pH ${esc(l.ph)} (${l.ph_method === "cacl2" ? "CaCl₂" : "water"})${l.texture ? ` · ${esc(l.texture)}` : ""}
-        <small class="muted">${esc(l.lab_name || "")} ${esc(l.date || "")}</small></li>`).join("")}</ul></div>` : ""}
+    ${history.lab_results.length ? `<details class="card"${history.lab_results.length <= 3 ? " open" : ""}><summary>Lab results (${history.lab_results.length})</summary><ul class="list">${history.lab_results.map((l) => `
+      <li>${l.point_label ? `<strong>${esc(l.point_label)}</strong> · ` : ""}pH ${esc(l.ph)} (${l.ph_method === "cacl2" ? "CaCl₂" : "water"})${l.p != null ? ` · P ${esc(l.p)}` : ""}${l.texture ? ` · ${esc(l.texture)}` : ""}
+        <small class="muted">${esc(l.lab_name || "")} ${esc(l.date || "")}</small></li>`).join("")}</ul></details>` : ""}
 
     <details class="card" ${openLab.length && !own ? "open" : ""}>
       <summary>${own ? "I have a lab report" : "Enter a lab result"}</summary>
@@ -604,6 +612,12 @@ async function viewField(fieldId) {
           <div><label for="ph_method">Method</label>
             <select id="ph_method" name="ph_method" required><option value="water">Water</option><option value="cacl2">CaCl₂</option></select></div>
         </div>
+        <div class="row">
+          <div><label for="point_label">Sampling point</label><input id="point_label" name="point_label" list="point-list" placeholder="e.g. S04 (optional)">
+            <datalist id="point-list">${points.filter((p) => p.label).map((p) => `<option value="${esc(p.label)}">`).join("")}</datalist></div>
+          <div><label for="p">Phosphorus (mg/kg)</label><input id="p" name="p" type="number" step="0.1" min="0" placeholder="optional"></div>
+        </div>
+        <p class="muted small">Naming the sampling point lets the probe learn its error from the lab (lab correction).</p>
         <label for="texture">Texture (as on the report)</label><input id="texture" name="texture" placeholder="e.g. Sandy Clay Loam">
         <label for="lab_name">Lab</label><input id="lab_name" name="lab_name" placeholder="e.g. ZARI Mount Makulu">
         <label for="date">Date</label><input id="date" name="date" type="date">
@@ -687,6 +701,7 @@ async function viewField(fieldId) {
   onSubmit("check-form", async (d) => { await post(`/fields/${fieldId}/checks`, d); toast("Field check saved"); await viewField(fieldId); });
   onSubmit("lab-form", async (d) => {
     if (d.referral_id) d.referral_id = Number(d.referral_id); else delete d.referral_id;
+    if (!d.point_label) delete d.point_label;
     await post(`/fields/${fieldId}/lab-results`, d);
     toast("Lab result saved. Ask for advice to use it.");
     await viewField(fieldId);

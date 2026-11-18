@@ -10,6 +10,7 @@ from backend.db import get_db
 from backend.routes.devices import device_or_404, latest_calibration
 from backend.routes.fields import field_or_404, reading_out
 from backend.schemas import ReadingIn
+from backend.services.anchor import device_offset
 from backend.services.probe import mv_to_ph
 from engine.quality import Calibration, check_reading
 
@@ -39,19 +40,23 @@ def create_reading(body: ReadingIn, db=Depends(get_db), user=Depends(current_use
                    if calibration_row else None)
     # No device or no accepted calibration: check_reading rejects (NFR2).
     result = check_reading(replicates, body.temp_c, calibration, body.moisture)
+    # Lab anchor: the probe's constant error against the lab, if it has been learned.
+    offset = device_offset(db, body.device_id) if result.accepted else None
+    ph = round(result.ph_mean - offset, 2) if offset is not None and result.ph_mean is not None else result.ph_mean
 
     with db:
         cur = db.execute(
             "INSERT INTO readings (field_id, device_id, operator_id, calibration_id, ph_water, "
             "replicates, replicates_mv, moisture, temp_c, quality_status, quality_reasons, "
-            "point_label, point_lat, point_lon) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "point_label, point_lat, point_lon, lab_offset) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (body.field_id, body.device_id, user["user_id"],
              calibration_row["calibration_id"] if calibration_row else None,
-             result.ph_mean, json.dumps(replicates),
+             ph, json.dumps(replicates),
              json.dumps(body.replicates_mv) if body.replicates_mv is not None else None,
              body.moisture, body.temp_c, "accepted" if result.accepted else "rejected",
-             json.dumps(result.reasons + result.warnings), body.point_label, body.point_lat, body.point_lon))
+             json.dumps(result.reasons + result.warnings), body.point_label, body.point_lat, body.point_lon,
+             offset))
     return get_reading(cur.lastrowid, db, user)
 
 

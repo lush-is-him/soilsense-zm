@@ -8,7 +8,7 @@ as "lab test recommended" or "rate not yet available".
 
 import calendar
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
 from .config import DEFAULT_CONFIG
@@ -36,6 +36,7 @@ class AdviceRequest:
     texture: Optional[str] = None     # "sandy"/"loamy"/"clay" or a USDA class name
     texture_source: Optional[str] = None   # "field_check", "lab" or "map"
     lang: str = "en"
+    lab_p: Optional[float] = None     # phosphorus from a lab result (never from the map)
 
 
 class Advisor:
@@ -72,8 +73,13 @@ class Advisor:
         candidates = self._ph_in_rule_scale(req.ph, req.ph_method, result["rules_ph_method"])
         outcomes = [self._evaluate(ph, req) for ph in candidates]
         chosen = outcomes[0]
+        sensitive = len({o["signature"] for o in outcomes}) > 1
+        # A known method (a lab result in CaCl2) is converted with the midpoint of the
+        # water-CaCl2 range; the advice is given and the closeness to a limit is flagged
+        # (MSG-11). Only an unconfirmed method withholds the quantities (REF-06).
+        unconfirmed = result["rules_ph_method"] == "unconfirmed" or req.ph_method == "unconfirmed"
 
-        if len({o["signature"] for o in outcomes}) > 1:
+        if sensitive and unconfirmed:
             # Spec 2.6: the plan depends on the unconfirmed pH method.
             result["method_sensitive"] = True
             for outcome in outcomes:
@@ -93,9 +99,17 @@ class Advisor:
             result["refusals"] = chosen["refusals"]
             result["plan_a"] = chosen["plan_a"]
             result["plan_c"] = chosen["plan_c"]
+            if sensitive:
+                result["method_sensitive"] = True
+                result["alternatives"] = [self._summary(o) for o in outcomes[1:]]
+                fired.append("MSG-11")
             messages = chosen["messages"] + ["MSG-08"]
             result["plan_b"] = self._plan_b(chosen, req, fired)
 
+        if sensitive and not unconfirmed:
+            messages = ["MSG-11"] + messages
+        messages += self._season(req, fired, result)
+        messages += self._lab_phosphorus(req, fired, result)
         result["borderline"] = any(o["borderline"] for o in outcomes)
         fired += ["PLAN-B", "LIME-PARTIAL"]
         return self._finish(result, fired, messages, req.lang)
@@ -109,9 +123,10 @@ class Advisor:
             return [ph]
         sign = -1 if input_method == "water" else 1     # water reads higher than CaCl2
         converted = [round(ph + sign * low, 2), round(ph + sign * high, 2)]
-        if rule_method == "unconfirmed":
+        if rule_method == "unconfirmed" or input_method == "unconfirmed":
             return [ph] + converted
-        return converted
+        # known method: the midpoint first (used for the advice), then the two ends
+        return [round(ph + sign * (low + high) / 2, 2)] + converted
 
     # ----- one interpretation ----------------------------------------
 
@@ -276,6 +291,41 @@ class Advisor:
         if to_start >= lead_max:
             return "ok"
         return "uncertain"
+
+    def _season(self, req, fired, result):
+        """PLANT-SEASON (AGR-3 review, Nov 2026): say when to plant, not only what.
+
+        Rain-fed crops are planted when the rains are established. Before the
+        season the farmer is told to prepare (lime, seed, fertiliser) and to plant
+        when the rains have started; inside the window nothing is added."""
+        crop_rule = self.rules.crop(req.crop)
+        window = (crop_rule.data or {}).get("planting_window_rainfed") if crop_rule else None
+        if req.water != "rainfed" or not window or "PLANT-SEASON" not in self.rules.rules:
+            return []
+        rule = self.rules["PLANT-SEASON"].data
+        fired.append("PLANT-SEASON")
+        start, end = self._next_window(window, req.as_of_date)
+        earliest = start - timedelta(days=rule["early_start_days"])
+        # _next_window gives the next window that has not ended, so the date is before or inside it
+        status, message = ("before_season", "MSG-09") if req.as_of_date < earliest else ("in_season", None)
+        result["planting"] = {"status": status, "from": earliest.isoformat(), "until": end.isoformat()}
+        if message:
+            fired.append(message)
+            return [message]
+        return []
+
+    def _lab_phosphorus(self, req, fired, result):
+        """NUT-P-LOW: the lab found very little phosphorus, so the basal fertiliser matters.
+
+        From the ZARI results: P was 1-14 mg/L at all twenty Shimabala samples and did
+        not follow pH, and the iSDAsoil map's P bore no relation to it (r = 0.11), so a
+        pH-only or map-based system cannot see this. Only a lab value triggers it."""
+        if req.lab_p is None or "NUT-P-LOW" not in self.rules.rules:
+            return []
+        if req.lab_p >= self.rules["NUT-P-LOW"].data["p_below"]:
+            return []
+        fired += ["NUT-P-LOW", "MSG-12"]
+        return ["MSG-12"]
 
     @staticmethod
     def _next_window(window, as_of):

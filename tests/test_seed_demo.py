@@ -19,13 +19,19 @@ class FakeMap:
 
 
 @pytest.fixture
-def conn(tmp_path, monkeypatch):
+def conn(tmp_path, monkeypatch, request):
     monkeypatch.setenv("SEED_ADMIN_PASSWORD", "admin-pass-1")
     samples = tmp_path / "samples.csv"
     samples.write_text(
         "sample_id,lat,lon,gps_accuracy_m,probe_ph_1,probe_ph_2,probe_ph_3,probe_temp_c,notes\n"
         "S01,-15.679223,28.217512,3,8.55,8.55,8.56,26.1,\n"
         "S02,-15.679295,28.217410,2.5,,,,,\n", encoding="utf-8")
+    if request.node.get_closest_marker("with_lab"):
+        samples.write_text(
+            "sample_id,lat,lon,gps_accuracy_m,probe_ph_1,probe_ph_2,probe_ph_3,probe_temp_c,lab_ph_cacl2,lab_p_mg_kg,lab_name,notes\n"
+            "S01,-15.679223,28.217512,3,8.55,8.55,8.56,26.1,6.94,4,ZARI,\n"
+            "S02,-15.679295,28.217410,2.5,7.73,7.73,7.74,26.1,6.89,1,ZARI,\n"
+            "S03,-15.679632,28.217347,2.5,,,,,6.85,1,ZARI,\n", encoding="utf-8")
     monkeypatch.setattr(seed_demo, "SAMPLES_CSV", samples)
     connection = backend_db.connect(tmp_path / "demo.db")
     seed(connection)
@@ -126,3 +132,18 @@ def test_dashboard_files_are_not_cached(conn):
     client = TestClient(app)
     assert client.get("/static/views.js").headers["cache-control"] == "no-cache"
     assert client.get("/").headers["cache-control"] == "no-cache"
+
+
+@pytest.mark.with_lab
+def test_lab_results_go_to_their_points_and_anchor_the_probe(conn):
+    with conn:   # the real probe was calibrated when the samples were measured
+        conn.execute("INSERT INTO calibrations (device_id, offset_mv, slope_pct, temp_c, accepted, reasons) "
+                     "VALUES ('probe-1', 0, 103.7, 26.0, 1, '[]')")
+    seed_demo.demo(conn)
+    plot = conn.execute("SELECT field_id FROM fields WHERE name = 'Shimabala plot'").fetchone()[0]
+    labs = {r[0]: r[1] for r in conn.execute("SELECT point_label, ph FROM lab_results WHERE field_id = ?", (plot,))}
+    assert labs == {"S01": 6.94, "S02": 6.89, "S03": 6.85}
+    probe = conn.execute("SELECT lab_offset, lab_offset_n FROM devices WHERE device_id = 'probe-1'").fetchone()
+    assert probe["lab_offset_n"] == 2 and probe["lab_offset"] is not None
+    seed_demo.demo(conn)                                                   # running again adds nothing
+    assert count(conn, f"SELECT COUNT(*) FROM lab_results WHERE field_id = {plot}") == 3
