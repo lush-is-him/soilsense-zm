@@ -295,6 +295,8 @@ async function viewAdvice(recId, target = $app) {
     ${a.whole_field ? `<p class="notice info">${t("sum.whole_field", { n: a.whole_field.n, median: a.whole_field.median })}</p>
       ${a.whole_field.zones ? `<p class="notice">${t("sum.zones", { min: a.whole_field.min, max: a.whole_field.max })}</p>` : ""}` : ""}
     ${a.checks && a.checks.status === "check_probe" ? "" : checksBanner(a)}
+    ${a.messages.filter((m) => m.key === "msg.MSG-09").map((m) => `<p class="notice">${icon("calendar")} ${say(m)}</p>`).join("")}
+    ${a.lab ? `<p class="notice info">Based on the laboratory result${a.lab.lab_name ? ` from ${esc(a.lab.lab_name)}` : ""}${a.lab.n_points ? `, the middle of ${esc(a.lab.n_points)} sampling points` : a.lab.point_label ? ` for point ${esc(a.lab.point_label)}` : ""}: pH ${esc(a.lab.ph)} (${a.lab.ph_method === "cacl2" ? "CaCl₂" : "water"})${a.lab.p != null ? `, phosphorus ${esc(a.lab.p)} mg/kg` : ""}.</p>` : ""}
     ${a.method_sensitive ? `<div class="card"><h2>${t("ui.depends_method")}</h2>
       <table><tr><th>pH</th><th>Band</th><th>${t("ui.lime")} t/ha</th><th>Plan C</th></tr>
       ${a.alternatives.map((x) => `<tr><td>${esc(x.ph_in_rule_scale)}</td><td>${esc(x.band)}</td>
@@ -306,7 +308,7 @@ async function viewAdvice(recId, target = $app) {
       ${planCard("b", "B", t("ui.plan_b"), oneB, planB(a.plan_b, crop), false)}
       ${planCard("c", "C", t("ui.plan_c"), oneC,
         a.plan_c && a.plan_c.crops.length ? `<p>${a.plan_c.crops.map((c) => esc(capital(cropName(c)))).join(", ")}</p>` : `<p>${t("plan.c_none")}</p>`, false)}` : ""}
-    <div class="card"><h2>${t("ui.remember")}</h2><ul>${a.messages.map((m) => `<li>${say(m)}</li>`).join("")}</ul></div>
+    <div class="card"><h2>${t("ui.remember")}</h2><ul>${a.messages.filter((m) => m.key !== "msg.MSG-09").map((m) => `<li>${say(m)}</li>`).join("")}</ul></div>
     <div class="card help-card"><h2>Not sure about this result?</h2>
       <div class="actions"><button class="secondary help-btn" data-kind="lab">Request a lab test</button>
         <button class="secondary help-btn" data-kind="visit">Ask an officer to visit</button></div></div>
@@ -433,6 +435,12 @@ async function viewProbe() {
         <div class="status-row">
           <span class="badge ${calState[0]}">${calState[1]}</span>
           <div><small class="muted">${calState[2]}${c ? ` Last: ${esc(when(c.date))}, slope ${esc(c.slope_pct)}% (must be 95–105%), ${esc(c.temp_c)} °C.` : ""}</small></div>
+        </div>
+        <div class="status-row">
+          <span class="badge ${d.lab_offset != null ? "accepted" : "low"}">${d.lab_offset != null ? "Lab correction on" : "No lab correction yet"}</span>
+          <div><small class="muted">${d.lab_offset != null
+            ? `Compared with ${esc(d.lab_offset_n)} lab samples, this probe reads ${esc(Math.abs(d.lab_offset))} ${d.lab_offset >= 0 ? "higher" : "lower"} than the lab${d.lab_offset_spread != null ? ` (varies by ±${esc(d.lab_offset_spread)})` : ""}; every reading is corrected by that amount.`
+            : "When at least two samples measured with this probe also get a lab result (with the sampling point named), the probe's error against the lab is learned and taken off its readings."}</small></div>
         </div>
       </div>`;
     }).join("")}

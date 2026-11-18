@@ -9,6 +9,9 @@ msg.MSG-05: {text: "Soybean: inoculate the seed with the right rhizobia, especia
 msg.MSG-06: {text: "Maize: use a suitable seed variety.", reviewed: false}
 msg.MSG-07: {text: "Common fertiliser mistakes: applying too early, too late, or ignoring the weather.", reviewed: false}
 msg.MSG-08: {text: "This is decision support only. Consult an extension officer or a soil lab before major spending.", reviewed: false}
+msg.MSG-09: {text: "It is not planting time yet. Use the time to lime the soil and buy seed and fertiliser, and plant when the rains have started, usually from late October.", reviewed: false}
+msg.MSG-11: {text: "This lab result was measured in calcium chloride. Converted to water pH it is close to a limit, so the advice could change. If the decision is costly, ask the lab for the pH in water.", reviewed: false}
+msg.MSG-12: {text: "The lab found very little phosphorus in this soil. Do not leave out the basal fertiliser (for example Compound D at planting): it is the crop's main source of phosphorus.", reviewed: false}
 ref.REF-01: {text: "The reading did not pass the quality check, so no advice is given. Retake the reading or enter a lab pH.", reviewed: false}
 ref.REF-02: {text: "The soil is too acidic for the system to advise safely. Take a sample to a soil lab or an extension officer.", reviewed: false}
 ref.REF-03: {text: "Lime amount needs the soil texture. Do the texture-by-feel check, then ask again.", reviewed: false}

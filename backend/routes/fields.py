@@ -214,10 +214,14 @@ def add_lab_result(field_id: int, body: LabResultIn, db=Depends(get_db), user=De
     with db:
         cur = db.execute(
             "INSERT INTO lab_results (field_id, ph, ph_method, soil_water_ratio, oc, p, k, texture, "
-            "lab_name, date, referral_id, entered_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "lab_name, date, referral_id, entered_by, point_label) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (field_id, body.ph, body.ph_method, body.soil_water_ratio, body.oc, body.p, body.k,
-             body.texture, body.lab_name, body.date, body.referral_id, user["user_id"]))
+             body.texture, body.lab_name, body.date, body.referral_id, user["user_id"],
+             (body.point_label or "").strip() or None))
         if body.referral_id is not None:
             db.execute("UPDATE referrals SET status = 'done', handled_by = COALESCE(handled_by, ?), "
                        "updated_at = datetime('now') WHERE referral_id = ?", (user["user_id"], body.referral_id))
+    if body.point_label:
+        from backend.services.anchor import refresh_for_field   # a probe that measured this point learns from it
+        refresh_for_field(db, field_id)
     return dict(db.execute("SELECT * FROM lab_results WHERE lab_id = ?", (cur.lastrowid,)).fetchone())

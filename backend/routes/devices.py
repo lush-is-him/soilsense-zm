@@ -90,6 +90,9 @@ def post_live(device_id: str, body: LiveIn, db=Depends(get_db)):
     cal = latest_calibration(db, device_id)
     ph = (mv_to_ph(body.mv, cal["offset_mv"], cal["slope_pct"], cal["temp_c"], body.temp_c)
           if cal and cal["accepted"] else None)
+    offset = device_or_404(db, device_id).get("lab_offset")
+    if ph is not None and offset is not None:
+        ph = round(ph - offset, 2)          # lab anchor, as for saved readings
     _LAST_SEEN[device_id] = datetime.now(timezone.utc).isoformat()
     _LIVE[device_id] = {"ph": ph, "temp_c": body.temp_c, "settled": body.settled,
                         "field_id": body.field_id, "ts": datetime.now(timezone.utc).isoformat()}

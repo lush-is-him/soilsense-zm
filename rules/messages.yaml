@@ -8,3 +8,6 @@ rules:
   - {id: MSG-06, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: D2,  data: {when: crop_caution}}
   - {id: MSG-07, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-1, ref: G4,  data: {when: fertiliser_advised}}
   - {id: MSG-08, domain: message, status: draft, source_type: derived, source_doc: null, reviewer_alias: null, ref: "Ch 1", data: {when: always}}
+  - {id: MSG-09, domain: message, status: agronomist_input, source_type: expert_opinion, source_doc: null, reviewer_alias: AGR-3, ref: "Review Nov 2026, situations 7-17, 21-25, 29-30", data: {when: rainfed_before_season}}
+  - {id: MSG-11, domain: message, status: draft, source_type: derived, source_doc: null, reviewer_alias: null, ref: "spec 2.6; ZARI report pH in CaCl2", data: {when: lab_method_close_to_limit}}
+  - {id: MSG-12, domain: message, status: draft, source_type: derived, source_doc: null, reviewer_alias: AGR-3, ref: "ZARI report 18 Nov 2026", data: {when: lab_phosphorus_low}}

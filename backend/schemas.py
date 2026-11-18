@@ -128,6 +128,7 @@ class LabResultIn(BaseModel):
     lab_name: Optional[str] = None
     date: Optional[str] = None
     referral_id: Optional[int] = None
+    point_label: Optional[str] = Field(default=None, max_length=20)   # the sampling point the lab sample came from
 
 
 class AdviceIn(BaseModel):

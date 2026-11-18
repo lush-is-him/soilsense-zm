@@ -177,6 +177,7 @@ def sample_farm(conn, client, password):
                                        "point_label": row["sample_id"], "point_lat": float(row["lat"]),
                                        "point_lon": float(row["lon"])}, headers=headers)
         added = True
+    added = _lab_results(conn, client, headers, plot_id, rows) or added
     if added or not conn.execute("SELECT 1 FROM recommendations WHERE field_id = ? AND whole_field = 1", (plot_id,)).fetchone():
         client.post("/advice", json={"field_id": plot_id, "crop": "maize", "whole_field": True}, headers=headers)
     _drop_untested_samples(conn, farmer_id)
@@ -184,6 +185,27 @@ def sample_farm(conn, client, password):
 
 
 PLOT_NAME = "Shimabala plot"
+
+
+def _lab_results(conn, client, headers, plot_id, rows):
+    """The laboratory's result for each sample, against its sampling point. Real data
+    (ZARI Soil Chemistry Laboratory, 18 Nov 2026, pH in 0.01 M CaCl2 at 1:2.5). Entering
+    them lets the probe learn its offset from the samples it also measured (lab anchor)."""
+    have = {(r[0] or "").upper() for r in conn.execute(
+        "SELECT point_label FROM lab_results WHERE field_id = ? AND point_label IS NOT NULL", (plot_id,))}
+    added = False
+    for row in rows:
+        water, cacl2 = row.get("lab_ph_water"), row.get("lab_ph_cacl2")
+        if row["sample_id"].upper() in have or not (water or cacl2):
+            continue
+        num = lambda k: float(row[k]) if row.get(k) else None      # noqa: E731
+        body = {"ph": float(water or cacl2), "ph_method": "water" if water else "cacl2",
+                "soil_water_ratio": "1:2.5", "oc": num("lab_oc_pct"), "p": num("lab_p_mg_kg"),
+                "k": num("lab_k_cmol_kg"), "lab_name": row.get("lab_name") or None, "date": "2026-11-18",
+                "point_label": row["sample_id"]}
+        r = client.post(f"/fields/{plot_id}/lab-results", json=body, headers=headers)
+        added = added or r.status_code == 201
+    return added
 
 
 def _sample_plot(conn, client, headers, farmer_id, rows):
