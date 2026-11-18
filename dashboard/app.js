@@ -292,8 +292,9 @@ async function viewAdvice(recId, target = $app) {
         <span>${t("sum.sure")} ${sureText(a)}</span></div>
       ${a.borderline ? `<p class="notice info">${t("borderline")}</p>` : ""}
     </div>
-    ${a.whole_field ? `<p class="notice info">${t("sum.whole_field", { n: a.whole_field.n, median: a.whole_field.median })}</p>
-      ${a.whole_field.zones ? `<p class="notice">${t("sum.zones", { min: a.whole_field.min, max: a.whole_field.max })}</p>` : ""}` : ""}
+    ${a.whole_field && !(a.lab && a.lab.n_points) ? `<p class="notice info">${t("sum.whole_field", { n: a.whole_field.n, median: a.whole_field.median })}</p>
+` : ""}
+    ${a.whole_field && a.whole_field.zones ? `<p class="notice">${t("sum.zones", { min: a.whole_field.min, max: a.whole_field.max })}</p>` : ""}
     ${a.checks && a.checks.status === "check_probe" ? "" : checksBanner(a)}
     ${a.messages.filter((m) => m.key === "msg.MSG-09").map((m) => `<p class="notice">${icon("calendar")} ${say(m)}</p>`).join("")}
     ${a.lab ? `<p class="notice info">Based on the laboratory result${a.lab.lab_name ? ` from ${esc(a.lab.lab_name)}` : ""}${a.lab.n_points ? `, the middle of ${esc(a.lab.n_points)} sampling points` : a.lab.point_label ? ` for point ${esc(a.lab.point_label)}` : ""}: pH ${esc(a.lab.ph)} (${a.lab.ph_method === "cacl2" ? "CaCl₂" : "water"})${a.lab.p != null ? `, phosphorus ${esc(a.lab.p)} mg/kg` : ""}.</p>` : ""}

@@ -15,7 +15,7 @@ msg.MSG-12: {text: "The lab found very little phosphorus in this soil. Do not le
 ref.REF-01: {text: "The reading did not pass the quality check, so no advice is given. Retake the reading or enter a lab pH.", reviewed: false}
 ref.REF-02: {text: "The soil is too acidic for the system to advise safely. Take a sample to a soil lab or an extension officer.", reviewed: false}
 ref.REF-03: {text: "Lime amount needs the soil texture. Do the texture-by-feel check, then ask again.", reviewed: false}
-ref.REF-04: {text: "The pH is above what {crop} tolerates. Do not apply lime. Get a lab test.", reviewed: false}
+ref.REF-04: {text: "The pH is above what {crop} tolerates. Do not apply lime; grow a crop from Plan C.", reviewed: false}
 ref.REF-05: {text: "It is too late to lime for this season's {crop}. Follow Plan C this season and lime early for next season.", reviewed: false}
 ref.REF-06: {text: "The advice depends on how the pH was measured (water or calcium chloride). Get a lab test before buying lime.", reviewed: false}
 ref.REF-07: {text: "This much lime must be split into more than one application.", reviewed: false}

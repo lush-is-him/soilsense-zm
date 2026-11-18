@@ -322,8 +322,6 @@ class Advisor:
         pH-only or map-based system cannot see this. Only a lab value triggers it."""
         if req.lab_p is None or "NUT-P-LOW" not in self.rules.rules:
             return []
-        if (result.get("plan_a") or {}).get("status") != "ok":
-            return []
         if req.lab_p >= self.rules["NUT-P-LOW"].data["p_below"]:
             return []
         fired += ["NUT-P-LOW", "MSG-12"]

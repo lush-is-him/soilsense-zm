@@ -72,7 +72,8 @@ def _field_lab(db, field_id, *, whole_field=False, point=None):
             lab = dict(points[0])
             lab.update(ph=_median(r["ph"] for r in points), p=_median(r["p"] for r in points),
                        k=_median(r["k"] for r in points), oc=_median(r["oc"] for r in points),
-                       point_label=None, n_points=len(points))
+                       point_label=None, n_points=len(points),
+                       point_values=sorted((r["point_label"], r["ph"]) for r in points))
             return lab
     return unlabelled[0] if unlabelled else rows[0]
 
@@ -170,6 +171,9 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
                         else {"status": "ok", "reasons": [], "refer_lab": False, "confirmed_by_repeat": False})
     result["field_id"] = body.field_id
     result["reading_id"] = body.reading_id
+    if points is not None and trust.level == HIGH and lab and lab.get("point_values"):
+        # the advice rests on the lab, so the field's spread is the lab's
+        points = [{"label": label, "ph": ph} for label, ph in lab["point_values"]]
     if points is not None:
         values = [p["ph"] for p in points]
         spread = round(max(values) - min(values), 2)

@@ -1,7 +1,7 @@
 """Lab anchor: correct a probe with the constant error it shows against the laboratory.
 
 The ZARI results (Nov 2026) showed the probe reading higher than the laboratory by
-nearly the same amount at every sample (1.31 pH, SD 0.20, against CaCl2), while
+nearly the same amount at every sample (1.31 pH, SD 0.28, against CaCl2), while
 ranking the samples correctly (r = 0.89). Part of the gap is the method (water
 against CaCl2), part is the probe and the field method. A single offset, learned
 from samples measured with the probe and also sent to the lab, removes most of

@@ -598,9 +598,9 @@ async function viewField(fieldId) {
         ${r.point_label ? `<strong>${esc(r.point_label)}</strong> · ` : ""}${r.ph_water != null ? `pH ${esc(r.ph_water)}` : ""}
         <small class="muted">${esc(when(r.ts))}${r.temp_c != null ? ` · ${esc(r.temp_c)} °C` : ""}</small>
         ${readingExplanation(r) ? `<br><small>${esc(readingExplanation(r))}</small>` : ""}</li>`).join("")}</ul></details>` : ""}
-    ${history.lab_results.length ? `<div class="card"><h2>Lab results</h2><ul class="list">${history.lab_results.map((l) => `
-      <li>pH ${esc(l.ph)} (${l.ph_method === "cacl2" ? "CaCl₂" : "water"})${l.texture ? ` · ${esc(l.texture)}` : ""}
-        <small class="muted">${esc(l.lab_name || "")} ${esc(l.date || "")}</small></li>`).join("")}</ul></div>` : ""}
+    ${history.lab_results.length ? `<details class="card"${history.lab_results.length <= 3 ? " open" : ""}><summary>Lab results (${history.lab_results.length})</summary><ul class="list">${history.lab_results.map((l) => `
+      <li>${l.point_label ? `<strong>${esc(l.point_label)}</strong> · ` : ""}pH ${esc(l.ph)} (${l.ph_method === "cacl2" ? "CaCl₂" : "water"})${l.p != null ? ` · P ${esc(l.p)}` : ""}${l.texture ? ` · ${esc(l.texture)}` : ""}
+        <small class="muted">${esc(l.lab_name || "")} ${esc(l.date || "")}</small></li>`).join("")}</ul></details>` : ""}
 
     <details class="card" ${openLab.length && !own ? "open" : ""}>
       <summary>${own ? "I have a lab report" : "Enter a lab result"}</summary>
