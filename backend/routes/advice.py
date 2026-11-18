@@ -1,5 +1,6 @@
 """POST /advice and friends (FR7, FR10, FR12, FR13)."""
 
+import dataclasses
 import json
 import statistics
 from datetime import date, datetime, timedelta, timezone
@@ -142,7 +143,10 @@ def create_advice(body: AdviceIn, db=Depends(get_db), user=Depends(current_user)
     estimate = get_or_fetch_map_estimate(db, field)
     map_estimate = MapEstimate(estimate["ph_mean"], estimate["ph_sd"], estimate["oc"], estimate["p"],
                                estimate["k"], estimate["texture"]) if estimate else None
-    trust = assess(quality, field["location_source"], field["gps_accuracy_m"], map_estimate, lab)
+    # a probe corrected by its lab anchor has the smaller measured error (RQ1)
+    config = (dataclasses.replace(DEFAULT_CONFIG, E_PROBE=DEFAULT_CONFIG.E_PROBE_ANCHORED)
+              if reading is not None and reading["lab_offset"] is not None else DEFAULT_CONFIG)
+    trust = assess(quality, field["location_source"], field["gps_accuracy_m"], map_estimate, lab, config)
 
     if trust.level == HIGH:
         ph, method = lab["ph"], lab["ph_method"]

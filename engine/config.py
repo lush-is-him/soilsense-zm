@@ -15,8 +15,11 @@ def _env_float(name, default):
 
 @dataclass(frozen=True)
 class EngineConfig:
-    # Largest probe error against the lab (RQ1). Provisional until validation.
-    E_PROBE: float = field(default_factory=lambda: _env_float("E_PROBE", 0.5))
+    # Largest probe error against the lab (RQ1, ZARI results Nov 2026, lab converted to water
+    # with the 0.65 midpoint): 0.96 as measured; 0.54 once the probe has a lab anchor
+    # (leave-one-out). Was a provisional 0.5 before the laboratory results.
+    E_PROBE: float = field(default_factory=lambda: _env_float("E_PROBE", 0.96))
+    E_PROBE_ANCHORED: float = field(default_factory=lambda: _env_float("E_PROBE_ANCHORED", 0.54))
     # Calibration slope must be within this % of theoretical (GLOSOLAN).
     SLOPE_MIN_PCT: float = 95.0
     SLOPE_MAX_PCT: float = 105.0
