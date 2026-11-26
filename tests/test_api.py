@@ -24,6 +24,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("SEED_OFFICER_PASSWORD", "officer-pass")
     monkeypatch.setenv("SEED_FARMER_PASSWORD", "farmer-pass")
     monkeypatch.setenv("SEED_ADMIN_PASSWORD", "admin-pass")
+    monkeypatch.setenv("SOILSENSE_BRIDGE_KEY_FILE", str(tmp_path / "bridge_key.txt"))
     conn = backend_db.connect(tmp_path / "test.db")
     seed(conn)
     backend_db.set_db(conn)

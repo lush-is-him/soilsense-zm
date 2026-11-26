@@ -107,9 +107,15 @@ _ACTIVE_FIELD = {}   # device_id -> field open on the dashboard's Live page
 
 
 @router.post("/devices/{device_id}/active-field")
-def set_active_field(device_id: str, body: ActiveFieldIn, db=Depends(get_db)):
-    """The Live page says which field it shows, so the bridge needs no --field."""
+def set_active_field(device_id: str, body: ActiveFieldIn, db=Depends(get_db), user=Depends(current_user)):
+    """The Live page says which field it shows, so the bridge needs no --field; the probe's
+    readings are then saved for the person who opened it (backend.bridge_key)."""
     device_or_404(db, device_id)
+    if user.get("user_id"):
+        from backend.access import field_for
+        field_for(db, user, body.field_id)       # only a field this person may see
+        from backend import bridge_key
+        bridge_key.set_acting(user["user_id"])
     _ACTIVE_FIELD[device_id] = body.field_id
     return {"field_id": body.field_id}
 

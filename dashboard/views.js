@@ -231,6 +231,8 @@ async function farmerHome(user) {
       <span class="avatar" style="width:44px;height:44px">${initials(profile.alias)}</span></div>
     ${probeStrip(state)}
     <a class="button big-btn" href="#/measure">${icon("sprout")} Test my soil</a>
+    ${profile.fields.length ? `<a class="button secondary-btn skip-btn" href="${profile.fields.length === 1 ? `#/live/${profile.fields[0].field_id}` : "#/measure/6"}">
+      ${icon("chev")} Sample ready? Measure now</a>` : ""}
     <div class="card">
       <div class="section-head"><h2>My fields</h2><a href="#/new-field/${profile.farmer_id}">${icon("plus")} Add a field</a></div>
       ${fieldCards(profile.fields, "Add your first field: stand in it and save its GPS position.")}
@@ -764,11 +766,23 @@ async function viewMeasure(stepParam) {
       : `<p>No field yet. ${user.role === "farmer" ? `<a href="#/new-field/${user.farmer_id}">Add your field</a> first (stand in it to save its position).`
         : `<a href="#/fields">Open a farmer</a> and add their field first.`}</p>`;
   }
+  // People who already know the steps can go straight to measuring: to the Live page of
+  // their only field, or to the last step to choose one.
+  let skip = "";
+  if (!s.choose) {
+    let href = `#/measure/${STEPS.length}`;
+    if (user.role === "farmer") {
+      const mine = (await api("/farmers/me")).fields;
+      if (mine.length === 1) href = `#/live/${mine[0].field_id}`;
+    }
+    skip = `<a class="button secondary-btn skip-btn" href="${href}">${icon("chev")} Sample ready? Skip the steps and measure now</a>`;
+  }
   $app.innerHTML = `
     ${pageHead(user.role === "farmer" ? "Test my soil" : "Guided soil test", `Step ${step} of ${STEPS.length}`,
       `<a href="#/guide">${icon("book")} All steps</a>`)}
     <ol class="stepper" aria-label="Steps">${STEPS.map((x, i) => `<li class="${i + 1 === step ? "now" : i + 1 < step ? "done" : ""}">
       <a href="#/measure/${i + 1}" aria-label="Step ${i + 1}: ${esc(x.title)}">${i + 1 < step ? "✓" : i + 1}</a></li>`).join("")}</ol>
+    ${skip}
     <div class="card step">
       <h2>${esc(s.title)}</h2>
       <div class="anim-box">${ANIM[s.anim]}</div>

@@ -31,3 +31,6 @@ Thumbs.db
 
 # Local secret for START_DEMO.bat
 data/secret_key.txt
+
+# Local key for the probe program (written by the server at start)
+data/bridge_key.txt

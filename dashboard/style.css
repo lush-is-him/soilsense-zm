@@ -362,3 +362,6 @@ tr.inactive, li.inactive { opacity: 0.55; }
 }
 @media (min-width: 760px) { .toast { bottom: 1.5rem; } }
 .toast.error { background: var(--red); color: #fff; }
+
+/* "Sample ready? Measure now": a clear second route past the guided steps */
+.skip-btn { display: flex; width: 100%; justify-content: center; gap: 0.4rem; margin: 0 0 1rem; }

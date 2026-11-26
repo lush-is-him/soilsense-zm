@@ -55,6 +55,8 @@ If it does not compile, copy the error message to Claude.
 
 ## 3. Install the bridge
 
+On the laptop that runs the server (START DEMO) the bridge needs **no login**: the server writes a key to `data/bridge_key.txt` when it starts, the bridge reads it, and readings are saved for whoever has the field's **Live page** open in the browser. Open the Live page first, then measure. Only `sample`, or a server on another computer (`--api`), asks for a username and password.
+
 ```
 pip install -r bridge\requirements.txt
 python -m bridge.bridge ports          # optional: lists the ports (the bridge finds the Arduino itself)
