@@ -7,7 +7,7 @@ import json
 import secrets
 import time
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend import config
@@ -62,8 +62,32 @@ def read_token(token):
     return payload if payload.get("exp", 0) > time.time() else None
 
 
-def current_user(creds: HTTPAuthorizationCredentials = Depends(_bearer), db=Depends(get_db)):
+def _bridge_user(request, db):
+    """The probe program on this laptop (backend.bridge_key): limited to the probe's own
+    endpoints, and to saving readings for the person who has the Live page open."""
+    from backend import bridge_key
+    path = request.url.path
+    if path.startswith("/devices/"):
+        user_id = bridge_key.acting_user_id()
+        if user_id is None:
+            return {"user_id": None, "username": "probe-program", "full_name": "Probe program", "role": "bridge"}
+    elif path in ("/readings", "/auth/me") and request.method in ("POST", "GET"):
+        user_id = bridge_key.acting_user_id()
+        if user_id is None:
+            raise HTTPException(409, "Open the field's Live page in the dashboard first: the reading is saved for whoever has it open")
+    else:
+        raise HTTPException(403, "The probe program can only send probe readings")
+    return {"uid": user_id}
+
+
+def current_user(request: Request, creds: HTTPAuthorizationCredentials = Depends(_bearer), db=Depends(get_db)):
     payload = read_token(creds.credentials) if creds else None
+    if payload is None and creds is None:
+        from backend import bridge_key
+        if bridge_key.is_local(request) and bridge_key.matches(request.headers.get(bridge_key.HEADER)):
+            payload = _bridge_user(request, db)
+            if "role" in payload:
+                return payload
     if payload is None:
         raise HTTPException(401, "Not logged in or session expired")
     row = db.execute("SELECT user_id, username, full_name, role, active FROM users WHERE user_id = ?",

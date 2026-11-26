@@ -13,12 +13,15 @@
 The Arduino is found automatically; add --port COM3 only if you have two.
 
 The server address defaults to http://localhost:8000 (--api to change).
-You are asked for your SoilSense username and password.
+On the laptop that runs the server no login is needed: the bridge uses the key the
+server writes to data/bridge_key.txt, and saves readings for whoever has the Live
+page open. Against a server elsewhere (--api), or for `sample`, you log in.
 """
 
 import argparse
 import getpass
 import json
+import os
 import statistics
 import sys
 import time
@@ -127,10 +130,28 @@ def open_serial(name):
 
 # ----- API -------------------------------------------------------------
 
+def bridge_key_path():
+    """The key the server on this laptop writes when it starts (backend/bridge_key.py)."""
+    if os.environ.get("SOILSENSE_BRIDGE_KEY_FILE"):
+        return Path(os.environ["SOILSENSE_BRIDGE_KEY_FILE"])
+    if os.environ.get("SOILSENSE_DB"):
+        return Path(os.environ["SOILSENSE_DB"]).parent / "bridge_key.txt"
+    return Path(__file__).resolve().parent.parent / "data" / "bridge_key.txt"
+
+
+def local_key():
+    path = bridge_key_path()
+    try:
+        return path.read_text().strip() or None
+    except OSError:
+        return None
+
+
 class Api:
-    def __init__(self, base, token=None):
+    def __init__(self, base, token=None, key=None):
         self.base = base.rstrip("/")
         self.token = token
+        self.key = key          # the local bridge key: no login needed on the server's own laptop
 
     def call(self, method, path, body=None):
         data = json.dumps(body).encode() if body is not None else None
@@ -138,6 +159,8 @@ class Api:
         request.add_header("Content-Type", "application/json")
         if self.token:
             request.add_header("Authorization", f"Bearer {self.token}")
+        elif self.key:
+            request.add_header("X-Bridge-Key", self.key)
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 return json.loads(response.read() or b"null")
@@ -535,9 +558,16 @@ def main(argv=None):
         # Log in before opening the port: the USB chip goes quiet while you type.
         api = Api(args.api)
         try:
-            if args.action == "live":
+            local = args.api.split("//")[-1].split(":")[0].split("/")[0] in ("localhost", "127.0.0.1")
+            if args.action in ("live", "calibrate") or local:
                 wait_for_server(api)
-            ensure_login(api)
+            api.key = local_key() if local and args.action != "sample" else None
+            if api.key:
+                print("Connected to the SoilSense server on this laptop (no login needed).")
+                if args.action == "live":
+                    print("Readings are saved for whoever has the field's Live page open in the browser.")
+            else:
+                ensure_login(api)
         except RuntimeError as error:
             print(f"ERROR: {error}")
             return 1

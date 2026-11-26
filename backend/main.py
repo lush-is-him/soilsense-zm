@@ -26,6 +26,8 @@ async def lifespan(app):
         sync_rules(next(connection))    # migrate the database and mirror the rule tables
     finally:
         connection.close()
+    from backend import bridge_key
+    bridge_key.ensure_key()             # lets the probe program on this laptop work without a second login
     yield
 
 
