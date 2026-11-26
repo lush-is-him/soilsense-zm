@@ -343,12 +343,21 @@ async function viewAdvice(recId, target = $app) {
 // ----- live probe page (the bridge runs: python -m bridge.bridge live --field N) -----
 
 let liveTimer = null;
+function waitingText(connected) {
+  return connected
+    ? "Probe connected. Put it in the sample and stir: the pH appears here as it settles."
+    : "Waiting for the probe program. On the laptop, double-click the SoilSense ZM icon and plug in the Arduino.";
+}
 async function viewLive(fieldId) {
   const [field, history, devices] = await Promise.all([
     api(`/fields/${fieldId}`), api(`/fields/${fieldId}/history`), api("/devices"), loadStrings(lang())]);
   const device = (devices[0] || {}).device_id || "probe-1";
   try { await post(`/devices/${device}/active-field`, { field_id: Number(fieldId) }); } catch (error) { /* bridge can still use --field */ }
-  let lastSeen = history.readings.length ? history.readings[0].reading_id : 0;
+  // A reading taken in the last 15 minutes is shown too (with its advice), so opening or
+  // refreshing this page just after a measurement does not hide it.
+  const newestOnOpen = history.readings[0];
+  const recent = newestOnOpen && (Date.now() - new Date(newestOnOpen.ts.replace(" ", "T") + "Z").getTime()) / 60000 < 15;
+  let lastSeen = newestOnOpen ? newestOnOpen.reading_id - (recent ? 1 : 0) : 0;
   const startedAt = new Date().toISOString();
   let lastLiveTs = "";
   $app.innerHTML = `
@@ -361,8 +370,7 @@ async function viewLive(fieldId) {
       </div>
       <div class="live-box">
         <div class="live-ph" id="live-ph">–</div>
-        <div id="live-state" class="muted">Waiting for the probe. Put it in the sample.<br>
-          (The probe program must be running: double-click START DEMO on the laptop.)</div>
+        <div id="live-state" class="muted">${waitingText(probeState(devices).connected)}</div>
         <div id="live-temp" class="muted"></div>
       </div>
     </div>
@@ -370,11 +378,18 @@ async function viewLive(fieldId) {
   const $ph = document.getElementById("live-ph"), $state = document.getElementById("live-state");
   const $temp = document.getElementById("live-temp"), $advice = document.getElementById("live-advice");
   let busy = false;
+  let ticks = 0;
   async function tick() {
     if (!location.hash.startsWith(`#/live/${fieldId}`)) { clearInterval(liveTimer); liveTimer = null; return; }
     if (busy) return;
     busy = true;
     try {
+      // Say again every few seconds which field is open, so the probe program finds it even if
+      // it (or the server) started after this page was opened; and keep the waiting message true.
+      if (ticks++ % 5 === 0) {
+        try { await post(`/devices/${device}/active-field`, { field_id: Number(fieldId) }); } catch (error) { /* ignore */ }
+        if (!lastLiveTs) $state.textContent = waitingText(probeState(await api("/devices")).connected);
+      }
       const live = await api(`/devices/${device}/live`);
       if (live.ts && live.ts !== lastLiveTs && live.ts > startedAt && (live.field_id == null || String(live.field_id) === String(fieldId))) {
         lastLiveTs = live.ts;
@@ -390,7 +405,8 @@ async function viewLive(fieldId) {
         if (newest.quality_status === "accepted") {
           $ph.textContent = `pH ${Number(newest.ph_water).toFixed(2)}`;
           $ph.classList.remove("settling");
-          $state.textContent = "Reading saved. Advice below. Rinse the probe and put it in the next sample.";
+          const minutes = Math.round((Date.now() - new Date(newest.ts.replace(" ", "T") + "Z").getTime()) / 60000);
+          $state.textContent = `Reading saved${minutes >= 1 ? ` ${minutes} min ago` : ""}. Advice below. Rinse the probe and put it in the next sample.`;
           const advice = await post("/advice", { field_id: Number(fieldId), reading_id: newest.reading_id,
             crop: document.getElementById("live-crop").value, lang: lang() });
           await viewAdvice(advice.rec_id, $advice);

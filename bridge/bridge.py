@@ -481,6 +481,10 @@ def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=N
                         say("  New sample detected.")
                         break
             except (OSError, RuntimeError) as error:
+                if "did not settle" in str(error):
+                    # e.g. the probe is still in the storage cap or in the air: keep going, never stop the demo
+                    say("  The reading did not settle. Put the probe in the sample and stir; trying again...")
+                    continue
                 lost = isinstance(error, OSError) or "no reply from the probe" in str(error)
                 if not lost or reattach is None:
                     raise
