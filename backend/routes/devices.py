@@ -120,10 +120,22 @@ def set_active_field(device_id: str, body: ActiveFieldIn, db=Depends(get_db), us
     return {"field_id": body.field_id}
 
 
+_NEW_READING = {}   # device_id -> True when someone pressed "Take a new reading" on the Live page
+
+
+@router.post("/devices/{device_id}/new-reading")
+def request_new_reading(device_id: str, db=Depends(get_db)):
+    """The Live page's 'Take a new reading' button: the probe program reads again even if the
+    probe was not moved (the reading is otherwise started by moving it to the next sample)."""
+    device_or_404(db, device_id)
+    _NEW_READING[device_id] = True
+    return {"requested": True}
+
+
 @router.get("/devices/{device_id}/active-field")
 def get_active_field(device_id: str, db=Depends(get_db)):
     device_or_404(db, device_id)
-    return {"field_id": _ACTIVE_FIELD.get(device_id)}
+    return {"field_id": _ACTIVE_FIELD.get(device_id), "new_reading": _NEW_READING.pop(device_id, False)}
 
 
 @router.get("/devices/{device_id}/live")
