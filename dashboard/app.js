@@ -343,6 +343,11 @@ async function viewAdvice(recId, target = $app) {
 // ----- live probe page (the bridge runs: python -m bridge.bridge live --field N) -----
 
 let liveTimer = null;
+function waitingText(connected) {
+  return connected
+    ? "Probe connected. Put it in the sample and stir: the pH appears here as it settles."
+    : "Waiting for the probe program. On the laptop, double-click the SoilSense ZM icon and plug in the Arduino.";
+}
 async function viewLive(fieldId) {
   const [field, history, devices] = await Promise.all([
     api(`/fields/${fieldId}`), api(`/fields/${fieldId}/history`), api("/devices"), loadStrings(lang())]);
@@ -361,8 +366,7 @@ async function viewLive(fieldId) {
       </div>
       <div class="live-box">
         <div class="live-ph" id="live-ph">–</div>
-        <div id="live-state" class="muted">Waiting for the probe. Put it in the sample.<br>
-          (The probe program must be running: double-click START DEMO on the laptop.)</div>
+        <div id="live-state" class="muted">${waitingText(probeState(devices).connected)}</div>
         <div id="live-temp" class="muted"></div>
       </div>
     </div>
@@ -370,11 +374,18 @@ async function viewLive(fieldId) {
   const $ph = document.getElementById("live-ph"), $state = document.getElementById("live-state");
   const $temp = document.getElementById("live-temp"), $advice = document.getElementById("live-advice");
   let busy = false;
+  let ticks = 0;
   async function tick() {
     if (!location.hash.startsWith(`#/live/${fieldId}`)) { clearInterval(liveTimer); liveTimer = null; return; }
     if (busy) return;
     busy = true;
     try {
+      // Say again every few seconds which field is open, so the probe program finds it even if
+      // it (or the server) started after this page was opened; and keep the waiting message true.
+      if (ticks++ % 5 === 0) {
+        try { await post(`/devices/${device}/active-field`, { field_id: Number(fieldId) }); } catch (error) { /* ignore */ }
+        if (!lastLiveTs) $state.textContent = waitingText(probeState(await api("/devices")).connected);
+      }
       const live = await api(`/devices/${device}/live`);
       if (live.ts && live.ts !== lastLiveTs && live.ts > startedAt && (live.field_id == null || String(live.field_id) === String(fieldId))) {
         lastLiveTs = live.ts;

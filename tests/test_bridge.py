@@ -247,6 +247,18 @@ def test_live_mode_saves_each_sample_and_shows_it_on_the_dashboard(api):
     assert shown["settled"] and shown["ph"] == pytest.approx(6.5, abs=0.02)
 
 
+def test_live_mode_keeps_going_when_a_reading_does_not_settle(api):
+    # e.g. the probe still in the air when the Live page opens: the demo must not stop
+    from bridge.bridge import live
+    state = {}
+    calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+    said = []
+    probe = Probe(FakeArduino([5.0, 6.0] * 90 + [6.0] * 6))
+    assert live(probe, api, BOARD, "probe-1", 1, say=said.append, state=state, rounds=1) == 1
+    assert any("did not settle" in s for s in said)
+    assert api.call("GET", "/fields/1/history")["readings"][0]["ph_water"] == pytest.approx(6.0, abs=0.02)
+
+
 def test_readings_do_not_send_moisture(api):
     state = {}
     calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
