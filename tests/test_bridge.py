@@ -259,6 +259,18 @@ def test_live_mode_keeps_going_when_a_reading_does_not_settle(api):
     assert api.call("GET", "/fields/1/history")["readings"][0]["ph_water"] == pytest.approx(6.0, abs=0.02)
 
 
+def test_live_mode_reads_again_when_the_dashboard_asks(api):
+    # the probe is not moved, but "Take a new reading" was pressed on the Live page
+    from bridge.bridge import live
+    state = {}
+    calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)
+    api.call("POST", "/devices/probe-1/new-reading", {})
+    said = []
+    assert live(Probe(FakeArduino([5.5] * 12)), api, BOARD, "probe-1", 1, say=said.append, state=state, rounds=2) == 2
+    assert any("New reading requested" in s for s in said)
+    assert api.call("GET", "/devices/probe-1/active-field")["new_reading"] is False      # used once
+
+
 def test_readings_do_not_send_moisture(api):
     state = {}
     calibrate(Probe(FakeArduino([7, 7, 7, 4, 4, 4])), api, BOARD, "probe-1", ask=quiet, say=quiet, state=state)

@@ -372,6 +372,7 @@ async function viewLive(fieldId) {
         <div class="live-ph" id="live-ph">–</div>
         <div id="live-state" class="muted">${waitingText(probeState(devices).connected)}</div>
         <div id="live-temp" class="muted"></div>
+        <button type="button" id="new-reading" class="secondary" hidden>Take a new reading</button>
       </div>
     </div>
     <div id="live-advice"></div>`;
@@ -379,6 +380,26 @@ async function viewLive(fieldId) {
   const $temp = document.getElementById("live-temp"), $advice = document.getElementById("live-advice");
   let busy = false;
   let ticks = 0;
+  let shownReading = null;
+  async function showAdvice() {
+    const advice = await post("/advice", { field_id: Number(fieldId), reading_id: shownReading,
+      crop: document.getElementById("live-crop").value, lang: lang() });
+    await viewAdvice(advice.rec_id, $advice);
+  }
+  // Changing the crop gives advice for the same reading: no new measurement is needed.
+  document.getElementById("live-crop").addEventListener("change", () => {
+    if (shownReading) showAdvice().catch((error) => toast(error.message, true));
+  });
+  document.getElementById("new-reading").addEventListener("click", async () => {
+    try {
+      await post(`/devices/${device}/new-reading`, {});
+      $advice.innerHTML = "";
+      $ph.textContent = "–";
+      $temp.textContent = "";
+      $state.textContent = "Put the probe in the next sample and stir: the new reading starts now.";
+      document.getElementById("new-reading").hidden = true;
+    } catch (error) { toast(error.message, true); }
+  });
   async function tick() {
     if (!location.hash.startsWith(`#/live/${fieldId}`)) { clearInterval(liveTimer); liveTimer = null; return; }
     if (busy) return;
@@ -406,10 +427,10 @@ async function viewLive(fieldId) {
           $ph.textContent = `pH ${Number(newest.ph_water).toFixed(2)}`;
           $ph.classList.remove("settling");
           const minutes = Math.round((Date.now() - new Date(newest.ts.replace(" ", "T") + "Z").getTime()) / 60000);
-          $state.textContent = `Reading saved${minutes >= 1 ? ` ${minutes} min ago` : ""}. Advice below. Rinse the probe and put it in the next sample.`;
-          const advice = await post("/advice", { field_id: Number(fieldId), reading_id: newest.reading_id,
-            crop: document.getElementById("live-crop").value, lang: lang() });
-          await viewAdvice(advice.rec_id, $advice);
+          $state.textContent = `Reading saved${minutes >= 1 ? ` ${minutes} min ago` : ""}. Advice below. For another sample: rinse the probe, press "Take a new reading" and put it in the sample.`;
+          shownReading = newest.reading_id;
+          document.getElementById("new-reading").hidden = false;
+          await showAdvice();
         } else {
           $state.textContent = `Reading rejected: ${(newest.quality_reasons || []).join("; ")}`;
         }

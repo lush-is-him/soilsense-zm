@@ -399,6 +399,13 @@ def read_sample(probe, api, board, device_id, sample_id, say=print, state=None, 
 MOVED_V = 0.05     # the probe is in a new sample when the volts move this far
 
 
+def _new_reading_requested(api, device_id):
+    try:
+        return bool(api.call("GET", f"/devices/{device_id}/active-field").get("new_reading"))
+    except RuntimeError:
+        return False
+
+
 def active_field(api, device_id, say=print, wait=1.0, tries=None):
     """The field open on the dashboard's Live page; waits until one is opened."""
     told = False
@@ -477,6 +484,9 @@ def live(probe, api, board, device_id, field_id, say=print, state=None, rounds=N
                     beat += 1
                     if beat % 3 == 0:
                         _heartbeat(api, device_id)
+                        if _new_reading_requested(api, device_id):
+                            say("  New reading requested on the dashboard.")
+                            break
                     if abs(reply["ph_v"] - last_v) > MOVED_V:
                         say("  New sample detected.")
                         break
