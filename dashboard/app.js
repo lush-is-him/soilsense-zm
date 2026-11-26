@@ -353,7 +353,11 @@ async function viewLive(fieldId) {
     api(`/fields/${fieldId}`), api(`/fields/${fieldId}/history`), api("/devices"), loadStrings(lang())]);
   const device = (devices[0] || {}).device_id || "probe-1";
   try { await post(`/devices/${device}/active-field`, { field_id: Number(fieldId) }); } catch (error) { /* bridge can still use --field */ }
-  let lastSeen = history.readings.length ? history.readings[0].reading_id : 0;
+  // A reading taken in the last 15 minutes is shown too (with its advice), so opening or
+  // refreshing this page just after a measurement does not hide it.
+  const newestOnOpen = history.readings[0];
+  const recent = newestOnOpen && (Date.now() - new Date(newestOnOpen.ts.replace(" ", "T") + "Z").getTime()) / 60000 < 15;
+  let lastSeen = newestOnOpen ? newestOnOpen.reading_id - (recent ? 1 : 0) : 0;
   const startedAt = new Date().toISOString();
   let lastLiveTs = "";
   $app.innerHTML = `
@@ -401,7 +405,8 @@ async function viewLive(fieldId) {
         if (newest.quality_status === "accepted") {
           $ph.textContent = `pH ${Number(newest.ph_water).toFixed(2)}`;
           $ph.classList.remove("settling");
-          $state.textContent = "Reading saved. Advice below. Rinse the probe and put it in the next sample.";
+          const minutes = Math.round((Date.now() - new Date(newest.ts.replace(" ", "T") + "Z").getTime()) / 60000);
+          $state.textContent = `Reading saved${minutes >= 1 ? ` ${minutes} min ago` : ""}. Advice below. Rinse the probe and put it in the next sample.`;
           const advice = await post("/advice", { field_id: Number(fieldId), reading_id: newest.reading_id,
             crop: document.getElementById("live-crop").value, lang: lang() });
           await viewAdvice(advice.rec_id, $advice);
